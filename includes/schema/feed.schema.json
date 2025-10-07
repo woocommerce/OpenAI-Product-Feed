@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "OpenAI Commerce Product Feed (subset)",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["id","title","description","link","image_link","price","availability","enable_search","enable_checkout"],
+    "properties": {
+      "id": {"type": "string"},
+      "title": {"type": "string"},
+      "description": {"type": "string"},
+      "link": {"type": "string"},
+      "image_link": {"type": "string"},
+      "additional_image_link": {"type": "array","items":{"type":"string"}},
+      "price": {"type": "string"},
+      "sale_price": {"type": ["string","null"]},
+      "sale_price_effective_date": {"type": ["string","null"]},
+      "availability": {"type": "string"},
+      "inventory_quantity": {"type": "integer"},
+      "shipping": {"type":"array","items":{"type":"string"}},
+      "pickup_method": {"type":["string","null"]},
+      "pickup_sla": {"type":["string","null"]},
+      "enable_search": {"type":"string"},
+      "enable_checkout": {"type":"string"}
+    }
+  }
+}
+

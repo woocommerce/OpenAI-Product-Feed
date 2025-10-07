@@ -1,0 +1,30 @@
+# Node
+node_modules/
+npm-debug.log*
+package-lock.json
+yarn.lock
+
+# Composer
+vendor/
+composer.lock
+
+# WordPress env
+.wp-env/
+.wp-env.d/
+.wp-env.override.json
+
+# OS / IDE
+.DS_Store
+.env
+.env.*
+.idea/
+.vscode/
+*.log
+
+#cursor
+.cursorindexingignore
+*.backup
+
+.specstory/
+
+
