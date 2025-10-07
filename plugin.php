@@ -27,7 +27,6 @@ require_once OAPFW_PLUGIN_DIR . 'includes/Core/Autoloader.php';
 require_once OAPFW_PLUGIN_DIR . 'includes/Core/Interfaces.php';
 require_once OAPFW_PLUGIN_DIR . 'includes/Core/Container.php';
 require_once OAPFW_PLUGIN_DIR . 'includes/Core/Plugin.php';
-require_once OAPFW_PLUGIN_DIR . 'includes/class-oapfw-product-fields.php';
 
 add_action('plugins_loaded', function () {
     if (!class_exists('WooCommerce')) {

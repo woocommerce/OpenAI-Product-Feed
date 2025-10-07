@@ -153,8 +153,6 @@ final class Plugin
         // Initialize API controller
         $this->container->get('api.controller')->init();
 
-        // Initialize product fields
-        \OAPFW_Product_Fields::init();
 
         // Register activation/deactivation hooks
         register_activation_hook(OAPFW_PLUGIN_FILE, [$this, 'activate']);
