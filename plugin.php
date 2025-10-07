@@ -64,8 +64,11 @@ register_activation_hook(__FILE__, function () {
 });
 
 register_deactivation_hook(__FILE__, function () {
-    wp_clear_scheduled_hook('oapfw_push_feed_event');
-    wp_clear_scheduled_hook('oapfw_push_delta_event');
+    // Cancel all Action Scheduler tasks for this plugin
+    if (function_exists('as_cancel_all_actions')) {
+        as_cancel_all_actions('oapfw_push_feed_event');
+        as_cancel_all_actions('oapfw_push_delta_event');
+    }
 });
 
 /**

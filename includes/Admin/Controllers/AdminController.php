@@ -47,7 +47,6 @@ class AdminController
         add_action('admin_post_oapfw_push_now', [$this, 'handlePushNow']);
 
         // Cron and scheduling
-        add_filter('cron_schedules', [$this, 'addFifteenMinuteInterval']);
         add_action(self::CRON_HOOK, [$this, 'cronPushFeed']);
         add_action('oapfw_push_delta_event', [$this, 'pushDeltaToEndpoint'], 10, 1);
         add_action('update_option_' . $this->settings->getOptionName(), [$this, 'maybeReschedule'], 10, 3);
@@ -223,7 +222,18 @@ class AdminController
         echo '<table class="form-table">';
         
         // Next scheduled push
-        $next_push = wp_next_scheduled(self::CRON_HOOK);
+        $next_push = null;
+        if (function_exists('as_get_scheduled_actions')) {
+            $scheduled_actions = as_get_scheduled_actions([
+                'hook' => self::CRON_HOOK,
+                'status' => 'pending',
+                'per_page' => 1
+            ]);
+            if (!empty($scheduled_actions)) {
+                $next_push = $scheduled_actions[0]->get_schedule()->get_date()->getTimestamp();
+            }
+        }
+        
         echo '<tr><th>' . esc_html__('Next Scheduled Push', 'openai-product-feed-for-woo') . '</th><td>';
         if ($next_push) {
             echo esc_html(wp_date(get_option('date_format') . ' ' . get_option('time_format'), $next_push));
@@ -446,16 +456,16 @@ class AdminController
         exit;
     }
 
+
     /**
-     * Add fifteen minute cron interval
+     * Check if Action Scheduler is available
      */
-    public function addFifteenMinuteInterval(array $schedules): array
+    private function isActionSchedulerAvailable(): bool
     {
-        $schedules['every_fifteen_minutes'] = [
-            'interval' => 15 * 60,
-            'display'  => __('Every 15 Minutes', 'openai-product-feed-for-woo'),
-        ];
-        return $schedules;
+        return function_exists('as_schedule_single_action') && 
+               function_exists('as_schedule_recurring_action') && 
+               function_exists('as_has_scheduled_action') && 
+               function_exists('as_cancel_all_actions');
     }
 
     /**
@@ -496,8 +506,11 @@ class AdminController
             return;
         }
 
-        if (!wp_next_scheduled(self::CRON_HOOK)) {
-            wp_schedule_single_event(time() + 120, self::CRON_HOOK);
+        // Check if Action Scheduler is available and no task is already scheduled
+        if ($this->isActionSchedulerAvailable()) {
+            if (!as_has_scheduled_action(self::CRON_HOOK)) {
+                as_schedule_single_action(time() + 120, self::CRON_HOOK);
+            }
         }
     }
 
@@ -516,7 +529,11 @@ class AdminController
 
         if ($this->settings->get('delivery_enabled', 'false') === 'true') {
             $product_id = $product->get_id();
-            wp_schedule_single_event(time() + 30, 'oapfw_push_delta_event', [$product_id]);
+            
+            // Use Action Scheduler if available
+            if ($this->isActionSchedulerAvailable()) {
+                as_schedule_single_action(time() + 30, 'oapfw_push_delta_event', [$product_id]);
+            }
         }
     }
 
@@ -526,12 +543,17 @@ class AdminController
     public function maybeReschedule($old_value, $value, $option): void
     {
         $enabled = isset($value['delivery_enabled']) && $value['delivery_enabled'] === 'true';
-        $timestamp = wp_next_scheduled(self::CRON_HOOK);
-
-        if ($enabled && !$timestamp) {
-            wp_schedule_event(time() + 60, 'every_fifteen_minutes', self::CRON_HOOK);
-        } elseif (!$enabled && $timestamp) {
-            wp_unschedule_event($timestamp, self::CRON_HOOK);
+        
+        // Use Action Scheduler if available
+        if ($this->isActionSchedulerAvailable()) {
+            $has_scheduled = as_has_scheduled_action(self::CRON_HOOK);
+            
+            if ($enabled && !$has_scheduled) {
+                // Schedule recurring action every 15 minutes
+                as_schedule_recurring_action(time() + 60, 900, self::CRON_HOOK); // 900 seconds = 15 minutes
+            } elseif (!$enabled && $has_scheduled) {
+                as_cancel_all_actions(self::CRON_HOOK);
+            }
         }
     }
 

@@ -186,9 +186,11 @@ final class Plugin
      */
     public function deactivate(): void
     {
-        // Clean up scheduled events
-        wp_clear_scheduled_hook('oapfw_push_feed_event');
-        wp_clear_scheduled_hook('oapfw_push_delta_event');
+        // Clean up scheduled events using Action Scheduler
+        if (function_exists('as_cancel_all_actions')) {
+            as_cancel_all_actions('oapfw_push_feed_event');
+            as_cancel_all_actions('oapfw_push_delta_event');
+        }
     }
 
     /**
