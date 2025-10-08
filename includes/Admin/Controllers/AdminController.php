@@ -7,19 +7,22 @@ namespace OAPFW\Admin\Controllers;
 use OAPFW\Core\SettingsRepositoryInterface;
 use OAPFW\Core\FeedGeneratorInterface;
 use OAPFW\Core\ValidatorInterface;
+use OAPFW\Admin\Helpers\CredentialValidator;
+use OAPFW\Admin\Helpers\FeedStatusProvider;
+use OAPFW\Admin\Views\AdminViewRenderer;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-/**
- * Admin controller for WooCommerce integration
- */
 class AdminController {
 
 	private SettingsRepositoryInterface $settings;
 	private FeedGeneratorInterface $feedGenerator;
 	private ValidatorInterface $validator;
+	private CredentialValidator $credentialValidator;
+	private FeedStatusProvider $statusProvider;
+	private AdminViewRenderer $viewRenderer;
 	private $logger;
 
 	const SCHEDULED_ACTION_HOOK = 'oapfw_push_feed_event';
@@ -33,353 +36,59 @@ class AdminController {
 		$this->feedGenerator = $feedGenerator;
 		$this->validator     = $validator;
 		$this->logger        = function_exists( 'wc_get_logger' ) ? wc_get_logger() : null;
+		
+		$this->credentialValidator = new CredentialValidator( $settings );
+		$this->statusProvider = new FeedStatusProvider();
+		$this->viewRenderer = new AdminViewRenderer( $settings, $this->credentialValidator, $this->statusProvider );
 	}
 
-	/**
-	 * Initialize admin functionality
-	 */
 	public function init(): void {
-		// WooCommerce settings tab integration
 		add_filter( 'woocommerce_settings_tabs_array', array( $this, 'addWcSettingsTab' ), 50 );
 		add_action( 'woocommerce_settings_tabs_oapfw', array( $this, 'renderWcSettingsTab' ) );
 		add_action( 'woocommerce_update_options_oapfw', array( $this, 'saveWcSettings' ) );
 
-		// Admin post handlers for actions
 		add_action( 'admin_post_oapfw_download_feed', array( $this, 'handleDownloadFeed' ) );
 		add_action( 'admin_post_oapfw_push_now', array( $this, 'handlePushNow' ) );
 
-		// Action Scheduler hooks
 		add_action( self::SCHEDULED_ACTION_HOOK, array( $this, 'cronPushFeed' ) );
 		add_action( 'oapfw_push_delta_event', array( $this, 'pushDeltaToEndpoint' ), 10, 1 );
 		add_action( 'update_option_' . $this->settings->getOptionName(), array( $this, 'maybeReschedule' ), 10, 3 );
 
-		// Product change hooks for delta pushes
 		add_action( 'woocommerce_update_product', array( $this, 'queueDeltaPush' ), 10, 1 );
 		add_action( 'woocommerce_product_set_stock', array( $this, 'queueDeltaPush' ), 10, 1 );
 		add_action( 'woocommerce_admin_process_product_object', array( $this, 'maybePushDeltaOnSave' ) );
 
-		// Admin notice for successful actions
 		add_action( 'admin_notices', array( $this, 'maybeShowAdminNotice' ) );
 	}
 
-	/**
-	 * Add WooCommerce settings tab
-	 */
 	public function addWcSettingsTab( array $tabs ): array {
 		$tabs['oapfw'] = __( 'OpenAI Feed', 'openai-product-feed-for-woo' );
 		return $tabs;
 	}
 
-	/**
-	 * Render WooCommerce settings tab content
-	 */
 	public function renderWcSettingsTab(): void {
 		$section = isset( $_GET['section'] ) ? sanitize_key( $_GET['section'] ) : 'push';
 
-		$this->renderTabNavigation( $section );
+		$this->viewRenderer->renderTabNavigation( $section );
 		$this->renderTabContent( $section );
 	}
 
-	/**
-	 * Render tab navigation
-	 */
-	private function renderTabNavigation( string $current_section ): void {
-		echo '<ul class="subsubsub">';
-
-		$sections = array(
-			'push'     => __( 'Feed Delivery', 'openai-product-feed-for-woo' ),
-			'settings' => __( 'Settings', 'openai-product-feed-for-woo' ),
-		);
-
-		$count = 0;
-		foreach ( $sections as $id => $label ) {
-			++$count;
-			$class = $current_section === $id ? 'class="current"' : '';
-			$url   = add_query_arg(
-				array(
-					'page'    => 'wc-settings',
-					'tab'     => 'oapfw',
-					'section' => $id,
-				),
-				admin_url( 'admin.php' )
-			);
-
-			printf(
-				'<li><a %s href="%s">%s</a>%s</li>',
-				$class,
-				esc_url( $url ),
-				esc_html( $label ),
-				$count < count( $sections ) ? ' | ' : ''
-			);
-		}
-
-		echo '</ul><br class="clear" />';
-	}
-
-	/**
-	 * Render tab content based on section
-	 */
 	private function renderTabContent( string $section ): void {
-		echo '<h2>' . esc_html__( 'OpenAI Product Feed', 'openai-product-feed-for-woo' ) . '</h2>';
-		echo '<p class="description">' . esc_html__( 'Push your product feed to OpenAI so ChatGPT can index your products with up-to-date price and availability.', 'openai-product-feed-for-woo' ) . '</p>';
+		$this->viewRenderer->renderTabHeader();
 
 		switch ( $section ) {
 			case 'push':
-				$this->renderPushSection();
+				$this->viewRenderer->renderPushSection();
 				break;
 			case 'settings':
-				$this->renderSettingsSection();
+				$this->viewRenderer->renderSettingsSection();
 				break;
 			default:
-				$this->renderPushSection(); // Default to push
+				$this->viewRenderer->renderPushSection();
 				break;
 		}
 	}
 
-	/**
-	 * Render push section
-	 */
-	private function renderPushSection(): void {
-		echo '<h3>' . esc_html__( 'Feed Delivery Configuration', 'openai-product-feed-for-woo' ) . '</h3>';
-		echo '<p>' . esc_html__( 'Configure how your product feed is delivered to OpenAI. Feeds are pushed automatically every 15 minutes when enabled, plus immediately when products change.', 'openai-product-feed-for-woo' ) . '</p>';
-
-		echo '<table class="form-table">';
-
-		// Enable/Disable Push
-		echo '<tr><th>' . esc_html__( 'Scheduled Delivery', 'openai-product-feed-for-woo' ) . '</th><td>';
-		printf(
-			'<label><input type="checkbox" name="oapfw_settings[delivery_enabled]" value="true" %s/> %s</label>',
-			checked( $this->settings->get( 'delivery_enabled', 'false' ), 'true', false ),
-			esc_html__( 'Enable push every ≤ 15 minutes', 'openai-product-feed-for-woo' )
-		);
-		echo '<p class="description">' . esc_html__( 'When enabled, your site will automatically POST the feed to OpenAI\'s endpoint.', 'openai-product-feed-for-woo' ) . '</p>';
-		echo '</td></tr>';
-
-		// OpenAI Endpoint URL
-		echo '<tr><th>' . esc_html__( 'OpenAI Endpoint URL', 'openai-product-feed-for-woo' ) . '</th><td>';
-		printf(
-			'<input type="url" class="regular-text" name="oapfw_settings[endpoint_url]" value="%s" placeholder="https://api.openai.com/v1/your-endpoint">',
-			esc_attr( $this->settings->get( 'endpoint_url', '' ) )
-		);
-		echo '<p class="description">' . esc_html__( 'Enter the HTTPS endpoint URL provided by OpenAI for your store.', 'openai-product-feed-for-woo' ) . '</p>';
-		echo '</td></tr>';
-
-		// Bearer Token
-		echo '<tr><th>' . esc_html__( 'Bearer Token', 'openai-product-feed-for-woo' ) . '</th><td>';
-		printf(
-			'<input type="text" class="regular-text" name="oapfw_settings[auth_token]" value="%s" placeholder="sk_live_...">',
-			esc_attr( $this->settings->get( 'auth_token', '' ) )
-		);
-		echo '<p class="description">' . esc_html__( 'Enter the authorization token provided by OpenAI.', 'openai-product-feed-for-woo' ) . '</p>';
-		echo '</td></tr>';
-
-		echo '</table>';
-
-		// Actions Section
-		echo '<h4>' . esc_html__( 'Actions', 'openai-product-feed-for-woo' ) . '</h4>';
-		$this->renderPushActions();
-
-		// Status Section
-		echo '<h4>' . esc_html__( 'Status', 'openai-product-feed-for-woo' ) . '</h4>';
-		$this->renderPushStatus();
-	}
-
-
-	/**
-	 * Render push actions section
-	 */
-	private function renderPushActions(): void {
-		echo '<table class="form-table"><tr><td>';
-
-		// Download button
-		$download_url = wp_nonce_url(
-			admin_url( 'admin-post.php?action=oapfw_download_feed' ),
-			'oapfw_download_feed'
-		);
-		echo '<a style="margin-right:8px;" href="' . esc_url( $download_url ) .
-			'" class="button button-primary">' .
-			esc_html__( 'Download Feed', 'openai-product-feed-for-woo' ) . '</a>';
-
-		// Push button (if configured)
-		$can_push = $this->canPushFeed();
-		if ( $can_push ) {
-			$push_url = wp_nonce_url(
-				admin_url( 'admin-post.php?action=oapfw_push_now' ),
-				'oapfw_push_now'
-			);
-			echo '<a style="display:inline-block;" href="' . esc_url( $push_url ) .
-				'" class="button">' .
-				esc_html__( 'Push Now', 'openai-product-feed-for-woo' ) . '</a>';
-		} else {
-			echo '<button type="button" class="button" disabled>' .
-				esc_html__( 'Push Now (configure endpoint + token)', 'openai-product-feed-for-woo' ) .
-				'</button>';
-		}
-
-		echo '</td></tr></table>';
-	}
-
-	/**
-	 * Render push status section
-	 */
-	private function renderPushStatus(): void {
-		echo '<table class="form-table">';
-
-		// Next scheduled push
-		$next_push = null;
-		if ( function_exists( 'as_get_scheduled_actions' ) ) {
-			$scheduled_actions = as_get_scheduled_actions(
-				array(
-					'hook'     => self::SCHEDULED_ACTION_HOOK,
-					'per_page' => 1,
-					'order'    => 'ASC',
-				)
-			);
-			
-			if ( ! empty( $scheduled_actions ) && isset( $scheduled_actions[0] ) ) {
-				$next_push = $scheduled_actions[0]->get_schedule()->get_date()->getTimestamp();
-			}
-		}
-
-		echo '<tr><th>' . esc_html__( 'Next Scheduled Push', 'openai-product-feed-for-woo' ) . '</th><td>';
-		if ( $next_push ) {
-			echo esc_html( wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $next_push ) );
-		} else {
-			echo esc_html__( 'Not scheduled', 'openai-product-feed-for-woo' );
-		}
-		echo '</td></tr>';
-
-		// Validation issues
-		$issues = get_transient( 'oapfw_last_validation' );
-		echo '<tr><th>' . esc_html__( 'Feed Validation', 'openai-product-feed-for-woo' ) . '</th><td>';
-		if ( ! empty( $issues ) && is_array( $issues ) ) {
-			$logs_url = admin_url( 'admin.php?page=wc-status&tab=logs&source=oapfw&paged=1' );
-			echo '<span style="color:#d63638;">' . sprintf(
-				esc_html__( '%d validation issues found', 'openai-product-feed-for-woo' ),
-				count( $issues )
-			) . '</span>';
-			echo ' • <a href="' . esc_url( $logs_url ) . '">' . 
-				 esc_html__( 'View in logs', 'openai-product-feed-for-woo' ) . '</a>';
-		} else {
-			echo '<span style="color:#00a32a;">✓ ' . esc_html__( 'No issues found', 'openai-product-feed-for-woo' ) . '</span>';
-		}
-		echo '</td></tr>';
-
-		echo '</table>';
-	}
-
-
-	/**
-	 * Render validation issues (legacy method - keeping for compatibility)
-	 */
-	private function renderValidationIssues(): void {
-		$issues = get_transient( 'oapfw_last_validation' );
-		if ( ! empty( $issues ) && is_array( $issues ) ) {
-			$logs_url = admin_url( 'admin.php?page=wc-status&tab=logs&source=oapfw&paged=1' );
-			echo '<div class="notice notice-warning"><p>' .
-				sprintf(
-					esc_html__( '%d feed validation issues found.', 'openai-product-feed-for-woo' ),
-					count( $issues )
-				) .
-				' <a href="' . esc_url( $logs_url ) . '">' .
-				esc_html__( 'View detailed logs', 'openai-product-feed-for-woo' ) .
-				'</a></p></div>';
-		}
-	}
-
-
-	/**
-	 * Render settings section (shared settings for both push and pull)
-	 */
-	private function renderSettingsSection(): void {
-		echo '<h3>' . esc_html__( 'Feed Content', 'openai-product-feed-for-woo' ) . '</h3>';
-		echo '<table class="form-table">';
-
-		// Feed format
-		echo '<tr><th>' . esc_html__( 'Default Format', 'openai-product-feed-for-woo' ) . '</th><td><select name="oapfw_settings[format]">';
-		foreach ( array( 'json', 'csv', 'xml', 'tsv' ) as $fmt ) {
-			printf( '<option value="%1$s" %2$s>%1$s</option>', esc_attr( $fmt ), selected( $this->settings->get( 'format', 'json' ), $fmt, false ) );
-		}
-		echo '</select><p class="description">' . esc_html__( 'Default format for feeds. JSON recommended. Pull requests can override this.', 'openai-product-feed-for-woo' ) . '</p></td></tr>';
-
-		echo '</table>';
-
-		// Product Defaults
-		echo '<h3>' . esc_html__( 'Product Defaults', 'openai-product-feed-for-woo' ) . '</h3>';
-		echo '<table class="form-table">';
-		echo '<tr><th>' . esc_html__( 'Enable Search', 'openai-product-feed-for-woo' ) . '</th><td>';
-		$search_val_wc = $this->settings->get( 'enable_search_default', 'true' );
-		printf( '<label><input type="checkbox" name="oapfw_settings[enable_search_default]" value="true" %s/> %s</label>', checked( $search_val_wc, 'true', false ), esc_html__( 'Allow products in ChatGPT search by default', 'openai-product-feed-for-woo' ) );
-		echo '<p class="description">' . esc_html__( 'Can be overridden per product in the product editor.', 'openai-product-feed-for-woo' ) . '</p>';
-		echo '</td></tr>';
-
-		echo '<tr><th>' . esc_html__( 'Enable Checkout', 'openai-product-feed-for-woo' ) . '</th><td>';
-		$checkout_val_wc = $this->settings->get( 'enable_checkout_default', '' );
-		if ( $checkout_val_wc === '' ) {
-			$checkout_val_wc = 'false'; }
-		printf( '<label><input type="checkbox" name="oapfw_settings[enable_checkout_default]" value="true" %s/> %s</label>', checked( $checkout_val_wc, 'true', false ), esc_html__( 'Allow ChatGPT instant checkout by default', 'openai-product-feed-for-woo' ) );
-		echo '<p class="description">' . esc_html__( 'Requires enable_search=true and OpenAI approval. Can be overridden per product.', 'openai-product-feed-for-woo' ) . '</p>';
-		echo '</td></tr>';
-
-		echo '</table>';
-
-		// Merchant Information
-		echo '<h3>' . esc_html__( 'Merchant Information', 'openai-product-feed-for-woo' ) . '</h3>';
-		echo '<p class="description">' . esc_html__( 'This information appears in all feeds and is required for checkout functionality.', 'openai-product-feed-for-woo' ) . '</p>';
-		echo '<table class="form-table">';
-
-		// Use repository defaults for consistent fallback behavior
-		$defaults    = $this->settings->getDefaults();
-		$seller_name = $this->settings->get( 'seller_name', $defaults['seller_name'] ?? '' );
-		$seller_url  = $this->settings->get( 'seller_url', $defaults['seller_url'] ?? '' );
-		$privacy_url = $this->settings->get( 'privacy_url', $defaults['privacy_url'] ?? '' );
-		$tos         = $this->settings->get( 'tos_url', $defaults['tos_url'] ?? '' );
-
-		echo '<tr><th>' . esc_html__( 'Seller Name', 'openai-product-feed-for-woo' ) . '</th><td>';
-		printf( '<input type="text" class="regular-text" name="oapfw_settings[seller_name]" value="%s">', esc_attr( $seller_name ) );
-		echo '</td></tr>';
-
-		echo '<tr><th>' . esc_html__( 'Store URL', 'openai-product-feed-for-woo' ) . '</th><td>';
-		printf( '<input type="url" class="regular-text" name="oapfw_settings[seller_url]" value="%s">', esc_attr( $seller_url ) );
-		echo '</td></tr>';
-
-		echo '<tr><th>' . esc_html__( 'Privacy Policy URL', 'openai-product-feed-for-woo' ) . '</th><td>';
-		printf( '<input type="url" class="regular-text" name="oapfw_settings[privacy_url]" value="%s">', esc_attr( $privacy_url ) );
-		echo '</td></tr>';
-
-		echo '<tr><th>' . esc_html__( 'Terms of Service URL', 'openai-product-feed-for-woo' ) . '</th><td>';
-		printf( '<input type="url" class="regular-text" name="oapfw_settings[tos_url]" value="%s">', esc_attr( $tos ) );
-		echo '</td></tr>';
-
-		echo '<tr><th>' . esc_html__( 'Return Policy URL', 'openai-product-feed-for-woo' ) . '</th><td>';
-		printf( '<input type="url" class="regular-text" name="oapfw_settings[returns_url]" value="%s">', esc_attr( $this->settings->get( 'returns_url', '' ) ) );
-		echo '</td></tr>';
-
-		echo '<tr><th>' . esc_html__( 'Return Window', 'openai-product-feed-for-woo' ) . '</th><td>';
-		$return_window = (int) $this->settings->get( 'return_window', $defaults['return_window'] ?? 30 );
-		printf( '<input type="number" class="small-text" min="0" step="1" name="oapfw_settings[return_window]" value="%s"> days', esc_attr( $return_window ) );
-		echo '</td></tr>';
-
-		echo '</table>';
-
-		// Feed Preview
-		echo '<h3>' . esc_html__( 'Feed Preview', 'openai-product-feed-for-woo' ) . '</h3>';
-		echo '<p>' . esc_html__( 'Preview your current feed data:', 'openai-product-feed-for-woo' ) . '</p>';
-		$preview_url = add_query_arg( '_wpnonce', wp_create_nonce( 'wp_rest' ), rest_url( 'wc/v3/openai-feed' ) );
-		echo '<p><code>' . esc_html( rest_url( 'wc/v3/openai-feed' ) ) . '</code> ';
-		echo '<a href="' . esc_url( $preview_url ) . '" target="_blank" class="button button-secondary">' .
-			esc_html__( 'Open Preview', 'openai-product-feed-for-woo' ) . '</a></p>';
-
-		// Reference
-		echo '<p class="description" style="margin-top:2em;">' . sprintf(
-			esc_html__( 'See the OpenAI Product Feed specification: %s', 'openai-product-feed-for-woo' ),
-			'<a href="https://developers.openai.com/commerce/specs/feed/" target="_blank" rel="noopener">developers.openai.com/commerce/specs/feed/</a>'
-		) . '</p>';
-	}
-
-	/**
-	 * Save WooCommerce settings
-	 */
 	public function saveWcSettings(): void {
 		if ( ! current_user_can( 'manage_woocommerce' ) ) {
 			return;
@@ -392,9 +101,6 @@ class AdminController {
 		$this->settings->save( $posted );
 	}
 
-	/**
-	 * Handle download feed action
-	 */
 	public function handleDownloadFeed(): void {
 		if ( ! current_user_can( 'manage_woocommerce' ) ) {
 			wp_die( __( 'Permission denied.', 'openai-product-feed-for-woo' ) );
@@ -415,9 +121,6 @@ class AdminController {
 		exit;
 	}
 
-	/**
-	 * Handle push now action
-	 */
 	public function handlePushNow(): void {
 		if ( ! current_user_can( 'manage_woocommerce' ) ) {
 			wp_die( __( 'Permission denied.', 'openai-product-feed-for-woo' ) );
@@ -440,17 +143,10 @@ class AdminController {
 		exit;
 	}
 
-
-	/**
-	 * Scheduled job to push feed (runs every 15 minutes when enabled)
-	 */
 	public function cronPushFeed(): void {
 		$this->pushToEndpoint();
 	}
 
-	/**
-	 * Push delta update for single product
-	 */
 	public function pushDeltaToEndpoint( int $product_id ): void {
 		$rows = $this->feedGenerator->buildForProductId( $product_id );
 		if ( ! $rows ) {
@@ -460,21 +156,15 @@ class AdminController {
 		$this->pushFeedData( $rows, true );
 	}
 
-	/**
-	 * Schedule delta push when product changes
-	 */
 	public function queueDeltaPush( $product_id_or_obj ): void {
-		// Only queue if delivery is enabled
 		if ( $this->settings->get( 'delivery_enabled', 'false' ) !== 'true' ) {
 			return;
 		}
 
-		// Extract product ID
 		$product_id = is_numeric( $product_id_or_obj ) 
 			? (int) $product_id_or_obj 
 			: $product_id_or_obj->get_id();
 
-		// Schedule delta push 30 seconds from now (debounced)
 		if ( function_exists( 'as_schedule_single_action' ) ) {
 			as_schedule_single_action( 
 				time() + 30, 
@@ -485,9 +175,6 @@ class AdminController {
 		}
 	}
 
-	/**
-	 * Handle product save - schedule delta push
-	 */
 	public function maybePushDeltaOnSave( $product ): void {
 		if ( is_numeric( $product ) ) {
 			$product = wc_get_product( $product );
@@ -498,22 +185,17 @@ class AdminController {
 		}
 	}
 
-	/**
-	 * Schedule or unschedule recurring feed pushes based on settings
-	 */
 	public function maybeReschedule( $old_value, $value, $option ): void {
 		$enabled = isset( $value['delivery_enabled'] ) && $value['delivery_enabled'] === 'true';
 
-		// Clear existing schedules
 		if ( function_exists( 'as_unschedule_all_actions' ) ) {
 			as_unschedule_all_actions( self::SCHEDULED_ACTION_HOOK );
 		}
 
-		// Schedule if enabled
 		if ( $enabled && function_exists( 'as_schedule_recurring_action' ) ) {
 			$action_id = as_schedule_recurring_action( 
-				time() + 60,      // Start in 1 minute
-				900,              // Repeat every 15 minutes
+				time() + 60,
+				900,
 				self::SCHEDULED_ACTION_HOOK,
 				array(),
 				'oapfw'
@@ -528,9 +210,6 @@ class AdminController {
 		}
 	}
 
-	/**
-	 * Show admin notice if needed
-	 */
 	public function maybeShowAdminNotice(): void {
 		if ( ! isset( $_GET['page'] ) || $_GET['page'] !== 'wc-settings' ) {
 			return;
@@ -543,34 +222,19 @@ class AdminController {
 		}
 	}
 
-	/**
-	 * Check if feed can be pushed
-	 */
 	private function canPushFeed(): bool {
-		$delivery_enabled    = $this->settings->get( 'delivery_enabled', 'false' ) === 'true';
-		$endpoint_configured = trim( (string) $this->settings->get( 'endpoint_url', '' ) ) !== '';
-		$token_configured    = trim( (string) $this->settings->get( 'auth_token', '' ) ) !== '';
-
-		return $delivery_enabled && $endpoint_configured && $token_configured;
+		return $this->credentialValidator->canPushFeed();
 	}
 
-	/**
-	 * Push feed to configured endpoint
-	 */
 	private function pushToEndpoint(): void {
 		$rows = $this->feedGenerator->buildFeed();
 		$this->pushFeedData( $rows, false );
 	}
 
-	/**
-	 * Push feed data to endpoint
-	 */
 	private function pushFeedData( array $rows, bool $is_delta = false ): void {
-		// Validate rows and record issues
 		$issues = $this->validator->validateFeed( $rows );
 
 		if ( $issues ) {
-			// Log validation issues to WooCommerce logs
 			if ( $this->logger ) {
 				$this->logger->warning( 'Feed validation issues found', array(
 					'source' => 'oapfw',
@@ -579,7 +243,6 @@ class AdminController {
 					'is_delta' => $is_delta
 				) );
 
-				// Log individual product issues
 				foreach ( $issues as $issue ) {
 					$product_id = $issue['id'] ?? 'unknown';
 					$issue_messages = $issue['issues'] ?? array();
@@ -593,10 +256,8 @@ class AdminController {
 				}
 			}
 
-			// Keep transient for dashboard display
 			set_transient( 'oapfw_last_validation', $issues, 5 * MINUTE_IN_SECONDS );
 		} else {
-			// Log successful validation
 			if ( $this->logger ) {
 				$this->logger->info( 'Feed validation passed', array(
 					'source' => 'oapfw',
@@ -608,7 +269,7 @@ class AdminController {
 		}
 
 		$format   = $this->settings->get( 'format', 'json' );
-		$endpoint = trim( (string) $this->settings->get( 'endpoint_url', '' ) );
+		$endpoint = $this->credentialValidator->getEndpointUrl();
 
 		if ( empty( $endpoint ) ) {
 			return;
@@ -621,7 +282,7 @@ class AdminController {
 			$headers['X-Feed-Delta'] = 'true';
 		}
 
-		$token = $this->settings->get( 'auth_token', '' );
+		$token = $this->credentialValidator->getAuthToken();
 		if ( ! empty( $token ) ) {
 			$headers['Authorization'] = 'Bearer ' . $token;
 		}
