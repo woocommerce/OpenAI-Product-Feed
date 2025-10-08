@@ -77,7 +77,7 @@ class AdminController {
 	 * Render WooCommerce settings tab content
 	 */
 	public function renderWcSettingsTab(): void {
-		$section = isset( $_GET['section'] ) ? sanitize_key( $_GET['section'] ) : 'settings';
+		$section = isset( $_GET['section'] ) ? sanitize_key( $_GET['section'] ) : 'push';
 
 		$this->renderTabNavigation( $section );
 		$this->renderTabContent( $section );
