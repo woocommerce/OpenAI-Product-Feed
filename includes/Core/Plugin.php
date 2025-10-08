@@ -11,6 +11,7 @@ use OAPFW\Feed\FeedGenerator;
 use OAPFW\Feed\Mappers\ProductMapper;
 use OAPFW\Feed\Validators\FeedValidator;
 use OAPFW\Admin\Controllers\AdminController;
+use OAPFW\Admin\Controllers\ProductFieldsController;
 use OAPFW\API\Controllers\ApiController;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -146,6 +147,13 @@ final class Plugin {
 		);
 
 		$this->container->set(
+			'admin.product_fields_controller',
+			function () {
+				return new ProductFieldsController();
+			}
+		);
+
+		$this->container->set(
 			'api.controller',
 			function () {
 				return new ApiController(
@@ -165,6 +173,9 @@ final class Plugin {
 
 		// Initialize admin controller
 		$this->container->get( 'admin.controller' )->init();
+
+		// Initialize product fields controller
+		$this->container->get( 'admin.product_fields_controller' )->init();
 
 		// Initialize API controller
 		$this->container->get( 'api.controller' )->init();
