@@ -18,6 +18,7 @@ abstract class SchemaBasedMapper {
 
 	protected SettingsRepositoryInterface $settings;
 	protected array $schema;
+	protected array $product_meta_cache = array();
 
 	public function __construct( SettingsRepositoryInterface $settings ) {
 		$this->settings = $settings;
@@ -133,10 +134,17 @@ abstract class SchemaBasedMapper {
 	}
 
 	/**
-	 * Get meta value with fallback
+	 * Get meta value with fallback (with caching to prevent N+1 queries)
 	 */
 	protected function getMetaValue( \WC_Product $product, string $key ): ?string {
-		$value = get_post_meta( $product->get_id(), $key, true );
+		$product_id = $product->get_id();
+		
+		// Load all meta for this product if not cached yet
+		if ( ! isset( $this->product_meta_cache[ $product_id ] ) ) {
+			$this->product_meta_cache[ $product_id ] = get_post_meta( $product_id );
+		}
+		
+		$value = $this->product_meta_cache[ $product_id ][ $key ][0] ?? null;
 		return ! empty( $value ) ? wp_strip_all_tags( $value ) : null;
 	}
 

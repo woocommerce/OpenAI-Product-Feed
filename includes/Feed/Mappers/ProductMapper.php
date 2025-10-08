@@ -16,6 +16,10 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface {
 
+	private static ?array $cached_shipping_data = null;
+	private static ?array $cached_shipping_zones = null;
+	private static ?bool $cached_has_local_pickup = null;
+
 	/**
 	 * Map WooCommerce product to feed row
 	 */
@@ -26,16 +30,16 @@ class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface 
 	// Schema mapper method implementations
 
 	protected function getEnableSearch( \WC_Product $product, ?\WC_Product $parent ): string {
-		$override = get_post_meta( $product->get_id(), '_oapfw_enable_search', true );
-		if ( $override !== '' ) {
+		$override = $this->getMetaValue( $product, '_oapfw_enable_search' );
+		if ( $override !== null && $override !== '' ) {
 			return $this->boolString( $override );
 		}
 		return $this->settings->get( 'enable_search_default', 'true' );
 	}
 
 	protected function getEnableCheckout( \WC_Product $product, ?\WC_Product $parent ): string {
-		$override = get_post_meta( $product->get_id(), '_oapfw_enable_checkout', true );
-		if ( $override !== '' ) {
+		$override = $this->getMetaValue( $product, '_oapfw_enable_checkout' );
+		if ( $override !== null && $override !== '' ) {
 			return $this->boolString( $override );
 		}
 		return $this->settings->get( 'enable_checkout_default', 'false' );
@@ -423,16 +427,22 @@ class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface 
 
 
 	/**
-	 * Get shipping data from WooCommerce zones
+	 * Get shipping data from WooCommerce zones (cached globally to prevent repeated queries)
 	 */
 	private function getShippingData(): array {
+		// Return cached data if available
+		if ( self::$cached_shipping_data !== null ) {
+			return self::$cached_shipping_data;
+		}
+
 		if ( ! class_exists( 'WC_Shipping_Zones' ) ) {
-			return array();
+			self::$cached_shipping_data = array();
+			return self::$cached_shipping_data;
 		}
 
 		$shipping_data = array();
 		$currency      = get_woocommerce_currency();
-		$zones         = \WC_Shipping_Zones::get_zones();
+		$zones         = $this->getCachedShippingZones();
 
 		foreach ( $zones as $zone ) {
 			$locations = $zone['zone_locations'];
@@ -450,7 +460,19 @@ class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface 
 			}
 		}
 
-		return array_values( array_unique( $shipping_data ) );
+		// Cache the result globally
+		self::$cached_shipping_data = array_values( array_unique( $shipping_data ) );
+		return self::$cached_shipping_data;
+	}
+
+	/**
+	 * Get cached shipping zones (prevents repeated API calls)
+	 */
+	private function getCachedShippingZones(): array {
+		if ( self::$cached_shipping_zones === null ) {
+			self::$cached_shipping_zones = \WC_Shipping_Zones::get_zones();
+		}
+		return self::$cached_shipping_zones;
 	}
 
 	/**
@@ -508,23 +530,31 @@ class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface 
 
 
 	/**
-	 * Check if local pickup is available
+	 * Check if local pickup is available (cached to prevent repeated zone queries)
 	 */
 	private function hasLocalPickup(): bool {
-		if ( ! class_exists( 'WC_Shipping_Zones' ) ) {
-			return false;
+		// Return cached result if available
+		if ( self::$cached_has_local_pickup !== null ) {
+			return self::$cached_has_local_pickup;
 		}
 
-		$zones = \WC_Shipping_Zones::get_zones();
+		if ( ! class_exists( 'WC_Shipping_Zones' ) ) {
+			self::$cached_has_local_pickup = false;
+			return self::$cached_has_local_pickup;
+		}
+
+		$zones = $this->getCachedShippingZones();
 
 		foreach ( $zones as $zone ) {
 			foreach ( $zone['shipping_methods'] as $method ) {
 				if ( $method->id === 'local_pickup' ) {
-					return true;
+					self::$cached_has_local_pickup = true;
+					return self::$cached_has_local_pickup;
 				}
 			}
 		}
 
-		return false;
+		self::$cached_has_local_pickup = false;
+		return self::$cached_has_local_pickup;
 	}
 }
