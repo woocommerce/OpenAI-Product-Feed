@@ -1,91 +1,86 @@
 <?php
 namespace OAPFW\Core;
 
-if (!defined('ABSPATH')) {
-    exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
 }
 
 /**
  * PSR-4 Autoloader for OpenAI Product Feed for Woo
  */
-class Autoloader
-{
-    private array $prefixes = [];
+class Autoloader {
 
-    /**
-     * Register autoloader
-     */
-    public function register(): void
-    {
-        spl_autoload_register([$this, 'loadClass']);
-    }
+	private array $prefixes = array();
 
-    /**
-     * Add namespace prefix
-     */
-    public function addNamespace(string $prefix, string $base_dir): void
-    {
-        $prefix = trim($prefix, '\\') . '\\';
-        $base_dir = rtrim($base_dir, DIRECTORY_SEPARATOR) . '/';
-        
-        if (!isset($this->prefixes[$prefix])) {
-            $this->prefixes[$prefix] = [];
-        }
-        
-        array_push($this->prefixes[$prefix], $base_dir);
-    }
+	/**
+	 * Register autoloader
+	 */
+	public function register(): void {
+		spl_autoload_register( array( $this, 'loadClass' ) );
+	}
 
-    /**
-     * Load class file
-     */
-    public function loadClass(string $class): bool
-    {
-        $prefix = $class;
+	/**
+	 * Add namespace prefix
+	 */
+	public function addNamespace( string $prefix, string $base_dir ): void {
+		$prefix   = trim( $prefix, '\\' ) . '\\';
+		$base_dir = rtrim( $base_dir, DIRECTORY_SEPARATOR ) . '/';
 
-        while (false !== $pos = strrpos($prefix, '\\')) {
-            $prefix = substr($class, 0, $pos + 1);
-            $relative_class = substr($class, $pos + 1);
+		if ( ! isset( $this->prefixes[ $prefix ] ) ) {
+			$this->prefixes[ $prefix ] = array();
+		}
 
-            $mapped_file = $this->loadMappedFile($prefix, $relative_class);
-            if ($mapped_file) {
-                return $mapped_file;
-            }
+		array_push( $this->prefixes[ $prefix ], $base_dir );
+	}
 
-            $prefix = rtrim($prefix, '\\');
-        }
+	/**
+	 * Load class file
+	 */
+	public function loadClass( string $class ): bool {
+		$prefix = $class;
 
-        return false;
-    }
+		while ( false !== $pos = strrpos( $prefix, '\\' ) ) {
+			$prefix         = substr( $class, 0, $pos + 1 );
+			$relative_class = substr( $class, $pos + 1 );
 
-    /**
-     * Load mapped file for namespace prefix and relative class
-     */
-    protected function loadMappedFile(string $prefix, string $relative_class): bool
-    {
-        if (!isset($this->prefixes[$prefix])) {
-            return false;
-        }
+			$mapped_file = $this->loadMappedFile( $prefix, $relative_class );
+			if ( $mapped_file ) {
+				return $mapped_file;
+			}
 
-        foreach ($this->prefixes[$prefix] as $base_dir) {
-            $file = $base_dir . str_replace('\\', '/', $relative_class) . '.php';
+			$prefix = rtrim( $prefix, '\\' );
+		}
 
-            if ($this->requireFile($file)) {
-                return true;
-            }
-        }
+		return false;
+	}
 
-        return false;
-    }
+	/**
+	 * Load mapped file for namespace prefix and relative class
+	 */
+	protected function loadMappedFile( string $prefix, string $relative_class ): bool {
+		if ( ! isset( $this->prefixes[ $prefix ] ) ) {
+			return false;
+		}
 
-    /**
-     * Require file if it exists
-     */
-    protected function requireFile(string $file): bool
-    {
-        if (file_exists($file)) {
-            require $file;
-            return true;
-        }
-        return false;
-    }
+		foreach ( $this->prefixes[ $prefix ] as $base_dir ) {
+			$file = $base_dir . str_replace( '\\', '/', $relative_class ) . '.php';
+
+			if ( $this->requireFile( $file ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Require file if it exists
+	 */
+	protected function requireFile( string $file ): bool {
+		if ( file_exists( $file ) ) {
+			require $file;
+			return true;
+		}
+		return false;
+	}
 }
