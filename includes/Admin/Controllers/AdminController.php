@@ -403,8 +403,9 @@ class AdminController {
 		// Feed Preview
 		echo '<h3>' . esc_html__( 'Feed Preview', 'openai-product-feed-for-woo' ) . '</h3>';
 		echo '<p>' . esc_html__( 'Preview your current feed data:', 'openai-product-feed-for-woo' ) . '</p>';
-		echo '<p><code>' . esc_html( rest_url( 'oapfw/v1/feed' ) ) . '</code> ';
-		echo '<a href="' . esc_url( rest_url( 'oapfw/v1/feed' ) ) . '" target="_blank" class="button button-secondary">' .
+		$preview_url = add_query_arg( '_wpnonce', wp_create_nonce( 'wp_rest' ), rest_url( 'wc/v3/openai-feed' ) );
+		echo '<p><code>' . esc_html( rest_url( 'wc/v3/openai-feed' ) ) . '</code> ';
+		echo '<a href="' . esc_url( $preview_url ) . '" target="_blank" class="button button-secondary">' .
 			esc_html__( 'Open Preview', 'openai-product-feed-for-woo' ) . '</a></p>';
 
 		// Reference
