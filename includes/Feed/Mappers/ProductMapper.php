@@ -47,7 +47,7 @@ class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface 
 	}
 
 	protected function getId( \WC_Product $product, ?\WC_Product $parent ): string {
-		return $product->get_sku() ?: 'wc-' . $product->get_id();
+		return (string) $product->get_id();
 	}
 
 	protected function getTitle( \WC_Product $product, ?\WC_Product $parent ): string {
@@ -180,7 +180,7 @@ class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface 
 		if ( ! $parent ) {
 			return null;
 		}
-		return $parent->get_sku() ?: 'wc-' . $parent->get_id();
+		return (string) $parent->get_id();
 	}
 
 	protected function getItemGroupTitle( \WC_Product $product, ?\WC_Product $parent ): ?string {
