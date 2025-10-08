@@ -131,7 +131,6 @@ class AdminViewRenderer {
 		echo '<h4>' . esc_html__( 'Actions', 'openai-product-feed-for-woo' ) . '</h4>';
 		$this->renderPushActions();
 
-		echo '<h4>' . esc_html__( 'Status', 'openai-product-feed-for-woo' ) . '</h4>';
 		$this->renderPushStatus();
 	}
 
@@ -166,9 +165,6 @@ class AdminViewRenderer {
 
 	public function renderPushStatus(): void {
 		echo '<div id="oapfw-feed-status">';
-		echo '<p class="description" style="margin-bottom: 15px;">' . 
-			 esc_html__( 'Validating your current feed against OpenAI specifications...', 'openai-product-feed-for-woo' ) . 
-			 '</p>';
 		
 		$status = $this->statusProvider->getFeedStatus( true );
 		
