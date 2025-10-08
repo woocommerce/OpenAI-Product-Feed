@@ -58,9 +58,6 @@ class AdminController {
 		add_action( 'woocommerce_product_set_stock', array( $this, 'queueDeltaPush' ), 10, 1 );
 		add_action( 'woocommerce_admin_process_product_object', array( $this, 'maybePushDeltaOnSave' ) );
 
-		// Add custom cron schedule for WP Cron fallback
-		add_filter( 'cron_schedules', array( $this, 'addCustomCronSchedules' ) );
-
 		// Admin notice for successful actions
 		add_action( 'admin_notices', array( $this, 'maybeShowAdminNotice' ) );
 	}
@@ -234,10 +231,11 @@ class AdminController {
 			$scheduled_actions = as_get_scheduled_actions(
 				array(
 					'hook'     => self::SCHEDULED_ACTION_HOOK,
-					'status'   => 'pending',
 					'per_page' => 1,
+					'order'    => 'ASC',
 				)
 			);
+			
 			if ( ! empty( $scheduled_actions ) && isset( $scheduled_actions[0] ) ) {
 				$next_push = $scheduled_actions[0]->get_schedule()->get_date()->getTimestamp();
 			}
@@ -248,6 +246,9 @@ class AdminController {
 			echo esc_html( wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $next_push ) );
 		} else {
 			echo esc_html__( 'Not scheduled', 'openai-product-feed-for-woo' );
+			if ( $this->settings->get( 'delivery_enabled', 'false' ) === 'true' ) {
+				echo ' <em>(' . esc_html__( 'click Reschedule button to activate', 'openai-product-feed-for-woo' ) . ')</em>';
+			}
 		}
 		echo '</td></tr>';
 
@@ -442,22 +443,38 @@ class AdminController {
 		exit;
 	}
 
-
 	/**
-	 * Check if Action Scheduler is available
+	 * Handle reschedule action
 	 */
-	private function isActionSchedulerAvailable(): bool {
-		return function_exists( 'as_schedule_single_action' );
-	}
-
-	/**
-	 * Cron job to push feed
-	 */
-	public function cronPushFeed(): void {
-		if ( $this->settings->get( 'delivery_enabled', 'false' ) !== 'true' ) {
-			return;
+	public function handleReschedule(): void {
+		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+			wp_die( __( 'Permission denied.', 'openai-product-feed-for-woo' ) );
 		}
 
+		check_admin_referer( 'oapfw_reschedule' );
+
+		// Force reschedule by calling maybeReschedule with current settings
+		$current_settings = get_option( $this->settings->getOptionName(), array() );
+		$this->maybeReschedule( array(), $current_settings, $this->settings->getOptionName() );
+
+		wp_safe_redirect(
+			add_query_arg(
+				array(
+					'page'          => 'wc-settings',
+					'tab'           => 'oapfw',
+					'oapfw_message' => 'rescheduled',
+				),
+				admin_url( 'admin.php' )
+			)
+		);
+		exit;
+	}
+
+
+	/**
+	 * Scheduled job to push feed (runs every 15 minutes when enabled)
+	 */
+	public function cronPushFeed(): void {
 		$this->pushToEndpoint();
 	}
 
@@ -465,10 +482,6 @@ class AdminController {
 	 * Push delta update for single product
 	 */
 	public function pushDeltaToEndpoint( int $product_id ): void {
-		if ( $this->settings->get( 'delivery_enabled', 'false' ) !== 'true' ) {
-			return;
-		}
-
 		$rows = $this->feedGenerator->buildForProductId( $product_id );
 		if ( ! $rows ) {
 			return;
@@ -478,114 +491,71 @@ class AdminController {
 	}
 
 	/**
-	 * Queue delta push for product changes
+	 * Schedule delta push when product changes
 	 */
 	public function queueDeltaPush( $product_id_or_obj ): void {
+		// Only queue if delivery is enabled
 		if ( $this->settings->get( 'delivery_enabled', 'false' ) !== 'true' ) {
 			return;
 		}
 
-		// Check if Action Scheduler is available and no task is already scheduled
-		if ( $this->isActionSchedulerAvailable() ) {
-			if ( ! as_has_scheduled_action( self::SCHEDULED_ACTION_HOOK ) ) {
-				as_schedule_single_action( time() + 120, self::SCHEDULED_ACTION_HOOK );
-			}
+		// Extract product ID
+		$product_id = is_numeric( $product_id_or_obj ) 
+			? (int) $product_id_or_obj 
+			: $product_id_or_obj->get_id();
+
+		// Schedule delta push 30 seconds from now (debounced)
+		if ( function_exists( 'as_schedule_single_action' ) ) {
+			as_schedule_single_action( 
+				time() + 30, 
+				'oapfw_push_delta_event', 
+				array( $product_id ),
+				'oapfw'
+			);
 		}
 	}
 
 	/**
-	 * Maybe push delta on product save
+	 * Handle product save - schedule delta push
 	 */
 	public function maybePushDeltaOnSave( $product ): void {
 		if ( is_numeric( $product ) ) {
 			$product = wc_get_product( $product );
 		}
 
-		if ( ! $product instanceof \WC_Product ) {
-			return;
-		}
-
-		if ( $this->settings->get( 'delivery_enabled', 'false' ) === 'true' ) {
-			$product_id = $product->get_id();
-
-			// Use Action Scheduler if available
-			if ( $this->isActionSchedulerAvailable() ) {
-				as_schedule_single_action( time() + 30, 'oapfw_push_delta_event', array( $product_id ) );
-			}
+		if ( $product instanceof \WC_Product ) {
+			$this->queueDeltaPush( $product );
 		}
 	}
 
 	/**
-	 * Maybe reschedule cron based on settings changes
+	 * Schedule or unschedule recurring feed pushes based on settings
 	 */
 	public function maybeReschedule( $old_value, $value, $option ): void {
 		$enabled = isset( $value['delivery_enabled'] ) && $value['delivery_enabled'] === 'true';
 
-		// Debug logging
-		if ( $this->logger ) {
-			$this->logger->info( 'maybeReschedule called', array(
-				'source'  => 'oapfw',
-				'enabled' => $enabled,
-				'as_available' => $this->isActionSchedulerAvailable()
-			) );
-		}
-
-		// Clear existing scheduled actions (both Action Scheduler and WP-Cron)
+		// Clear existing schedules
 		if ( function_exists( 'as_unschedule_all_actions' ) ) {
 			as_unschedule_all_actions( self::SCHEDULED_ACTION_HOOK );
 		}
-		wp_clear_scheduled_hook( self::SCHEDULED_ACTION_HOOK );
 
-		// Only schedule if enabled and Action Scheduler is available
-		if ( $enabled && $this->isActionSchedulerAvailable() ) {
-			// Schedule recurring action every 15 minutes using WooCommerce patterns
-			$result = as_schedule_recurring_action( 
-				time() + 60, 
-				900, 
-				self::SCHEDULED_ACTION_HOOK, 
-				array(), 
-				'oapfw' 
-			); // 900 seconds = 15 minutes
+		// Schedule if enabled
+		if ( $enabled && function_exists( 'as_schedule_recurring_action' ) ) {
+			$action_id = as_schedule_recurring_action( 
+				time() + 60,      // Start in 1 minute
+				900,              // Repeat every 15 minutes
+				self::SCHEDULED_ACTION_HOOK,
+				array(),
+				'oapfw'
+			);
 			
-			if ( $this->logger ) {
-				$this->logger->info( 'Scheduled recurring action', array(
+			if ( $this->logger && $action_id ) {
+				$this->logger->info( 'Feed delivery scheduled', array(
 					'source' => 'oapfw',
-					'hook'   => self::SCHEDULED_ACTION_HOOK,
-					'result' => $result
-				) );
-			}
-		} elseif ( $enabled && ! $this->isActionSchedulerAvailable() ) {
-			// Fallback to WordPress cron if Action Scheduler is not available
-			if ( ! wp_next_scheduled( self::SCHEDULED_ACTION_HOOK ) ) {
-				wp_schedule_event( time() + 60, 'every_15_minutes', self::SCHEDULED_ACTION_HOOK );
-			}
-			
-			if ( $this->logger ) {
-				$this->logger->info( 'Scheduled using WP Cron (fallback)', array(
-					'source' => 'oapfw',
-					'hook'   => self::SCHEDULED_ACTION_HOOK
+					'action' => $action_id,
 				) );
 			}
 		}
-
-		if ( $this->logger ) {
-			$this->logger->info( 'Rescheduling completed', array(
-				'source' => 'oapfw',
-				'enabled' => $enabled,
-				'method' => $this->isActionSchedulerAvailable() ? 'Action Scheduler' : 'WP Cron'
-			) );
-		}
-	}
-
-	/**
-	 * Add custom cron schedules
-	 */
-	public function addCustomCronSchedules( array $schedules ): array {
-		$schedules['every_15_minutes'] = array(
-			'interval' => 900, // 15 minutes in seconds
-			'display'  => __( 'Every 15 Minutes', 'openai-product-feed-for-woo' ),
-		);
-		return $schedules;
 	}
 
 	/**
@@ -599,6 +569,12 @@ class AdminController {
 		if ( isset( $_GET['oapfw_message'] ) && $_GET['oapfw_message'] === 'pushed' ) {
 			echo '<div class="notice notice-success"><p>' .
 				esc_html__( 'Feed push triggered. Check debug log for status.', 'openai-product-feed-for-woo' ) .
+				'</p></div>';
+		}
+
+		if ( isset( $_GET['oapfw_message'] ) && $_GET['oapfw_message'] === 'rescheduled' ) {
+			echo '<div class="notice notice-success"><p>' .
+				esc_html__( 'Scheduled delivery has been rescheduled.', 'openai-product-feed-for-woo' ) .
 				'</p></div>';
 		}
 	}
