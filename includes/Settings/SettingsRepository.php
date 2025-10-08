@@ -91,9 +91,8 @@ class SettingsRepository implements SettingsRepositoryInterface {
 				? $input['format'] : 'json';
 		}
 
-		if ( array_key_exists( 'delivery_enabled', $input ) ) {
-			$out['delivery_enabled'] = isset( $input['delivery_enabled'] ) ? StringHelper::boolString( $input['delivery_enabled'] ) : 'false';
-		}
+		// Handle delivery_enabled checkbox - always set since unchecked checkboxes don't appear in POST data
+		$out['delivery_enabled'] = isset( $input['delivery_enabled'] ) ? StringHelper::boolString( $input['delivery_enabled'] ) : 'false';
 
 		if ( isset( $input['endpoint_url'] ) ) {
 			$out['endpoint_url'] = esc_url_raw( $input['endpoint_url'] );
@@ -107,13 +106,11 @@ class SettingsRepository implements SettingsRepositoryInterface {
 			$out['pickup_sla'] = sanitize_text_field( $input['pickup_sla'] );
 		}
 
-		if ( array_key_exists( 'enable_search_default', $input ) ) {
-			$out['enable_search_default'] = isset( $input['enable_search_default'] ) ? StringHelper::boolString( $input['enable_search_default'] ) : 'false';
-		}
+		// Handle enable_search_default checkbox - always set since unchecked checkboxes don't appear in POST data
+		$out['enable_search_default'] = isset( $input['enable_search_default'] ) ? StringHelper::boolString( $input['enable_search_default'] ) : 'false';
 
-		if ( array_key_exists( 'enable_checkout_default', $input ) ) {
-			$out['enable_checkout_default'] = isset( $input['enable_checkout_default'] ) ? StringHelper::boolString( $input['enable_checkout_default'] ) : 'false';
-		}
+		// Handle enable_checkout_default checkbox - always set since unchecked checkboxes don't appear in POST data
+		$out['enable_checkout_default'] = isset( $input['enable_checkout_default'] ) ? StringHelper::boolString( $input['enable_checkout_default'] ) : 'false';
 
 		if ( isset( $input['seller_name'] ) ) {
 			$out['seller_name'] = sanitize_text_field( $input['seller_name'] );

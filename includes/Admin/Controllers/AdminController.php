@@ -238,7 +238,7 @@ class AdminController {
 					'per_page' => 1,
 				)
 			);
-			if ( ! empty( $scheduled_actions ) ) {
+			if ( ! empty( $scheduled_actions ) && isset( $scheduled_actions[0] ) ) {
 				$next_push = $scheduled_actions[0]->get_schedule()->get_date()->getTimestamp();
 			}
 		}
