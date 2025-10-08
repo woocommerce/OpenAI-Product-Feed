@@ -199,27 +199,33 @@ class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface 
 	}
 
 	protected function getSellerName( \WC_Product $product, ?\WC_Product $parent ): ?string {
-		return $this->settings->get( 'seller_name' ) ?: null;
+		$seller_name = $this->settings->get( 'seller_name' );
+		return $seller_name ? (string) $seller_name : null;
 	}
 
 	protected function getSellerUrl( \WC_Product $product, ?\WC_Product $parent ): ?string {
-		return $this->settings->get( 'seller_url' ) ?: null;
+		$seller_url = $this->settings->get( 'seller_url' );
+		return $seller_url ? (string) $seller_url : null;
 	}
 
 	protected function getSellerPrivacyPolicy( \WC_Product $product, ?\WC_Product $parent ): ?string {
-		return $this->settings->get( 'privacy_url' ) ?: null;
+		$privacy_url = $this->settings->get( 'privacy_url' );
+		return $privacy_url ? (string) $privacy_url : null;
 	}
 
 	protected function getSellerTos( \WC_Product $product, ?\WC_Product $parent ): ?string {
-		return $this->settings->get( 'tos_url' ) ?: null;
+		$tos_url = $this->settings->get( 'tos_url' );
+		return $tos_url ? (string) $tos_url : null;
 	}
 
 	protected function getReturnPolicy( \WC_Product $product, ?\WC_Product $parent ): ?string {
-		return $this->settings->get( 'returns_url' ) ?: null;
+		$returns_url = $this->settings->get( 'returns_url' );
+		return $returns_url ? (string) $returns_url : null;
 	}
 
 	protected function getReturnWindow( \WC_Product $product, ?\WC_Product $parent ): ?string {
-		return $this->settings->get( 'return_window' ) ?: null;
+		$return_window = $this->settings->get( 'return_window' );
+		return $return_window ? (string) $return_window : null;
 	}
 
 	protected function getShipping( \WC_Product $product, ?\WC_Product $parent ): array {
@@ -232,7 +238,8 @@ class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface 
 
 	protected function getPickupSla( \WC_Product $product, ?\WC_Product $parent ): ?string {
 		if ( $this->hasLocalPickup() ) {
-			return $this->settings->get( 'pickup_sla' );
+			$pickup_sla = $this->settings->get( 'pickup_sla' );
+			return $pickup_sla ? (string) $pickup_sla : null;
 		}
 		return null;
 	}
