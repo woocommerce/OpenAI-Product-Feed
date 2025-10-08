@@ -54,30 +54,23 @@ final class Plugin {
 			return;
 		}
 
-		add_action( 'plugins_loaded', array( $this, 'checkDependencies' ) );
+		// Check WooCommerce dependency
+		if ( ! class_exists( 'WooCommerce' ) ) {
+			add_action( 'admin_notices', array( $this, 'showWooCommerceMissingNotice' ) );
+			$this->initialized = true;
+			return;
+		}
+
+		// Initialize components on WordPress init hook
 		add_action( 'init', array( $this, 'init' ), 0 );
 
 		$this->initialized = true;
 	}
 
 	/**
-	 * Check for WooCommerce dependency
-	 */
-	public function checkDependencies(): void {
-		if ( ! class_exists( 'WooCommerce' ) ) {
-			add_action( 'admin_notices', array( $this, 'showWooCommerceMissingNotice' ) );
-			return;
-		}
-	}
-
-	/**
 	 * Initialize plugin components
 	 */
 	public function init(): void {
-		if ( ! class_exists( 'WooCommerce' ) ) {
-			return;
-		}
-
 		$this->registerServices();
 		$this->initializeComponents();
 	}
@@ -179,10 +172,6 @@ final class Plugin {
 
 		// Initialize API controller
 		$this->container->get( 'api.controller' )->init();
-
-		// Register activation/deactivation hooks
-		register_activation_hook( OAPFW_PLUGIN_FILE, array( $this, 'activate' ) );
-		register_deactivation_hook( OAPFW_PLUGIN_FILE, array( $this, 'deactivate' ) );
 	}
 
 	/**
@@ -199,8 +188,8 @@ final class Plugin {
 			);
 		}
 
-		// Set default options if they don't exist
-		$settings = $this->container->get( 'settings.repository' );
+		// Set default options if they don't exist - create SettingsRepository directly
+		$settings = new SettingsRepository();
 		if ( ! get_option( $settings->getOptionName() ) ) {
 			update_option( $settings->getOptionName(), $settings->getDefaults() );
 		}

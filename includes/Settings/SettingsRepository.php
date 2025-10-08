@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OAPFW\Settings;
 
 use OAPFW\Core\SettingsRepositoryInterface;
+use OAPFW\Utils\StringHelper;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -91,7 +92,7 @@ class SettingsRepository implements SettingsRepositoryInterface {
 		}
 
 		if ( array_key_exists( 'delivery_enabled', $input ) ) {
-			$out['delivery_enabled'] = isset( $input['delivery_enabled'] ) ? $this->boolString( $input['delivery_enabled'] ) : 'false';
+			$out['delivery_enabled'] = isset( $input['delivery_enabled'] ) ? StringHelper::boolString( $input['delivery_enabled'] ) : 'false';
 		}
 
 		if ( isset( $input['endpoint_url'] ) ) {
@@ -107,11 +108,11 @@ class SettingsRepository implements SettingsRepositoryInterface {
 		}
 
 		if ( array_key_exists( 'enable_search_default', $input ) ) {
-			$out['enable_search_default'] = isset( $input['enable_search_default'] ) ? $this->boolString( $input['enable_search_default'] ) : 'false';
+			$out['enable_search_default'] = isset( $input['enable_search_default'] ) ? StringHelper::boolString( $input['enable_search_default'] ) : 'false';
 		}
 
 		if ( array_key_exists( 'enable_checkout_default', $input ) ) {
-			$out['enable_checkout_default'] = isset( $input['enable_checkout_default'] ) ? $this->boolString( $input['enable_checkout_default'] ) : 'false';
+			$out['enable_checkout_default'] = isset( $input['enable_checkout_default'] ) ? StringHelper::boolString( $input['enable_checkout_default'] ) : 'false';
 		}
 
 		if ( isset( $input['seller_name'] ) ) {
@@ -139,14 +140,6 @@ class SettingsRepository implements SettingsRepositoryInterface {
 		}
 
 		return $out;
-	}
-
-	/**
-	 * Convert value to boolean string
-	 */
-	private function boolString( $value ): string {
-		$value = strtolower( (string) $value );
-		return ( $value === 'true' || $value === '1' || $value === 'yes' ) ? 'true' : 'false';
 	}
 
 	/**

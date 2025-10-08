@@ -330,24 +330,12 @@ class AdminController {
 		echo '<p class="description">' . esc_html__( 'This information appears in all feeds and is required for checkout functionality.', 'openai-product-feed-for-woo' ) . '</p>';
 		echo '<table class="form-table">';
 
-		$default_shop_url = function_exists( 'wc_get_page_permalink' ) ? wc_get_page_permalink( 'shop' ) : home_url( '/' );
-		$default_shop_url = $default_shop_url ?: home_url( '/' );
-		$default_privacy  = function_exists( 'get_privacy_policy_url' ) ? get_privacy_policy_url() : '';
-		$seller_name      = $this->settings->get( 'seller_name', '' );
-		if ( $seller_name === '' ) {
-			$seller_name = get_bloginfo( 'name' ); }
-		$seller_url = $this->settings->get( 'seller_url', '' );
-		if ( $seller_url === '' ) {
-			$seller_url = $default_shop_url; }
-		$privacy_url = $this->settings->get( 'privacy_url', '' );
-		if ( $privacy_url === '' ) {
-			$privacy_url = $default_privacy; }
-		$tos = $this->settings->get( 'tos_url', '' );
-		if ( $tos === '' && function_exists( 'wc_terms_and_conditions_page_id' ) ) {
-			$pid = wc_terms_and_conditions_page_id();
-			if ( $pid ) {
-				$tos = get_permalink( $pid ); }
-		}
+		// Use repository defaults for consistent fallback behavior
+		$defaults    = $this->settings->getDefaults();
+		$seller_name = $this->settings->get( 'seller_name', $defaults['seller_name'] ?? '' );
+		$seller_url  = $this->settings->get( 'seller_url', $defaults['seller_url'] ?? '' );
+		$privacy_url = $this->settings->get( 'privacy_url', $defaults['privacy_url'] ?? '' );
+		$tos         = $this->settings->get( 'tos_url', $defaults['tos_url'] ?? '' );
 
 		echo '<tr><th>' . esc_html__( 'Seller Name', 'openai-product-feed-for-woo' ) . '</th><td>';
 		printf( '<input type="text" class="regular-text" name="oapfw_settings[seller_name]" value="%s">', esc_attr( $seller_name ) );
@@ -370,9 +358,7 @@ class AdminController {
 		echo '</td></tr>';
 
 		echo '<tr><th>' . esc_html__( 'Return Window', 'openai-product-feed-for-woo' ) . '</th><td>';
-		$return_window = (int) $this->settings->get( 'return_window', 0 );
-		if ( $return_window === 0 ) {
-			$return_window = 30; }
+		$return_window = (int) $this->settings->get( 'return_window', $defaults['return_window'] ?? 30 );
 		printf( '<input type="number" class="small-text" min="0" step="1" name="oapfw_settings[return_window]" value="%s"> days', esc_attr( $return_window ) );
 		echo '</td></tr>';
 

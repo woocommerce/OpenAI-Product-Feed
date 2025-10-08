@@ -6,6 +6,7 @@ namespace OAPFW\Feed\Mappers;
 
 use OAPFW\Feed\Schema\OpenAIFeedSchema;
 use OAPFW\Core\SettingsRepositoryInterface;
+use OAPFW\Utils\StringHelper;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -71,7 +72,7 @@ abstract class SchemaBasedMapper {
 
 		switch ( $config['type'] ) {
 			case 'boolean_string':
-				return $this->boolString( $value );
+				return StringHelper::boolString( $value );
 
 			case 'integer':
 				return (int) $value;
@@ -79,7 +80,7 @@ abstract class SchemaBasedMapper {
 			case 'string':
 				$value = (string) $value;
 				if ( isset( $config['max_length'] ) ) {
-					$value = $this->truncateText( $value, $config['max_length'] );
+					$value = StringHelper::truncate( $value, $config['max_length'] );
 				}
 				return $value;
 
@@ -146,24 +147,6 @@ abstract class SchemaBasedMapper {
 		
 		$value = $this->product_meta_cache[ $product_id ][ $key ][0] ?? null;
 		return ! empty( $value ) ? wp_strip_all_tags( $value ) : null;
-	}
-
-	/**
-	 * Convert value to boolean string
-	 */
-	protected function boolString( $value ): string {
-		$value = strtolower( (string) $value );
-		return ( $value === 'true' || $value === '1' || $value === 'yes' ) ? 'true' : 'false';
-	}
-
-	/**
-	 * Truncate text to specified length
-	 */
-	protected function truncateText( string $text, int $max_length ): string {
-		if ( mb_strlen( $text ) > $max_length ) {
-			return mb_substr( $text, 0, $max_length );
-		}
-		return $text;
 	}
 
 	// Abstract methods that implementing classes must define

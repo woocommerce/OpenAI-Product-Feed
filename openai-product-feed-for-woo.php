@@ -31,28 +31,11 @@ require_once OAPFW_PLUGIN_DIR . 'includes/Core/Interfaces.php';
 require_once OAPFW_PLUGIN_DIR . 'includes/Core/Container.php';
 require_once OAPFW_PLUGIN_DIR . 'includes/Core/Plugin.php';
 
-add_action(
-	'plugins_loaded',
-	function () {
-		if ( ! class_exists( 'WooCommerce' ) ) {
-			add_action(
-				'admin_notices',
-				function () {
-					echo '<div class="notice notice-error"><p>' .
-					esc_html__(
-						'OpenAI Product Feed for Woo requires WooCommerce to be installed and active.',
-						'openai-product-feed-for-woo',
-					) .
-					'</p></div>';
-				}
-			);
-			return;
-		}
-
-		$plugin = \OAPFW\Core\Plugin::getInstance();
-		$plugin->initialize();
-	}
-);
+// Initialize plugin after all plugins are loaded to ensure WooCommerce is available
+add_action( 'plugins_loaded', function() {
+	$plugin = \OAPFW\Core\Plugin::getInstance();
+	$plugin->initialize();
+} );
 
 add_action(
 	'before_woocommerce_init',
@@ -63,31 +46,15 @@ add_action(
 	}
 );
 
-register_activation_hook(
-	__FILE__,
-	function () {
-		if ( ! class_exists( 'WooCommerce' ) ) {
-			deactivate_plugins( plugin_basename( __FILE__ ) );
-			wp_die(
-				esc_html__(
-					'OpenAI Product Feed for Woo requires WooCommerce to be installed and active.',
-					'openai-product-feed-for-woo',
-				),
-			);
-		}
-	}
-);
-
-register_deactivation_hook(
-	__FILE__,
-	function () {
-		// Cancel all Action Scheduler tasks for this plugin
-		if ( function_exists( 'as_cancel_all_actions' ) ) {
-			as_cancel_all_actions( 'oapfw_push_feed_event' );
-			as_cancel_all_actions( 'oapfw_push_delta_event' );
-		}
-	}
-);
+// Activation and deactivation hooks - logic handled in Plugin class
+register_activation_hook( __FILE__, function() {
+	$plugin = \OAPFW\Core\Plugin::getInstance();
+	$plugin->activate();
+} );
+register_deactivation_hook( __FILE__, function() {
+	$plugin = \OAPFW\Core\Plugin::getInstance();
+	$plugin->deactivate();
+} );
 
 /**
  * Helper function to get plugin instance

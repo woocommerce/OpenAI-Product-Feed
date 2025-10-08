@@ -15,10 +15,21 @@ if ( ! defined( 'ABSPATH' ) ) {
 class OpenAIFeedSchema {
 
 	/**
-	 * Get the complete feed schema definition
+	 * Cached schema to avoid rebuilding on every call
+	 *
+	 * @var array|null
+	 */
+	private static ?array $cached_schema = null;
+
+	/**
+	 * Get the complete feed schema definition (cached)
 	 */
 	public static function getSchema(): array {
-		return array(
+		if ( self::$cached_schema !== null ) {
+			return self::$cached_schema;
+		}
+
+		self::$cached_schema = array(
 			// OpenAI flags (required)
 			'enable_search'             => array(
 				'required'    => true,
@@ -347,6 +358,8 @@ class OpenAIFeedSchema {
 				'mapper'      => 'getQAndA',
 			),
 		);
+
+		return self::$cached_schema;
 	}
 
 	/**

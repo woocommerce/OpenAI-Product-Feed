@@ -6,6 +6,7 @@ namespace OAPFW\Feed\Mappers;
 
 use OAPFW\Core\ProductMapperInterface;
 use OAPFW\Core\SettingsRepositoryInterface;
+use OAPFW\Utils\StringHelper;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -32,7 +33,7 @@ class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface 
 	protected function getEnableSearch( \WC_Product $product, ?\WC_Product $parent ): string {
 		$override = $this->getMetaValue( $product, '_oapfw_enable_search' );
 		if ( $override !== null && $override !== '' ) {
-			return $this->boolString( $override );
+			return StringHelper::boolString( $override );
 		}
 		return $this->settings->get( 'enable_search_default', 'true' );
 	}
@@ -40,7 +41,7 @@ class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface 
 	protected function getEnableCheckout( \WC_Product $product, ?\WC_Product $parent ): string {
 		$override = $this->getMetaValue( $product, '_oapfw_enable_checkout' );
 		if ( $override !== null && $override !== '' ) {
-			return $this->boolString( $override );
+			return StringHelper::boolString( $override );
 		}
 		return $this->settings->get( 'enable_checkout_default', 'false' );
 	}
