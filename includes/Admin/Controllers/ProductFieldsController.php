@@ -300,9 +300,16 @@ class ProductFieldsController {
 		echo '</div>';
 
 		// Preview link
-		$rest_url = rest_url( 'oapfw/v1/feed' );
+		$rest_url = rest_url( 'wc/v3/openai-feed' );
+		$preview_url = add_query_arg( 
+			array( 
+				'product_id' => get_the_ID(),
+				'_wpnonce'   => wp_create_nonce( 'wp_rest' )
+			), 
+			$rest_url 
+		);
 		echo '<p style="margin: 8px 0;">' . esc_html__( 'Preview this product in the feed (admin-only):', 'openai-product-feed-for-woo' ) . ' ';
-		echo '<a href="' . esc_url( add_query_arg( array( 'product_id' => get_the_ID() ), $rest_url ) ) . '" target="_blank">' . esc_html__( 'Open preview', 'openai-product-feed-for-woo' ) . '</a></p>';
+		echo '<a href="' . esc_url( $preview_url ) . '" target="_blank">' . esc_html__( 'Open preview', 'openai-product-feed-for-woo' ) . '</a></p>';
 
 		echo '</div>';
 	}
