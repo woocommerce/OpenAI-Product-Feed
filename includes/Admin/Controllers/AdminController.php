@@ -38,7 +38,7 @@ class AdminController {
 		$this->logger        = function_exists( 'wc_get_logger' ) ? wc_get_logger() : null;
 		
 		$this->credentialValidator = new CredentialValidator( $settings );
-		$this->statusProvider = new FeedStatusProvider();
+		$this->statusProvider = new FeedStatusProvider( $feedGenerator, $validator );
 		$this->viewRenderer = new AdminViewRenderer( $settings, $this->credentialValidator, $this->statusProvider );
 	}
 

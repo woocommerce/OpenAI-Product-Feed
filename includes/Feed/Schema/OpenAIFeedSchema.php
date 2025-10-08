@@ -222,6 +222,7 @@ class OpenAIFeedSchema {
 				'default'     => 0,
 			),
 			'availability_date'         => array(
+				'required'      => false,
 				'required_when' => array( 'availability' => 'preorder' ),
 				'type'          => 'date',
 				'description'   => 'When product becomes available',
@@ -406,7 +407,7 @@ class OpenAIFeedSchema {
 		}
 
 		// Direct requirement
-		if ( $fieldConfig['required'] === true ) {
+		if ( isset( $fieldConfig['required'] ) && $fieldConfig['required'] === true ) {
 			return true;
 		}
 

@@ -165,7 +165,12 @@ class AdminViewRenderer {
 	}
 
 	public function renderPushStatus(): void {
-		$status = $this->statusProvider->getFeedStatus();
+		echo '<div id="oapfw-feed-status">';
+		echo '<p class="description" style="margin-bottom: 15px;">' . 
+			 esc_html__( 'Validating your current feed against OpenAI specifications...', 'openai-product-feed-for-woo' ) . 
+			 '</p>';
+		
+		$status = $this->statusProvider->getFeedStatus( true );
 		
 		echo '<table class="form-table">';
 
@@ -179,23 +184,28 @@ class AdminViewRenderer {
 
 		echo '<tr><th>' . esc_html__( 'Feed Validation', 'openai-product-feed-for-woo' ) . '</th><td>';
 		if ( $status['has_issues'] ) {
-			echo '<span style="color:#d63638;">' . sprintf(
+			echo '<span style="color:#d63638;">⚠ ' . sprintf(
 				esc_html__( '%d validation issues found', 'openai-product-feed-for-woo' ),
 				$status['issue_count']
 			) . '</span>';
-			echo ' • <a href="' . esc_url( $status['logs_url'] ) . '">' . 
-				 esc_html__( 'View in logs', 'openai-product-feed-for-woo' ) . '</a>';
+			echo '<br><small style="color:#666;">' . esc_html__( 'Your feed has issues that need attention before it can be successfully processed by OpenAI.', 'openai-product-feed-for-woo' ) . '</small>';
+			echo '<br><a href="' . esc_url( $status['logs_url'] ) . '">' . 
+				 esc_html__( 'View detailed validation results →', 'openai-product-feed-for-woo' ) . '</a>';
 		} else {
 			echo '<span style="color:#00a32a;">✓ ' . esc_html__( 'Feed meets OpenAI specifications', 'openai-product-feed-for-woo' ) . '</span>';
+			echo '<br><small style="color:#666;">' . esc_html__( 'Your product feed is ready for ChatGPT indexing.', 'openai-product-feed-for-woo' ) . '</small>';
 		}
 		echo '</td></tr>';
 
 		echo '<tr><th>' . esc_html__( 'Recent Activity', 'openai-product-feed-for-woo' ) . '</th><td>';
 		echo '<a href="' . esc_url( $status['logs_url'] ) . '" class="button button-secondary">' . 
 			 esc_html__( 'View Activity Logs', 'openai-product-feed-for-woo' ) . '</a>';
+		echo '<br><small style="color:#666; margin-top: 5px; display: inline-block;">' . 
+			 esc_html__( 'Last validation: just now', 'openai-product-feed-for-woo' ) . '</small>';
 		echo '</td></tr>';
 
 		echo '</table>';
+		echo '</div>';
 	}
 
 	public function renderSettingsSection(): void {
