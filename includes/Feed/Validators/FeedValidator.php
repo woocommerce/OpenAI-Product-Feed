@@ -16,14 +16,25 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class FeedValidator implements ValidatorInterface {
 
+	/**
+	 * OpenAI feed schema configuration array.
+	 *
+	 * @var array
+	 */
 	private array $schema;
 
+	/**
+	 * Initialize the validator with OpenAI feed schema.
+	 */
 	public function __construct() {
 		$this->schema = OpenAIFeedSchema::getSchema();
 	}
 
 	/**
 	 * Validate single feed row using schema
+	 *
+	 * @param array $row Product data row to validate.
+	 * @return array Array of validation issues.
 	 */
 	public function validateRow( array $row ): array {
 		$issues = array();
@@ -32,7 +43,7 @@ class FeedValidator implements ValidatorInterface {
 			$this->validateField( $row, $field, $config, $issues );
 		}
 
-		// Additional custom validations
+		// Additional custom validations.
 		$this->validateBrandRequirement( $row, $issues );
 		$this->validatePrices( $row, $issues );
 		$this->validateSaleDates( $row, $issues );
@@ -42,11 +53,16 @@ class FeedValidator implements ValidatorInterface {
 
 	/**
 	 * Validate individual field based on schema
+	 *
+	 * @param array  $row Product data row.
+	 * @param string $field Field name to validate.
+	 * @param array  $config Field configuration from schema.
+	 * @param array  $issues Reference to issues array.
 	 */
 	private function validateField( array $row, string $field, array $config, array &$issues ): void {
 		$value = $row[ $field ] ?? null;
 
-		// Check required fields
+		// Check required fields.
 		if ( OpenAIFeedSchema::isFieldRequired( $field, $row ) ) {
 			if ( empty( $value ) && '0' !== $value ) {
 				$message  = $config['error_message'] ?? "Missing {$field}";
@@ -55,12 +71,12 @@ class FeedValidator implements ValidatorInterface {
 			}
 		}
 
-		// Skip validation if field is empty and not required
+		// Skip validation if field is empty and not required.
 		if ( empty( $value ) && '0' !== $value ) {
 			return;
 		}
 
-		// Type and format validation
+		// Type and format validation.
 		$this->validateFieldType( $field, $value, $config, $issues );
 		$this->validateFieldPattern( $field, $value, $config, $issues );
 		$this->validateFieldEnum( $field, $value, $config, $issues );
@@ -69,6 +85,11 @@ class FeedValidator implements ValidatorInterface {
 
 	/**
 	 * Validate field type
+	 *
+	 * @param string $field Field name.
+	 * @param mixed  $value Field value.
+	 * @param array  $config Field configuration.
+	 * @param array  $issues Reference to issues array.
 	 */
 	private function validateFieldType( string $field, $value, array $config, array &$issues ): void {
 		switch ( $config['type'] ) {
@@ -94,6 +115,11 @@ class FeedValidator implements ValidatorInterface {
 
 	/**
 	 * Validate field pattern
+	 *
+	 * @param string $field Field name.
+	 * @param mixed  $value Field value.
+	 * @param array  $config Field configuration.
+	 * @param array  $issues Reference to issues array.
 	 */
 	private function validateFieldPattern( string $field, $value, array $config, array &$issues ): void {
 		if ( isset( $config['pattern'] ) && ! preg_match( $config['pattern'], (string) $value ) ) {
@@ -104,6 +130,11 @@ class FeedValidator implements ValidatorInterface {
 
 	/**
 	 * Validate enum values
+	 *
+	 * @param string $field Field name.
+	 * @param mixed  $value Field value.
+	 * @param array  $config Field configuration.
+	 * @param array  $issues Reference to issues array.
 	 */
 	private function validateFieldEnum( string $field, $value, array $config, array &$issues ): void {
 		if ( isset( $config['values'] ) && ! in_array( $value, $config['values'], true ) ) {
@@ -114,11 +145,18 @@ class FeedValidator implements ValidatorInterface {
 
 	/**
 	 * Validate field dependencies
+	 *
+	 * @param string $field Field name.
+	 * @param mixed  $value Field value.
+	 * @param array  $config Field configuration.
+	 * @param array  $row Product data row.
+	 * @param array  $issues Reference to issues array.
 	 */
 	private function validateFieldDependencies( string $field, $value, array $config, array $row, array &$issues ): void {
 		if ( isset( $config['depends_on'] ) ) {
 			foreach ( $config['depends_on'] as $dep_field => $dep_value ) {
-				if ( 'true' === $value && $dep_value !== ( $row[ $dep_field ] ?? null ) ) {
+				$current_value = $row[ $dep_field ] ?? null;
+				if ( 'true' === $value && $dep_value !== $current_value ) {
 					$issues[] = "{$field} requires {$dep_field}={$dep_value}";
 				}
 			}
@@ -127,6 +165,9 @@ class FeedValidator implements ValidatorInterface {
 
 	/**
 	 * Validate entire feed
+	 *
+	 * @param array $rows Array of product data rows.
+	 * @return array Array of validation issues.
 	 */
 	public function validateFeed( array $rows ): array {
 		$all_issues = array();
@@ -147,6 +188,9 @@ class FeedValidator implements ValidatorInterface {
 
 	/**
 	 * Validate brand requirement (custom logic for exempt categories)
+	 *
+	 * @param array $row Product data row.
+	 * @param array $issues Reference to issues array.
 	 */
 	private function validateBrandRequirement( array $row, array &$issues ): void {
 		$brand_config      = $this->schema['brand'];
@@ -168,6 +212,9 @@ class FeedValidator implements ValidatorInterface {
 
 	/**
 	 * Validate price relationships
+	 *
+	 * @param array $row Product data row.
+	 * @param array $issues Reference to issues array.
 	 */
 	private function validatePrices( array $row, array &$issues ): void {
 		if ( ! empty( $row['sale_price'] ) && ! empty( $row['price'] ) ) {
@@ -182,6 +229,9 @@ class FeedValidator implements ValidatorInterface {
 
 	/**
 	 * Validate sale date range
+	 *
+	 * @param array $row Product data row.
+	 * @param array $issues Reference to issues array.
 	 */
 	private function validateSaleDates( array $row, array &$issues ): void {
 		if ( ! empty( $row['sale_price_effective_date'] ) && strpos( $row['sale_price_effective_date'], '/' ) !== false ) {
@@ -196,6 +246,9 @@ class FeedValidator implements ValidatorInterface {
 
 	/**
 	 * Extract numeric value from price string
+	 *
+	 * @param string $value Price value string.
+	 * @return float Extracted numeric value.
 	 */
 	private function extractNumericValue( string $value ): float {
 		if ( preg_match( '/([0-9]+(?:\.[0-9]+)?)/', $value, $matches ) ) {
