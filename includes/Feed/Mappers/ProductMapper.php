@@ -506,19 +506,6 @@ class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface 
 		);
 	}
 
-	/**
-	 * Add pickup data if available
-	 */
-	private function addPickupData( array &$row ): void {
-		if ( $this->hasLocalPickup() ) {
-			$row['pickup_method'] = 'in_store';
-
-			$pickup_sla = $this->settings->get( 'pickup_sla' );
-			if ( ! empty( $pickup_sla ) ) {
-				$row['pickup_sla'] = $pickup_sla;
-			}
-		}
-	}
 
 	/**
 	 * Check if local pickup is available
