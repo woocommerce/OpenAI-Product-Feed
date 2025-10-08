@@ -58,6 +58,9 @@ class AdminController {
 		add_action( 'woocommerce_product_set_stock', array( $this, 'queueDeltaPush' ), 10, 1 );
 		add_action( 'woocommerce_admin_process_product_object', array( $this, 'maybePushDeltaOnSave' ) );
 
+		// Add custom cron schedule for WP Cron fallback
+		add_filter( 'cron_schedules', array( $this, 'addCustomCronSchedules' ) );
+
 		// Admin notice for successful actions
 		add_action( 'admin_notices', array( $this, 'maybeShowAdminNotice' ) );
 	}
@@ -483,10 +486,7 @@ class AdminController {
 	 * Check if Action Scheduler is available
 	 */
 	private function isActionSchedulerAvailable(): bool {
-		return function_exists( 'as_schedule_single_action' ) &&
-				function_exists( 'as_schedule_recurring_action' ) &&
-				function_exists( 'as_has_scheduled_action' ) &&
-				function_exists( 'as_cancel_all_actions' );
+		return function_exists( 'as_schedule_single_action' );
 	}
 
 	/**
@@ -560,17 +560,71 @@ class AdminController {
 	public function maybeReschedule( $old_value, $value, $option ): void {
 		$enabled = isset( $value['delivery_enabled'] ) && $value['delivery_enabled'] === 'true';
 
-		// Use Action Scheduler if available
-		if ( $this->isActionSchedulerAvailable() ) {
-			$has_scheduled = as_has_scheduled_action( self::SCHEDULED_ACTION_HOOK );
+		// Debug logging
+		if ( $this->logger ) {
+			$this->logger->info( 'maybeReschedule called', array(
+				'source'  => 'oapfw',
+				'enabled' => $enabled,
+				'as_available' => $this->isActionSchedulerAvailable()
+			) );
+		}
 
-			if ( $enabled && ! $has_scheduled ) {
-				// Schedule recurring action every 15 minutes
-				as_schedule_recurring_action( time() + 60, 900, self::SCHEDULED_ACTION_HOOK ); // 900 seconds = 15 minutes
-			} elseif ( ! $enabled && $has_scheduled ) {
-				as_cancel_all_actions( self::SCHEDULED_ACTION_HOOK );
+		// Clear existing scheduled actions (both Action Scheduler and WP-Cron)
+		if ( function_exists( 'as_unschedule_all_actions' ) ) {
+			as_unschedule_all_actions( self::SCHEDULED_ACTION_HOOK );
+		}
+		wp_clear_scheduled_hook( self::SCHEDULED_ACTION_HOOK );
+
+		// Only schedule if enabled and Action Scheduler is available
+		if ( $enabled && $this->isActionSchedulerAvailable() ) {
+			// Schedule recurring action every 15 minutes using WooCommerce patterns
+			$result = as_schedule_recurring_action( 
+				time() + 60, 
+				900, 
+				self::SCHEDULED_ACTION_HOOK, 
+				array(), 
+				'oapfw' 
+			); // 900 seconds = 15 minutes
+			
+			if ( $this->logger ) {
+				$this->logger->info( 'Scheduled recurring action', array(
+					'source' => 'oapfw',
+					'hook'   => self::SCHEDULED_ACTION_HOOK,
+					'result' => $result
+				) );
+			}
+		} elseif ( $enabled && ! $this->isActionSchedulerAvailable() ) {
+			// Fallback to WordPress cron if Action Scheduler is not available
+			if ( ! wp_next_scheduled( self::SCHEDULED_ACTION_HOOK ) ) {
+				wp_schedule_event( time() + 60, 'every_15_minutes', self::SCHEDULED_ACTION_HOOK );
+			}
+			
+			if ( $this->logger ) {
+				$this->logger->info( 'Scheduled using WP Cron (fallback)', array(
+					'source' => 'oapfw',
+					'hook'   => self::SCHEDULED_ACTION_HOOK
+				) );
 			}
 		}
+
+		if ( $this->logger ) {
+			$this->logger->info( 'Rescheduling completed', array(
+				'source' => 'oapfw',
+				'enabled' => $enabled,
+				'method' => $this->isActionSchedulerAvailable() ? 'Action Scheduler' : 'WP Cron'
+			) );
+		}
+	}
+
+	/**
+	 * Add custom cron schedules
+	 */
+	public function addCustomCronSchedules( array $schedules ): array {
+		$schedules['every_15_minutes'] = array(
+			'interval' => 900, // 15 minutes in seconds
+			'display'  => __( 'Every 15 Minutes', 'openai-product-feed-for-woo' ),
+		);
+		return $schedules;
 	}
 
 	/**
