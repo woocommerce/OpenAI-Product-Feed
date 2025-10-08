@@ -22,7 +22,7 @@ class AdminController {
 	private ValidatorInterface $validator;
 	private $logger;
 
-	const CRON_HOOK = 'oapfw_push_feed_event';
+	const SCHEDULED_ACTION_HOOK = 'oapfw_push_feed_event';
 
 	public function __construct(
 		SettingsRepositoryInterface $settings,
@@ -48,8 +48,8 @@ class AdminController {
 		add_action( 'admin_post_oapfw_download_feed', array( $this, 'handleDownloadFeed' ) );
 		add_action( 'admin_post_oapfw_push_now', array( $this, 'handlePushNow' ) );
 
-		// Cron and scheduling
-		add_action( self::CRON_HOOK, array( $this, 'cronPushFeed' ) );
+		// Action Scheduler hooks
+		add_action( self::SCHEDULED_ACTION_HOOK, array( $this, 'cronPushFeed' ) );
 		add_action( 'oapfw_push_delta_event', array( $this, 'pushDeltaToEndpoint' ), 10, 1 );
 		add_action( 'update_option_' . $this->settings->getOptionName(), array( $this, 'maybeReschedule' ), 10, 3 );
 
@@ -230,7 +230,7 @@ class AdminController {
 		if ( function_exists( 'as_get_scheduled_actions' ) ) {
 			$scheduled_actions = as_get_scheduled_actions(
 				array(
-					'hook'     => self::CRON_HOOK,
+					'hook'     => self::SCHEDULED_ACTION_HOOK,
 					'status'   => 'pending',
 					'per_page' => 1,
 				)
@@ -526,8 +526,8 @@ class AdminController {
 
 		// Check if Action Scheduler is available and no task is already scheduled
 		if ( $this->isActionSchedulerAvailable() ) {
-			if ( ! as_has_scheduled_action( self::CRON_HOOK ) ) {
-				as_schedule_single_action( time() + 120, self::CRON_HOOK );
+			if ( ! as_has_scheduled_action( self::SCHEDULED_ACTION_HOOK ) ) {
+				as_schedule_single_action( time() + 120, self::SCHEDULED_ACTION_HOOK );
 			}
 		}
 	}
@@ -562,13 +562,13 @@ class AdminController {
 
 		// Use Action Scheduler if available
 		if ( $this->isActionSchedulerAvailable() ) {
-			$has_scheduled = as_has_scheduled_action( self::CRON_HOOK );
+			$has_scheduled = as_has_scheduled_action( self::SCHEDULED_ACTION_HOOK );
 
 			if ( $enabled && ! $has_scheduled ) {
 				// Schedule recurring action every 15 minutes
-				as_schedule_recurring_action( time() + 60, 900, self::CRON_HOOK ); // 900 seconds = 15 minutes
+				as_schedule_recurring_action( time() + 60, 900, self::SCHEDULED_ACTION_HOOK ); // 900 seconds = 15 minutes
 			} elseif ( ! $enabled && $has_scheduled ) {
-				as_cancel_all_actions( self::CRON_HOOK );
+				as_cancel_all_actions( self::SCHEDULED_ACTION_HOOK );
 			}
 		}
 	}
