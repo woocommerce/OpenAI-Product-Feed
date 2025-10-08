@@ -246,9 +246,6 @@ class AdminController {
 			echo esc_html( wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $next_push ) );
 		} else {
 			echo esc_html__( 'Not scheduled', 'openai-product-feed-for-woo' );
-			if ( $this->settings->get( 'delivery_enabled', 'false' ) === 'true' ) {
-				echo ' <em>(' . esc_html__( 'click Reschedule button to activate', 'openai-product-feed-for-woo' ) . ')</em>';
-			}
 		}
 		echo '</td></tr>';
 
@@ -443,33 +440,6 @@ class AdminController {
 		exit;
 	}
 
-	/**
-	 * Handle reschedule action
-	 */
-	public function handleReschedule(): void {
-		if ( ! current_user_can( 'manage_woocommerce' ) ) {
-			wp_die( __( 'Permission denied.', 'openai-product-feed-for-woo' ) );
-		}
-
-		check_admin_referer( 'oapfw_reschedule' );
-
-		// Force reschedule by calling maybeReschedule with current settings
-		$current_settings = get_option( $this->settings->getOptionName(), array() );
-		$this->maybeReschedule( array(), $current_settings, $this->settings->getOptionName() );
-
-		wp_safe_redirect(
-			add_query_arg(
-				array(
-					'page'          => 'wc-settings',
-					'tab'           => 'oapfw',
-					'oapfw_message' => 'rescheduled',
-				),
-				admin_url( 'admin.php' )
-			)
-		);
-		exit;
-	}
-
 
 	/**
 	 * Scheduled job to push feed (runs every 15 minutes when enabled)
@@ -569,12 +539,6 @@ class AdminController {
 		if ( isset( $_GET['oapfw_message'] ) && $_GET['oapfw_message'] === 'pushed' ) {
 			echo '<div class="notice notice-success"><p>' .
 				esc_html__( 'Feed push triggered. Check debug log for status.', 'openai-product-feed-for-woo' ) .
-				'</p></div>';
-		}
-
-		if ( isset( $_GET['oapfw_message'] ) && $_GET['oapfw_message'] === 'rescheduled' ) {
-			echo '<div class="notice notice-success"><p>' .
-				esc_html__( 'Scheduled delivery has been rescheduled.', 'openai-product-feed-for-woo' ) .
 				'</p></div>';
 		}
 	}
