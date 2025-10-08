@@ -81,20 +81,22 @@ class ProductFieldsController {
 
 		echo '</div><div class="options_group">';
 
-		// ChatGPT flags
+		// ChatGPT flags - using WooCommerce's pattern
 		woocommerce_wp_checkbox(
 			array(
-				'id'          => '_oapfw_enable_search',
-				'label'       => __( 'Enable search (ChatGPT)', 'openai-product-feed-for-woo' ),
+				'id'          => '_oapfw_disable_search',
+				'value'       => get_post_meta( get_the_ID(), '_oapfw_disable_search', true ) === 'yes' ? 'yes' : 'no',
+				'label'       => __( 'Disable search (ChatGPT)', 'openai-product-feed-for-woo' ),
 				'description' => __( 'Overrides global default for this product.', 'openai-product-feed-for-woo' ),
 			)
 		);
 
 		woocommerce_wp_checkbox(
 			array(
-				'id'          => '_oapfw_enable_checkout',
-				'label'       => __( 'Enable checkout (ChatGPT)', 'openai-product-feed-for-woo' ),
-				'description' => __( 'Requires enable search.', 'openai-product-feed-for-woo' ),
+				'id'          => '_oapfw_disable_checkout',
+				'value'       => get_post_meta( get_the_ID(), '_oapfw_disable_checkout', true ) === 'yes' ? 'yes' : 'no',
+				'label'       => __( 'Disable checkout (ChatGPT)', 'openai-product-feed-for-woo' ),
+				'description' => __( 'Requires search to be enabled.', 'openai-product-feed-for-woo' ),
 			)
 		);
 
@@ -369,8 +371,7 @@ class ProductFieldsController {
 			$product->update_meta_data( '_oapfw_age_restriction', max( 0, absint( wp_unslash( $_POST['_oapfw_age_restriction'] ) ) ) );
 		}
 
-		// Checkbox fields (store as 'true' or '')
-		$product->update_meta_data( '_oapfw_enable_search', isset( $_POST['_oapfw_enable_search'] ) ? 'true' : '' );
-		$product->update_meta_data( '_oapfw_enable_checkout', isset( $_POST['_oapfw_enable_checkout'] ) ? 'true' : '' );
+		$product->update_meta_data( '_oapfw_disable_search', isset( $_POST['_oapfw_disable_search'] ) ? 'yes' : 'no' );
+		$product->update_meta_data( '_oapfw_disable_checkout', isset( $_POST['_oapfw_disable_checkout'] ) ? 'yes' : 'no' );
 	}
 }

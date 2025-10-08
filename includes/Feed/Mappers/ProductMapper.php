@@ -31,17 +31,23 @@ class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface 
 	// Schema mapper method implementations
 
 	protected function getEnableSearch( \WC_Product $product, ?\WC_Product $parent ): string {
-		$override = $this->getMetaValue( $product, '_oapfw_enable_search' );
-		if ( $override !== null && $override !== '' ) {
-			return StringHelper::boolString( $override );
+		$disable_override = $this->getMetaValue( $product, '_oapfw_disable_search' );
+		
+		// Only disable if explicitly set to 'yes' 
+		// Empty/null/no all mean "don't disable" (use global default)
+		if ( $disable_override === 'yes' ) {
+			return 'false';
 		}
 		return $this->settings->get( 'enable_search_default', 'true' );
 	}
 
 	protected function getEnableCheckout( \WC_Product $product, ?\WC_Product $parent ): string {
-		$override = $this->getMetaValue( $product, '_oapfw_enable_checkout' );
-		if ( $override !== null && $override !== '' ) {
-			return StringHelper::boolString( $override );
+		$disable_override = $this->getMetaValue( $product, '_oapfw_disable_checkout' );
+		
+		// Only disable if explicitly set to 'yes' 
+		// Empty/null/no all mean "don't disable" (use global default)
+		if ( $disable_override === 'yes' ) {
+			return 'false';
 		}
 		return $this->settings->get( 'enable_checkout_default', 'false' );
 	}
