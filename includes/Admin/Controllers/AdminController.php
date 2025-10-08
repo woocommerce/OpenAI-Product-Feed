@@ -235,37 +235,7 @@ class AdminController {
 		$issues = $this->validator->validateFeed( $rows );
 
 		if ( $issues ) {
-			if ( $this->logger ) {
-				$this->logger->warning( 'Feed validation issues found', array(
-					'source' => 'oapfw',
-					'total_issues' => count( $issues ),
-					'products_with_issues' => count( $issues ),
-					'is_delta' => $is_delta
-				) );
-
-				foreach ( $issues as $issue ) {
-					$product_id = $issue['id'] ?? 'unknown';
-					$issue_messages = $issue['issues'] ?? array();
-					
-					$this->logger->warning( "Product validation failed: {$product_id}", array(
-						'source' => 'oapfw',
-						'product_id' => $product_id,
-						'issues' => $issue_messages,
-						'issue_count' => count( $issue_messages )
-					) );
-				}
-			}
-
-			set_transient( 'oapfw_last_validation', $issues, 5 * MINUTE_IN_SECONDS );
-		} else {
-			if ( $this->logger ) {
-				$this->logger->info( 'Feed validation passed', array(
-					'source' => 'oapfw',
-					'products_validated' => count( $rows ),
-					'is_delta' => $is_delta
-				) );
-			}
-			delete_transient( 'oapfw_last_validation' );
+			return;
 		}
 
 		$format   = $this->settings->get( 'format', 'json' );
