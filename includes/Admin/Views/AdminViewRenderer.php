@@ -184,13 +184,28 @@ class AdminViewRenderer {
 
 		echo '<tr><th>' . esc_html__( 'Feed Validation', 'openai-product-feed-for-woo' ) . '</th><td>';
 		if ( $status['has_issues'] ) {
-			echo '<span style="color:#d63638;">⚠ ' . sprintf(
-				esc_html__( '%d validation issues found', 'openai-product-feed-for-woo' ),
-				$status['issue_count']
-			) . '</span>';
-			echo '<br><small style="color:#666;">' . esc_html__( 'Your feed has issues that need attention before it can be successfully processed by OpenAI.', 'openai-product-feed-for-woo' ) . '</small>';
-			echo '<br><a href="' . esc_url( $status['logs_url'] ) . '">' . 
-				 esc_html__( 'View detailed validation results →', 'openai-product-feed-for-woo' ) . '</a>';
+			// Check if the issue is specifically about empty feed
+			$is_empty_feed = false;
+			foreach ( $status['validation_issues'] as $issue ) {
+				if ( isset( $issue['id'] ) && $issue['id'] === 'feed' && 
+					 isset( $issue['issues'] ) && in_array( 'Feed is empty - no products to export', $issue['issues'] ) ) {
+					$is_empty_feed = true;
+					break;
+				}
+			}
+			
+			if ( $is_empty_feed ) {
+				echo '<span style="color:#d63638;">⚠ ' . esc_html__( 'Feed is empty - no products to export', 'openai-product-feed-for-woo' ) . '</span>';
+				echo '<br><small style="color:#666;">' . esc_html__( 'Add products to your store or check that they are published and in stock.', 'openai-product-feed-for-woo' ) . '</small>';
+			} else {
+				echo '<span style="color:#d63638;">⚠ ' . sprintf(
+					esc_html__( '%d validation issues found', 'openai-product-feed-for-woo' ),
+					$status['issue_count']
+				) . '</span>';
+				echo '<br><small style="color:#666;">' . esc_html__( 'Your feed has issues that need attention before it can be successfully processed by OpenAI.', 'openai-product-feed-for-woo' ) . '</small>';
+				echo '<br><a href="' . esc_url( $status['logs_url'] ) . '">' . 
+					 esc_html__( 'View detailed validation results →', 'openai-product-feed-for-woo' ) . '</a>';
+			}
 		} else {
 			echo '<span style="color:#00a32a;">✓ ' . esc_html__( 'Feed meets OpenAI specifications', 'openai-product-feed-for-woo' ) . '</span>';
 			echo '<br><small style="color:#666;">' . esc_html__( 'Your product feed is ready for ChatGPT indexing.', 'openai-product-feed-for-woo' ) . '</small>';
