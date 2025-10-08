@@ -55,7 +55,7 @@ class ProductFieldsController {
 				'id'          => '_gtin',
 				'label'       => __( 'GTIN', 'openai-product-feed-for-woo' ),
 				'desc_tip'    => true,
-				'description' => __( '8–14 digits; no spaces or dashes.', 'openai-product-feed-for-woo' ),
+				'description' => __( 'Global Trade Item Number (GTIN, UPC, EAN, etc.)', 'openai-product-feed-for-woo' ),
 			)
 		);
 

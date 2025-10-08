@@ -69,10 +69,8 @@ class OpenAIFeedSchema {
 			'gtin'                      => array(
 				'required'      => true,
 				'type'          => 'string',
-				'pattern'       => '/^\d{8,14}$/',
-				'description'   => 'Global Trade Item Number (8-14 digits)',
+				'description'   => 'Global Trade Item Number',
 				'mapper'        => 'getGtin',
-				'error_message' => 'GTIN invalid (must be 8–14 digits only)',
 			),
 			'mpn'                       => array(
 				'required'    => false,
