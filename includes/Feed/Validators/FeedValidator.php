@@ -172,6 +172,14 @@ class FeedValidator implements ValidatorInterface {
 	public function validateFeed( array $rows ): array {
 		$all_issues = array();
 
+		if ( empty( $rows ) ) {
+			$all_issues[] = array(
+				'id'     => 'feed',
+				'issues' => array( 'Feed is empty - no products to export' ),
+			);
+			return $all_issues;
+		}
+
 		foreach ( $rows as $index => $row ) {
 			$row_issues = $this->validateRow( $row );
 			if ( $row_issues ) {
