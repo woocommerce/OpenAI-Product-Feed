@@ -255,26 +255,13 @@ class AdminController {
 		$issues = get_transient( 'oapfw_last_validation' );
 		echo '<tr><th>' . esc_html__( 'Feed Validation', 'openai-product-feed-for-woo' ) . '</th><td>';
 		if ( ! empty( $issues ) && is_array( $issues ) ) {
+			$logs_url = admin_url( 'admin.php?page=wc-status&tab=logs&source=oapfw&paged=1' );
 			echo '<span style="color:#d63638;">' . sprintf(
 				esc_html__( '%d validation issues found', 'openai-product-feed-for-woo' ),
 				count( $issues )
 			) . '</span>';
-			echo '<details style="margin-top:8px;"><summary>View Issues</summary>';
-			echo '<ul style="margin-left:1em;">';
-			$shown = 0;
-			foreach ( $issues as $item ) {
-				if ( $shown > 10 ) {
-					echo '<li>…</li>';
-					break;
-				}
-				$id       = isset( $item['id'] ) ? esc_html( (string) $item['id'] ) : '#';
-				$messages = isset( $item['issues'] ) && is_array( $item['issues'] )
-					? array_map( 'esc_html', $item['issues'] )
-					: array();
-				echo '<li><strong>' . $id . ':</strong> ' . implode( '; ', $messages ) . '</li>';
-				++$shown;
-			}
-			echo '</ul></details>';
+			echo ' • <a href="' . esc_url( $logs_url ) . '">' . 
+				 esc_html__( 'View in logs', 'openai-product-feed-for-woo' ) . '</a>';
 		} else {
 			echo '<span style="color:#00a32a;">✓ ' . esc_html__( 'No issues found', 'openai-product-feed-for-woo' ) . '</span>';
 		}
@@ -290,27 +277,15 @@ class AdminController {
 	private function renderValidationIssues(): void {
 		$issues = get_transient( 'oapfw_last_validation' );
 		if ( ! empty( $issues ) && is_array( $issues ) ) {
+			$logs_url = admin_url( 'admin.php?page=wc-status&tab=logs&source=oapfw&paged=1' );
 			echo '<div class="notice notice-warning"><p>' .
-				esc_html__( 'Recent feed validation issues:', 'openai-product-feed-for-woo' ) .
-				'</p><ul style="margin-left:1em;">';
-
-			$shown = 0;
-			foreach ( $issues as $item ) {
-				if ( $shown > 10 ) {
-					echo '<li>…</li>';
-					break;
-				}
-
-				$id       = isset( $item['id'] ) ? esc_html( (string) $item['id'] ) : '#';
-				$messages = isset( $item['issues'] ) && is_array( $item['issues'] )
-					? array_map( 'esc_html', $item['issues'] )
-					: array();
-
-				echo '<li><strong>' . $id . ':</strong> ' . implode( '; ', $messages ) . '</li>';
-				++$shown;
-			}
-
-			echo '</ul></div>';
+				sprintf(
+					esc_html__( '%d feed validation issues found.', 'openai-product-feed-for-woo' ),
+					count( $issues )
+				) .
+				' <a href="' . esc_url( $logs_url ) . '">' .
+				esc_html__( 'View detailed logs', 'openai-product-feed-for-woo' ) .
+				'</a></p></div>';
 		}
 	}
 
@@ -669,8 +644,40 @@ class AdminController {
 		$issues = $this->validator->validateFeed( $rows );
 
 		if ( $issues ) {
+			// Log validation issues to WooCommerce logs
+			if ( $this->logger ) {
+				$this->logger->warning( 'Feed validation issues found', array(
+					'source' => 'oapfw',
+					'total_issues' => count( $issues ),
+					'products_with_issues' => count( $issues ),
+					'is_delta' => $is_delta
+				) );
+
+				// Log individual product issues
+				foreach ( $issues as $issue ) {
+					$product_id = $issue['id'] ?? 'unknown';
+					$issue_messages = $issue['issues'] ?? array();
+					
+					$this->logger->warning( "Product validation failed: {$product_id}", array(
+						'source' => 'oapfw',
+						'product_id' => $product_id,
+						'issues' => $issue_messages,
+						'issue_count' => count( $issue_messages )
+					) );
+				}
+			}
+
+			// Keep transient for dashboard display
 			set_transient( 'oapfw_last_validation', $issues, 5 * MINUTE_IN_SECONDS );
 		} else {
+			// Log successful validation
+			if ( $this->logger ) {
+				$this->logger->info( 'Feed validation passed', array(
+					'source' => 'oapfw',
+					'products_validated' => count( $rows ),
+					'is_delta' => $is_delta
+				) );
+			}
 			delete_transient( 'oapfw_last_validation' );
 		}
 
