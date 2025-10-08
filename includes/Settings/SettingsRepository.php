@@ -80,25 +80,63 @@ class SettingsRepository implements SettingsRepositoryInterface {
 	 * Sanitize settings input
 	 */
 	public function sanitize( array $input ): array {
-		$out = array();
+		// Start with existing settings to preserve values not in current form
+		$this->loadSettings();
+		$out = $this->cache;
 
-		$out['format'] = in_array( ( $input['format'] ?? 'json' ), array( 'json', 'csv', 'xml', 'tsv' ), true )
-			? $input['format'] : 'json';
+		// Only update fields that are present in the input
+		if ( isset( $input['format'] ) ) {
+			$out['format'] = in_array( $input['format'], array( 'json', 'csv', 'xml', 'tsv' ), true )
+				? $input['format'] : 'json';
+		}
 
-		$out['delivery_enabled'] = $this->boolString( $input['delivery_enabled'] ?? 'false' );
-		$out['endpoint_url']     = esc_url_raw( $input['endpoint_url'] ?? '' );
-		$out['auth_token']       = sanitize_text_field( $input['auth_token'] ?? '' );
-		$out['pickup_sla']       = sanitize_text_field( $input['pickup_sla'] ?? '' );
+		if ( array_key_exists( 'delivery_enabled', $input ) ) {
+			$out['delivery_enabled'] = isset( $input['delivery_enabled'] ) ? $this->boolString( $input['delivery_enabled'] ) : 'false';
+		}
 
-		$out['enable_search_default']   = $this->boolString( $input['enable_search_default'] ?? 'false' );
-		$out['enable_checkout_default'] = $this->boolString( $input['enable_checkout_default'] ?? 'false' );
+		if ( isset( $input['endpoint_url'] ) ) {
+			$out['endpoint_url'] = esc_url_raw( $input['endpoint_url'] );
+		}
 
-		$out['seller_name']   = sanitize_text_field( $input['seller_name'] ?? '' );
-		$out['seller_url']    = esc_url_raw( $input['seller_url'] ?? '' );
-		$out['privacy_url']   = esc_url_raw( $input['privacy_url'] ?? '' );
-		$out['tos_url']       = esc_url_raw( $input['tos_url'] ?? '' );
-		$out['returns_url']   = esc_url_raw( $input['returns_url'] ?? '' );
-		$out['return_window'] = isset( $input['return_window'] ) ? max( 0, absint( $input['return_window'] ) ) : 0;
+		if ( isset( $input['auth_token'] ) ) {
+			$out['auth_token'] = sanitize_text_field( $input['auth_token'] );
+		}
+
+		if ( isset( $input['pickup_sla'] ) ) {
+			$out['pickup_sla'] = sanitize_text_field( $input['pickup_sla'] );
+		}
+
+		if ( array_key_exists( 'enable_search_default', $input ) ) {
+			$out['enable_search_default'] = isset( $input['enable_search_default'] ) ? $this->boolString( $input['enable_search_default'] ) : 'false';
+		}
+
+		if ( array_key_exists( 'enable_checkout_default', $input ) ) {
+			$out['enable_checkout_default'] = isset( $input['enable_checkout_default'] ) ? $this->boolString( $input['enable_checkout_default'] ) : 'false';
+		}
+
+		if ( isset( $input['seller_name'] ) ) {
+			$out['seller_name'] = sanitize_text_field( $input['seller_name'] );
+		}
+
+		if ( isset( $input['seller_url'] ) ) {
+			$out['seller_url'] = esc_url_raw( $input['seller_url'] );
+		}
+
+		if ( isset( $input['privacy_url'] ) ) {
+			$out['privacy_url'] = esc_url_raw( $input['privacy_url'] );
+		}
+
+		if ( isset( $input['tos_url'] ) ) {
+			$out['tos_url'] = esc_url_raw( $input['tos_url'] );
+		}
+
+		if ( isset( $input['returns_url'] ) ) {
+			$out['returns_url'] = esc_url_raw( $input['returns_url'] );
+		}
+
+		if ( isset( $input['return_window'] ) ) {
+			$out['return_window'] = max( 0, absint( $input['return_window'] ) );
+		}
 
 		return $out;
 	}
