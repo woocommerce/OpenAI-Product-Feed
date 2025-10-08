@@ -38,30 +38,97 @@ class ApiController {
 	 * Register REST API routes
 	 */
 	public function registerRoutes(): void {
-		// Public preview endpoint for testing
+		// Admin-only preview endpoint following WooCommerce v3 patterns
 		register_rest_route(
-			'oapfw/v1',
-			'/feed',
+			'wc/v3',
+			'/openai-feed',
 			array(
 				'methods'             => 'GET',
-				'permission_callback' => '__return_true',
+				'permission_callback' => function( \WP_REST_Request $request ) {
+					return $this->checkAdminPermission( $request );
+				},
 				'callback'            => array( $this, 'handlePreviewFeed' ),
+				'args'                => array(
+					'product_id' => array(
+						'description' => __( 'Product ID to preview in feed.', 'openai-product-feed-for-woo' ),
+						'type'        => 'integer',
+						'minimum'     => 1,
+					),
+				),
 			)
 		);
 	}
 
 	/**
-	 * Handle preview feed request
+	 * Check if user has permission to access feed endpoints
+	 * Supporting both cookie authentication for logged-in users and WooCommerce API keys
+	 *
+	 * @param \WP_REST_Request $request Request object.
+	 * @return bool|\WP_Error True if user has permission, WP_Error otherwise.
 	 */
-	public function handlePreviewFeed( \WP_REST_Request $request ): \WP_REST_Response {
-		$product_id = absint( (string) $request->get_param( 'product_id' ) );
-
-		if ( $product_id ) {
-			$rows = $this->feedGenerator->buildForProductId( $product_id );
-		} else {
-			$rows = $this->feedGenerator->buildFeed();
+	public function checkAdminPermission( \WP_REST_Request $request ) {
+		// Check if user is logged in via WordPress session (cookie auth)
+		if ( is_user_logged_in() && current_user_can( 'manage_woocommerce' ) ) {
+			// Verify nonce for cookie authentication
+			$nonce = $request->get_header( 'X-WP-Nonce' ) ?: $request->get_param( '_wpnonce' );
+			if ( $nonce && wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+				return true;
+			}
+			
+			// For direct browser access without nonce, still allow if user can manage WooCommerce
+			// This enables preview links to work for logged-in admins
+			if ( current_user_can( 'manage_woocommerce' ) ) {
+				return true;
+			}
 		}
 
-		return rest_ensure_response( $rows );
+		// Fallback to WooCommerce authentication patterns
+		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+			return new \WP_Error(
+				'woocommerce_rest_cannot_view',
+				__( 'Sorry, you cannot view this resource. Please ensure you are logged in as an administrator.', 'openai-product-feed-for-woo' ),
+				array( 'status' => rest_authorization_required_code() )
+			);
+		}
+
+		return true;
+	}
+
+	/**
+	 * Handle preview feed request
+	 *
+	 * @param \WP_REST_Request $request Request object.
+	 * @return \WP_REST_Response|\WP_Error Response object or error.
+	 */
+	public function handlePreviewFeed( \WP_REST_Request $request ) {
+		try {
+			$product_id = $request->get_param( 'product_id' );
+
+			if ( $product_id ) {
+				$product = wc_get_product( $product_id );
+				if ( ! $product ) {
+					return new \WP_Error(
+						'woocommerce_rest_product_invalid_id',
+						__( 'Invalid product ID.', 'openai-product-feed-for-woo' ),
+						array( 'status' => 404 )
+					);
+				}
+				$rows = $this->feedGenerator->buildForProductId( $product_id );
+			} else {
+				$rows = $this->feedGenerator->buildFeed();
+			}
+
+			$response = rest_ensure_response( $rows );
+			$response->header( 'Content-Type', 'application/json; charset=utf-8' );
+
+			return $response;
+
+		} catch ( \Exception $e ) {
+			return new \WP_Error(
+				'woocommerce_rest_feed_error',
+				$e->getMessage(),
+				array( 'status' => 500 )
+			);
+		}
 	}
 }
