@@ -1,4 +1,7 @@
 <?php
+
+declare(strict_types=1);
+
 namespace OAPFW\Feed\Validators;
 
 use OAPFW\Core\ValidatorInterface;
@@ -45,7 +48,7 @@ class FeedValidator implements ValidatorInterface {
 
 		// Check required fields
 		if ( OpenAIFeedSchema::isFieldRequired( $field, $row ) ) {
-			if ( empty( $value ) && $value !== '0' ) {
+			if ( empty( $value ) && '0' !== $value ) {
 				$message  = $config['error_message'] ?? "Missing {$field}";
 				$issues[] = $message;
 				return;
@@ -53,7 +56,7 @@ class FeedValidator implements ValidatorInterface {
 		}
 
 		// Skip validation if field is empty and not required
-		if ( empty( $value ) && $value !== '0' ) {
+		if ( empty( $value ) && '0' !== $value ) {
 			return;
 		}
 
@@ -114,9 +117,9 @@ class FeedValidator implements ValidatorInterface {
 	 */
 	private function validateFieldDependencies( string $field, $value, array $config, array $row, array &$issues ): void {
 		if ( isset( $config['depends_on'] ) ) {
-			foreach ( $config['depends_on'] as $depField => $depValue ) {
-				if ( $value === 'true' && ( $row[ $depField ] ?? null ) !== $depValue ) {
-					$issues[] = "{$field} requires {$depField}={$depValue}";
+			foreach ( $config['depends_on'] as $dep_field => $dep_value ) {
+				if ( 'true' === $value && $dep_value !== ( $row[ $dep_field ] ?? null ) ) {
+					$issues[] = "{$field} requires {$dep_field}={$dep_value}";
 				}
 			}
 		}
@@ -146,19 +149,19 @@ class FeedValidator implements ValidatorInterface {
 	 * Validate brand requirement (custom logic for exempt categories)
 	 */
 	private function validateBrandRequirement( array $row, array &$issues ): void {
-		$brandConfig      = $this->schema['brand'];
-		$category         = strtolower( $row['product_category'] ?? '' );
-		$exemptCategories = $brandConfig['exempt_categories'] ?? array();
+		$brand_config      = $this->schema['brand'];
+		$category          = strtolower( $row['product_category'] ?? '' );
+		$exempt_categories = $brand_config['exempt_categories'] ?? array();
 
-		$isExempt = false;
-		foreach ( $exemptCategories as $exempt ) {
+		$is_exempt = false;
+		foreach ( $exempt_categories as $exempt ) {
 			if ( strpos( $category, $exempt ) !== false ) {
-				$isExempt = true;
+				$is_exempt = true;
 				break;
 			}
 		}
 
-		if ( ! $isExempt && empty( $row['brand'] ) ) {
+		if ( ! $is_exempt && empty( $row['brand'] ) ) {
 			$issues[] = 'Brand is required (except for movies, books, music)';
 		}
 	}

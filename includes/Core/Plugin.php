@@ -1,4 +1,7 @@
 <?php
+
+declare(strict_types=1);
+
 namespace OAPFW\Core;
 
 use OAPFW\Core\Autoloader;

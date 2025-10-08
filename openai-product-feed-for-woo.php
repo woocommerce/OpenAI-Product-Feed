@@ -1,4 +1,7 @@
 <?php
+
+declare(strict_types=1);
+
 /**
  * Plugin Name:          OpenAI Product Feed for Woo
  * Plugin URI:           https://automattic.ai

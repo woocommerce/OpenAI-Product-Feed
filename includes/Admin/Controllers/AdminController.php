@@ -1,4 +1,7 @@
 <?php
+
+declare(strict_types=1);
+
 namespace OAPFW\Admin\Controllers;
 
 use OAPFW\Core\SettingsRepositoryInterface;
