@@ -2,58 +2,131 @@
 namespace OAPFW\Feed\Validators;
 
 use OAPFW\Core\ValidatorInterface;
+use OAPFW\Feed\Schema\OpenAIFeedSchema;
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
 /**
- * Feed data validator
+ * Schema-driven feed data validator
  */
 class FeedValidator implements ValidatorInterface
 {
+    private array $schema;
+
+    public function __construct()
+    {
+        $this->schema = OpenAIFeedSchema::getSchema();
+    }
+
     /**
-     * Validate single feed row
+     * Validate single feed row using schema
      */
     public function validateRow(array $row): array
     {
         $issues = [];
         
-        // Required fields (per OpenAI specification)
-        $this->validateRequiredField($row, 'id', 'Missing id', $issues);
-        $this->validateRequiredField($row, 'title', 'Missing title', $issues);
-        $this->validateRequiredField($row, 'description', 'Missing description', $issues);
-        $this->validateRequiredField($row, 'link', 'Missing link', $issues);
-        $this->validateRequiredField($row, 'availability', 'Missing availability', $issues);
-        $this->validateRequiredField($row, 'inventory_quantity', 'Missing inventory_quantity', $issues);
-        $this->validateRequiredField($row, 'enable_search', 'Missing enable_search', $issues);
-        $this->validateRequiredField($row, 'enable_checkout', 'Missing enable_checkout', $issues);
+        foreach ($this->schema as $field => $config) {
+            $this->validateField($row, $field, $config, $issues);
+        }
         
-        // Brand is required (except for movies, books, music)
+        // Additional custom validations
         $this->validateBrandRequirement($row, $issues);
-        
-        // Weight is required
-        $this->validateRequiredField($row, 'weight', 'Missing weight', $issues);
-        
-        // GTIN validation - now required since WooCommerce doesn't have MPN
-        $this->validateGtinRequirement($row, $issues);
-        
-        // Price validation
         $this->validatePrices($row, $issues);
-        
-        // Sale date validation
         $this->validateSaleDates($row, $issues);
         
-        // Checkout/search dependency
-        $this->validateCheckoutDependency($row, $issues);
-        
-        // Availability validation
-        $this->validateAvailability($row, $issues);
-        
-        // Preorder validation
-        $this->validatePreorder($row, $issues);
-        
         return $issues;
+    }
+
+    /**
+     * Validate individual field based on schema
+     */
+    private function validateField(array $row, string $field, array $config, array &$issues): void
+    {
+        $value = $row[$field] ?? null;
+        
+        // Check required fields
+        if (OpenAIFeedSchema::isFieldRequired($field, $row)) {
+            if (empty($value) && $value !== '0') {
+                $message = $config['error_message'] ?? "Missing {$field}";
+                $issues[] = $message;
+                return;
+            }
+        }
+        
+        // Skip validation if field is empty and not required
+        if (empty($value) && $value !== '0') {
+            return;
+        }
+        
+        // Type and format validation
+        $this->validateFieldType($field, $value, $config, $issues);
+        $this->validateFieldPattern($field, $value, $config, $issues);
+        $this->validateFieldEnum($field, $value, $config, $issues);
+        $this->validateFieldDependencies($field, $value, $config, $row, $issues);
+    }
+
+    /**
+     * Validate field type
+     */
+    private function validateFieldType(string $field, $value, array $config, array &$issues): void
+    {
+        switch ($config['type']) {
+            case 'integer':
+                if (!is_numeric($value)) {
+                    $issues[] = "{$field} must be a number";
+                }
+                break;
+            
+            case 'url':
+                if (!filter_var($value, FILTER_VALIDATE_URL)) {
+                    $issues[] = "{$field} must be a valid URL";
+                }
+                break;
+            
+            case 'boolean_string':
+                if (!in_array($value, ['true', 'false'], true)) {
+                    $issues[] = "{$field} must be 'true' or 'false'";
+                }
+                break;
+        }
+    }
+
+    /**
+     * Validate field pattern
+     */
+    private function validateFieldPattern(string $field, $value, array $config, array &$issues): void
+    {
+        if (isset($config['pattern']) && !preg_match($config['pattern'], (string)$value)) {
+            $message = $config['error_message'] ?? "{$field} format is invalid";
+            $issues[] = $message;
+        }
+    }
+
+    /**
+     * Validate enum values
+     */
+    private function validateFieldEnum(string $field, $value, array $config, array &$issues): void
+    {
+        if (isset($config['values']) && !in_array($value, $config['values'], true)) {
+            $valid = implode('|', $config['values']);
+            $issues[] = "{$field} must be {$valid}";
+        }
+    }
+
+    /**
+     * Validate field dependencies
+     */
+    private function validateFieldDependencies(string $field, $value, array $config, array $row, array &$issues): void
+    {
+        if (isset($config['depends_on'])) {
+            foreach ($config['depends_on'] as $depField => $depValue) {
+                if ($value === 'true' && ($row[$depField] ?? null) !== $depValue) {
+                    $issues[] = "{$field} requires {$depField}={$depValue}";
+                }
+            }
+        }
     }
 
     /**
@@ -76,46 +149,25 @@ class FeedValidator implements ValidatorInterface
         return $all_issues;
     }
 
-    /**
-     * Validate required field
-     */
-    private function validateRequiredField(array $row, string $field, string $message, array &$issues): void
-    {
-        if (empty($row[$field]) && $row[$field] !== '0') {
-            $issues[] = $message;
-        }
-    }
 
     /**
-     * Validate GTIN requirement and format
-     */
-    private function validateGtinRequirement(array $row, array &$issues): void
-    {
-        if (empty($row['gtin']) || $row['gtin'] === 'MISSING') {
-            $issues[] = 'GTIN is required (8-14 digit universal product identifier)';
-        } elseif (!preg_match('/^\d{8,14}$/', (string)$row['gtin'])) {
-            $issues[] = 'GTIN invalid (must be 8–14 digits only)';
-        }
-    }
-
-    /**
-     * Validate brand requirement
+     * Validate brand requirement (custom logic for exempt categories)
      */
     private function validateBrandRequirement(array $row, array &$issues): void
     {
-        // Brand is required except for movies, books, music categories
+        $brandConfig = $this->schema['brand'];
         $category = strtolower($row['product_category'] ?? '');
-        $exempt_categories = ['books', 'movies', 'music', 'media'];
+        $exemptCategories = $brandConfig['exempt_categories'] ?? [];
         
-        $is_exempt = false;
-        foreach ($exempt_categories as $exempt) {
+        $isExempt = false;
+        foreach ($exemptCategories as $exempt) {
             if (strpos($category, $exempt) !== false) {
-                $is_exempt = true;
+                $isExempt = true;
                 break;
             }
         }
         
-        if (!$is_exempt && empty($row['brand'])) {
+        if (!$isExempt && empty($row['brand'])) {
             $issues[] = 'Brand is required (except for movies, books, music)';
         }
     }
@@ -149,42 +201,6 @@ class FeedValidator implements ValidatorInterface
         }
     }
 
-    /**
-     * Validate checkout dependency on search
-     */
-    private function validateCheckoutDependency(array $row, array &$issues): void
-    {
-        if (!empty($row['enable_checkout']) && 
-            $row['enable_checkout'] === 'true' && 
-            ($row['enable_search'] ?? '') !== 'true') {
-            $issues[] = 'enable_checkout requires enable_search=true';
-        }
-    }
-
-    /**
-     * Validate availability values
-     */
-    private function validateAvailability(array $row, array &$issues): void
-    {
-        if (!empty($row['availability'])) {
-            $valid_values = ['in_stock', 'out_of_stock', 'preorder'];
-            if (!in_array($row['availability'], $valid_values, true)) {
-                $issues[] = 'availability must be in_stock|out_of_stock|preorder';
-            }
-        }
-    }
-
-    /**
-     * Validate preorder requirements
-     */
-    private function validatePreorder(array $row, array &$issues): void
-    {
-        if (!empty($row['availability']) && 
-            $row['availability'] === 'preorder' && 
-            empty($row['availability_date'])) {
-            $issues[] = 'availability_date required for preorder';
-        }
-    }
 
     /**
      * Extract numeric value from price string

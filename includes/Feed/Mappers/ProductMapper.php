@@ -9,127 +9,76 @@ if (!defined('ABSPATH')) {
 }
 
 /**
- * Maps WooCommerce products to OpenAI feed format
+ * Maps WooCommerce products to OpenAI feed format using schema-driven approach
  */
-class ProductMapper implements ProductMapperInterface
+class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface
 {
-    private SettingsRepositoryInterface $settings;
-
-    public function __construct(SettingsRepositoryInterface $settings)
-    {
-        $this->settings = $settings;
-    }
-
     /**
      * Map WooCommerce product to feed row
      */
     public function mapProduct(\WC_Product $product, ?\WC_Product $parent = null): array
     {
-        $currency = get_woocommerce_currency();
-        $sku = $product->get_sku() ?: 'wc-' . $product->get_id();
-        
-        $row = [
-            // OpenAI flags
-            'enable_search'   => $this->settings->get('enable_search_default', 'true'),
-            'enable_checkout' => $this->settings->get('enable_checkout_default', 'false'),
-
-            // Basic Product Data
-            'id'          => $sku,
-            'gtin'        => $this->getMetaValue($product, '_gtin'),
-            'mpn'         => $this->getMetaValue($product, '_mpn'),
-            'title'       => $this->truncateText(wp_strip_all_tags($product->get_name()), 150),
-            'description' => $this->getDescription($product),
-            'link'        => get_permalink($product->get_id()),
-
-            // Item Information
-            'product_category' => $this->getCategoryPath($product),
-            'brand'            => $this->getBrand($product, $parent) ?: 'Generic', // Default if missing
-            'material'         => $product->get_attribute('pa_material') ?: null,
-            'condition'        => $this->getMetaValue($product, '_oapfw_condition'),
-            'age_group'        => $this->getMetaValue($product, '_oapfw_age_group'),
-
-            // Dimensions & Weight (weight is required)
-            'weight'     => $this->formatWeight($product) ?: '0 kg', // Default if missing
-            'length'     => $this->formatDimension($product->get_length()),
-            'width'      => $this->formatDimension($product->get_width()),
-            'height'     => $this->formatDimension($product->get_height()),
-            'dimensions' => $this->formatDimensions($product),
-
-            // Media
-            'image_link'            => $this->getMainImage($product, $parent),
-            'additional_image_link' => $this->getGalleryImages($product, $parent),
-            'video_link'            => $this->getMetaValue($product, '_oapfw_video_link'),
-            'model_3d_link'         => $this->getMetaValue($product, '_oapfw_model_3d_link'),
-
-            // Price & Promotions
-            'price'      => $this->formatPrice($product->get_regular_price(), $currency),
-            'sale_price' => $this->formatPrice($product->get_sale_price(), $currency),
-            'sale_price_effective_date' => $this->getSaleDateRange($product),
-
-            // Availability & Inventory
-            'availability'        => $this->getAvailability($product),
-            'inventory_quantity'  => $product->get_stock_quantity() ?? 0,
-            'availability_date'   => $this->getMetaValue($product, '_oapfw_availability_date'),
-            'expiration_date'     => $this->getMetaValue($product, '_oapfw_expiration_date'),
-
-            // Variants
-            'item_group_id'    => $this->getItemGroupId($parent),
-            'item_group_title' => $this->getItemGroupTitle($parent),
-            'color'            => $product->get_attribute('pa_color') ?: null,
-            'size'             => $product->get_attribute('pa_size') ?: null,
-            'size_system'      => $product->get_attribute('pa_size_system') ?: null,
-            'gender'           => $product->get_attribute('pa_gender') ?: null,
-
-            // Merchant Info
-            'seller_name'           => $this->settings->get('seller_name') ?: null,
-            'seller_url'            => $this->settings->get('seller_url') ?: null,
-            'seller_privacy_policy' => $this->settings->get('privacy_url') ?: null,
-            'seller_tos'            => $this->settings->get('tos_url') ?: null,
-            'return_policy'         => $this->settings->get('returns_url') ?: null,
-            'return_window'         => $this->settings->get('return_window') ?: null,
-
-            // Additional fields
-            'warning'          => $this->getMetaValue($product, '_oapfw_warning'),
-            'warning_url'      => $this->getMetaValue($product, '_oapfw_warning_url'),
-            'age_restriction'  => $this->getMetaValue($product, '_oapfw_age_restriction'),
-            'q_and_a'          => $this->getMetaValue($product, '_oapfw_q_and_a'),
-        ];
-
-        // Apply per-product overrides
-        $row = $this->applyProductOverrides($product, $row);
-        
-        // Add shipping and fulfillment data
-        $row['shipping'] = $this->getShippingData();
-        $this->addPickupData($row);
-
-        // Validate and clean up
-        $row = $this->validateAndCleanRow($row);
-
-        return apply_filters('oapfw_map_product', $row, $product, $parent);
+        return $this->mapProductBySchema($product, $parent);
     }
 
-    /**
-     * Get meta value with fallback
-     */
-    private function getMetaValue(\WC_Product $product, string $key): ?string
+    // Schema mapper method implementations
+    
+    protected function getEnableSearch(\WC_Product $product, ?\WC_Product $parent): string
     {
-        $value = get_post_meta($product->get_id(), $key, true);
-        return !empty($value) ? wp_strip_all_tags($value) : null;
+        $override = get_post_meta($product->get_id(), '_oapfw_enable_search', true);
+        if ($override !== '') {
+            return $this->boolString($override);
+        }
+        return $this->settings->get('enable_search_default', 'true');
     }
 
-    /**
-     * Get product description
-     */
-    private function getDescription(\WC_Product $product): string
+    protected function getEnableCheckout(\WC_Product $product, ?\WC_Product $parent): string
+    {
+        $override = get_post_meta($product->get_id(), '_oapfw_enable_checkout', true);
+        if ($override !== '') {
+            return $this->boolString($override);
+        }
+        return $this->settings->get('enable_checkout_default', 'false');
+    }
+
+    protected function getId(\WC_Product $product, ?\WC_Product $parent): string
+    {
+        return $product->get_sku() ?: 'wc-' . $product->get_id();
+    }
+
+    protected function getTitle(\WC_Product $product, ?\WC_Product $parent): string
+    {
+        return wp_strip_all_tags($product->get_name());
+    }
+
+    protected function getDescription(\WC_Product $product, ?\WC_Product $parent): string
     {
         $description = $product->get_description() ?: $product->get_short_description();
-        return $this->truncateText(wp_strip_all_tags($description), 5000);
+        return wp_strip_all_tags($description);
     }
 
-    /**
-     * Get brand from attribute or meta
-     */
-    private function getBrand(\WC_Product $product, ?\WC_Product $parent): ?string
+    protected function getLink(\WC_Product $product, ?\WC_Product $parent): string
+    {
+        return get_permalink($product->get_id());
+    }
+
+    protected function getGtin(\WC_Product $product, ?\WC_Product $parent): ?string
+    {
+        $gtin = $this->getMetaValue($product, '_gtin');
+        return $gtin ?: 'MISSING';
+    }
+
+    protected function getMpn(\WC_Product $product, ?\WC_Product $parent): ?string
+    {
+        return $this->getMetaValue($product, '_mpn');
+    }
+
+    protected function getProductCategory(\WC_Product $product, ?\WC_Product $parent): ?string
+    {
+        return $this->getCategoryPath($product);
+    }
+
+    protected function getBrand(\WC_Product $product, ?\WC_Product $parent): ?string
     {
         $brand = $product->get_attribute('pa_brand');
         if (!$brand && $parent) {
@@ -138,8 +87,221 @@ class ProductMapper implements ProductMapperInterface
         if (!$brand) {
             $brand = $this->getMetaValue($product, '_brand');
         }
-        return $brand;
+        return $brand ?: 'Generic';
     }
+
+    protected function getMaterial(\WC_Product $product, ?\WC_Product $parent): ?string
+    {
+        return $product->get_attribute('pa_material') ?: null;
+    }
+
+    protected function getCondition(\WC_Product $product, ?\WC_Product $parent): ?string
+    {
+        return $this->getMetaValue($product, '_oapfw_condition');
+    }
+
+    protected function getAgeGroup(\WC_Product $product, ?\WC_Product $parent): ?string
+    {
+        return $this->getMetaValue($product, '_oapfw_age_group');
+    }
+
+    protected function getWeight(\WC_Product $product, ?\WC_Product $parent): ?string
+    {
+        return $this->formatWeight($product) ?: '0 kg';
+    }
+
+    protected function getLength(\WC_Product $product, ?\WC_Product $parent): ?string
+    {
+        return $this->formatDimension($product->get_length());
+    }
+
+    protected function getWidth(\WC_Product $product, ?\WC_Product $parent): ?string
+    {
+        return $this->formatDimension($product->get_width());
+    }
+
+    protected function getHeight(\WC_Product $product, ?\WC_Product $parent): ?string
+    {
+        return $this->formatDimension($product->get_height());
+    }
+
+    protected function getDimensions(\WC_Product $product, ?\WC_Product $parent): ?string
+    {
+        return $this->formatDimensions($product);
+    }
+
+    protected function getImageLink(\WC_Product $product, ?\WC_Product $parent): string
+    {
+        return $this->getMainImage($product, $parent);
+    }
+
+    protected function getAdditionalImageLink(\WC_Product $product, ?\WC_Product $parent): array
+    {
+        return $this->getGalleryImages($product, $parent);
+    }
+
+    protected function getVideoLink(\WC_Product $product, ?\WC_Product $parent): ?string
+    {
+        return $this->getMetaValue($product, '_oapfw_video_link');
+    }
+
+    protected function getModel3dLink(\WC_Product $product, ?\WC_Product $parent): ?string
+    {
+        return $this->getMetaValue($product, '_oapfw_model_3d_link');
+    }
+
+    protected function getPrice(\WC_Product $product, ?\WC_Product $parent): ?string
+    {
+        $currency = get_woocommerce_currency();
+        return $this->formatPrice($product->get_regular_price(), $currency);
+    }
+
+    protected function getSalePrice(\WC_Product $product, ?\WC_Product $parent): ?string
+    {
+        $currency = get_woocommerce_currency();
+        return $this->formatPrice($product->get_sale_price(), $currency);
+    }
+
+    protected function getSalePriceEffectiveDate(\WC_Product $product, ?\WC_Product $parent): ?string
+    {
+        return $this->getSaleDateRange($product);
+    }
+
+    protected function getAvailability(\WC_Product $product, ?\WC_Product $parent): string
+    {
+        $stock_status = $product->get_stock_status();
+        
+        switch ($stock_status) {
+            case 'instock':
+                return 'in_stock';
+            case 'outofstock':
+                return 'out_of_stock';
+            case 'onbackorder':
+                return 'preorder';
+            default:
+                return 'out_of_stock';
+        }
+    }
+
+    protected function getInventoryQuantity(\WC_Product $product, ?\WC_Product $parent): int
+    {
+        return $product->get_stock_quantity() ?? 0;
+    }
+
+    protected function getAvailabilityDate(\WC_Product $product, ?\WC_Product $parent): ?string
+    {
+        return $this->getMetaValue($product, '_oapfw_availability_date');
+    }
+
+    protected function getExpirationDate(\WC_Product $product, ?\WC_Product $parent): ?string
+    {
+        return $this->getMetaValue($product, '_oapfw_expiration_date');
+    }
+
+    protected function getItemGroupId(\WC_Product $product, ?\WC_Product $parent): ?string
+    {
+        if (!$parent) {
+            return null;
+        }
+        return $parent->get_sku() ?: 'wc-' . $parent->get_id();
+    }
+
+    protected function getItemGroupTitle(\WC_Product $product, ?\WC_Product $parent): ?string
+    {
+        return $parent ? wp_strip_all_tags($parent->get_name()) : null;
+    }
+
+    protected function getColor(\WC_Product $product, ?\WC_Product $parent): ?string
+    {
+        return $product->get_attribute('pa_color') ?: null;
+    }
+
+    protected function getSize(\WC_Product $product, ?\WC_Product $parent): ?string
+    {
+        return $product->get_attribute('pa_size') ?: null;
+    }
+
+    protected function getSizeSystem(\WC_Product $product, ?\WC_Product $parent): ?string
+    {
+        return $product->get_attribute('pa_size_system') ?: null;
+    }
+
+    protected function getGender(\WC_Product $product, ?\WC_Product $parent): ?string
+    {
+        return $product->get_attribute('pa_gender') ?: null;
+    }
+
+    protected function getSellerName(\WC_Product $product, ?\WC_Product $parent): ?string
+    {
+        return $this->settings->get('seller_name') ?: null;
+    }
+
+    protected function getSellerUrl(\WC_Product $product, ?\WC_Product $parent): ?string
+    {
+        return $this->settings->get('seller_url') ?: null;
+    }
+
+    protected function getSellerPrivacyPolicy(\WC_Product $product, ?\WC_Product $parent): ?string
+    {
+        return $this->settings->get('privacy_url') ?: null;
+    }
+
+    protected function getSellerTos(\WC_Product $product, ?\WC_Product $parent): ?string
+    {
+        return $this->settings->get('tos_url') ?: null;
+    }
+
+    protected function getReturnPolicy(\WC_Product $product, ?\WC_Product $parent): ?string
+    {
+        return $this->settings->get('returns_url') ?: null;
+    }
+
+    protected function getReturnWindow(\WC_Product $product, ?\WC_Product $parent): ?string
+    {
+        return $this->settings->get('return_window') ?: null;
+    }
+
+    protected function getShipping(\WC_Product $product, ?\WC_Product $parent): array
+    {
+        return $this->getShippingData();
+    }
+
+    protected function getPickupMethod(\WC_Product $product, ?\WC_Product $parent): ?string
+    {
+        return $this->hasLocalPickup() ? 'in_store' : null;
+    }
+
+    protected function getPickupSla(\WC_Product $product, ?\WC_Product $parent): ?string
+    {
+        if ($this->hasLocalPickup()) {
+            return $this->settings->get('pickup_sla');
+        }
+        return null;
+    }
+
+    protected function getWarning(\WC_Product $product, ?\WC_Product $parent): ?string
+    {
+        return $this->getMetaValue($product, '_oapfw_warning');
+    }
+
+    protected function getWarningUrl(\WC_Product $product, ?\WC_Product $parent): ?string
+    {
+        return $this->getMetaValue($product, '_oapfw_warning_url');
+    }
+
+    protected function getAgeRestriction(\WC_Product $product, ?\WC_Product $parent): ?string
+    {
+        return $this->getMetaValue($product, '_oapfw_age_restriction');
+    }
+
+    protected function getQAndA(\WC_Product $product, ?\WC_Product $parent): ?string
+    {
+        return $this->getMetaValue($product, '_oapfw_q_and_a');
+    }
+
+    // Keep existing business logic methods
+
+
 
     /**
      * Get category path
@@ -306,63 +468,8 @@ class ProductMapper implements ProductMapperInterface
         return null;
     }
 
-    /**
-     * Get availability status
-     */
-    private function getAvailability(\WC_Product $product): string
-    {
-        $stock_status = $product->get_stock_status();
-        
-        switch ($stock_status) {
-            case 'instock':
-                return 'in_stock';
-            case 'outofstock':
-                return 'out_of_stock';
-            case 'onbackorder':
-                return 'preorder';
-            default:
-                return 'out_of_stock';
-        }
-    }
 
-    /**
-     * Get item group ID for variations
-     */
-    private function getItemGroupId(?\WC_Product $parent): ?string
-    {
-        if (!$parent) {
-            return null;
-        }
-        
-        return $parent->get_sku() ?: 'wc-' . $parent->get_id();
-    }
 
-    /**
-     * Get item group title for variations
-     */
-    private function getItemGroupTitle(?\WC_Product $parent): ?string
-    {
-        return $parent ? wp_strip_all_tags($parent->get_name()) : null;
-    }
-
-    /**
-     * Apply per-product flag overrides
-     */
-    private function applyProductOverrides(\WC_Product $product, array $row): array
-    {
-        $override_search = get_post_meta($product->get_id(), '_oapfw_enable_search', true);
-        $override_checkout = get_post_meta($product->get_id(), '_oapfw_enable_checkout', true);
-        
-        if ($override_search !== '') {
-            $row['enable_search'] = $this->boolString($override_search);
-        }
-        
-        if ($override_checkout !== '') {
-            $row['enable_checkout'] = $this->boolString($override_checkout);
-        }
-        
-        return $row;
-    }
 
     /**
      * Get shipping data from WooCommerce zones
@@ -482,58 +589,4 @@ class ProductMapper implements ProductMapperInterface
         return false;
     }
 
-    /**
-     * Validate and clean row data
-     */
-    private function validateAndCleanRow(array $row): array
-    {
-        // Ensure boolean strings
-        $row['enable_search'] = $this->boolString($row['enable_search']);
-        $row['enable_checkout'] = $this->boolString($row['enable_checkout']);
-        
-        // Checkout requires search
-        if ($row['enable_checkout'] === 'true' && $row['enable_search'] !== 'true') {
-            $row['enable_checkout'] = 'false';
-        }
-        
-        // Ensure title/description limits
-        if (!empty($row['title'])) {
-            $row['title'] = $this->truncateText($row['title'], 150);
-        }
-        
-        if (!empty($row['description'])) {
-            $row['description'] = $this->truncateText($row['description'], 5000);
-        }
-        
-        // GTIN is now required since WooCommerce doesn't have native MPN support
-        // Set a fallback GTIN if missing (will be flagged by validation)
-        if (empty($row['gtin'])) {
-            $row['gtin'] = 'MISSING'; // Will be caught by validator
-        }
-        
-        // Remove null and empty values
-        return array_filter($row, function($value) {
-            return $value !== null && $value !== '';
-        });
-    }
-
-    /**
-     * Convert value to boolean string
-     */
-    private function boolString($value): string
-    {
-        $value = strtolower((string) $value);
-        return ($value === 'true' || $value === '1' || $value === 'yes') ? 'true' : 'false';
-    }
-
-    /**
-     * Truncate text to specified length
-     */
-    private function truncateText(string $text, int $max_length): string
-    {
-        if (mb_strlen($text) > $max_length) {
-            return mb_substr($text, 0, $max_length);
-        }
-        return $text;
-    }
 }
