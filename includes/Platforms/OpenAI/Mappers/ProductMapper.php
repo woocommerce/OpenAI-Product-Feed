@@ -124,22 +124,26 @@ class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface 
 	 * Get enable search setting
 	 *
 	 * @param \WC_Product      $product Product to check.
-	 * @param \WC_Product|null $parent  Parent product (unused).
+	 * @param \WC_Product|null $parent  Parent product for variations.
 	 * @return string 'true' or 'false'.
 	 */
 	protected function getEnableSearch( \WC_Product $product, ?\WC_Product $parent ): string {
-		return $this->getEnableWithOverride( $product, '_oapfw_disable_search', 'enable_search_default', 'true' );
+		// For variations, check parent product meta; for simple products, check product meta
+		$check_product = $parent ?: $product;
+		return $this->getEnableWithOverride( $check_product, '_oapfw_disable_search', 'enable_search_default', 'true' );
 	}
 
 	/**
 	 * Get enable checkout setting
 	 *
 	 * @param \WC_Product      $product Product to check.
-	 * @param \WC_Product|null $parent  Parent product (unused).
+	 * @param \WC_Product|null $parent  Parent product for variations.
 	 * @return string 'true' or 'false'.
 	 */
 	protected function getEnableCheckout( \WC_Product $product, ?\WC_Product $parent ): string {
-		return $this->getEnableWithOverride( $product, '_oapfw_disable_checkout', 'enable_checkout_default', 'false' );
+		// For variations, check parent product meta; for simple products, check product meta
+		$check_product = $parent ?: $product;
+		return $this->getEnableWithOverride( $check_product, '_oapfw_disable_checkout', 'enable_checkout_default', 'false' );
 	}
 
 	/**
