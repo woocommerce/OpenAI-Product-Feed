@@ -402,6 +402,14 @@ class ProductFieldsController {
 	 * @param \WC_Product $product Product object being saved.
 	 */
 	public function saveProductFields( \WC_Product $product ): void {
+		if ( ! isset( $_POST['woocommerce_meta_nonce'] ) || ! wp_verify_nonce( $_POST['woocommerce_meta_nonce'], 'woocommerce_save_data' ) ) {
+			return;
+		}
+
+		if ( ! current_user_can( 'edit_products' ) ) {
+			return;
+		}
+
 		// Text fields
 		$text_keys = array(
 			'_gtin',
