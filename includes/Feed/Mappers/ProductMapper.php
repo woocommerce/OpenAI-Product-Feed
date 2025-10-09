@@ -14,6 +14,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Maps WooCommerce products to OpenAI feed format using schema-driven approach
+ * 
+ * Converts WooCommerce product data into OpenAI Product Feed specification format.
+ * Uses a schema-driven approach to ensure all required fields are mapped correctly.
  */
 class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface {
 
@@ -23,6 +26,12 @@ class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface 
 
 	/**
 	 * Map WooCommerce product to feed row
+	 * 
+	 * Main entry point for converting a WooCommerce product into OpenAI feed format.
+	 *
+	 * @param \WC_Product      $product Product to map.
+	 * @param \WC_Product|null $parent  Parent product for variations.
+	 * @return array Mapped product data array.
 	 */
 	public function mapProduct( \WC_Product $product, ?\WC_Product $parent = null ): array {
 		return $this->mapProductBySchema( $product, $parent );
@@ -30,41 +39,91 @@ class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface 
 
 	// Schema mapper method implementations
 
+	/**
+	 * Get enable/disable setting with product override support
+	 * 
+	 * Helper method to reduce redundancy in enable_search/enable_checkout logic.
+	 *
+	 * @param \WC_Product $product      Product to check.
+	 * @param string      $meta_key     Meta key for disable override.
+	 * @param string      $setting_key  Global setting key.
+	 * @param string      $default      Default value if setting not found.
+	 * @return string 'true' or 'false'.
+	 */
+	private function getEnableWithOverride( \WC_Product $product, string $meta_key, string $setting_key, string $default ): string {
+		$disable_override = $this->getMetaValue( $product, $meta_key );
+		
+		// Only disable if explicitly set to 'yes' 
+		// Empty/null/no all mean "don't disable" (use global default)
+		if ( $disable_override === 'yes' ) {
+			return 'false';
+		}
+		return $this->settings->get( $setting_key, $default );
+	}
+
+	/**
+	 * Get enable search setting
+	 *
+	 * @param \WC_Product      $product Product to check.
+	 * @param \WC_Product|null $parent  Parent product (unused).
+	 * @return string 'true' or 'false'.
+	 */
 	protected function getEnableSearch( \WC_Product $product, ?\WC_Product $parent ): string {
-		$disable_override = $this->getMetaValue( $product, '_oapfw_disable_search' );
-		
-		// Only disable if explicitly set to 'yes' 
-		// Empty/null/no all mean "don't disable" (use global default)
-		if ( $disable_override === 'yes' ) {
-			return 'false';
-		}
-		return $this->settings->get( 'enable_search_default', 'true' );
+		return $this->getEnableWithOverride( $product, '_oapfw_disable_search', 'enable_search_default', 'true' );
 	}
 
+	/**
+	 * Get enable checkout setting
+	 *
+	 * @param \WC_Product      $product Product to check.
+	 * @param \WC_Product|null $parent  Parent product (unused).
+	 * @return string 'true' or 'false'.
+	 */
 	protected function getEnableCheckout( \WC_Product $product, ?\WC_Product $parent ): string {
-		$disable_override = $this->getMetaValue( $product, '_oapfw_disable_checkout' );
-		
-		// Only disable if explicitly set to 'yes' 
-		// Empty/null/no all mean "don't disable" (use global default)
-		if ( $disable_override === 'yes' ) {
-			return 'false';
-		}
-		return $this->settings->get( 'enable_checkout_default', 'false' );
+		return $this->getEnableWithOverride( $product, '_oapfw_disable_checkout', 'enable_checkout_default', 'false' );
 	}
 
+	/**
+	 * Get product ID
+	 *
+	 * @param \WC_Product      $product Product object.
+	 * @param \WC_Product|null $parent  Parent product (unused).
+	 * @return string Product ID as string.
+	 */
 	protected function getId( \WC_Product $product, ?\WC_Product $parent ): string {
 		return (string) $product->get_id();
 	}
 
+	/**
+	 * Get product title
+	 *
+	 * @param \WC_Product      $product Product object.
+	 * @param \WC_Product|null $parent  Parent product (unused).
+	 * @return string Product title with HTML tags stripped.
+	 */
 	protected function getTitle( \WC_Product $product, ?\WC_Product $parent ): string {
 		return wp_strip_all_tags( $product->get_name() );
 	}
 
+	/**
+	 * Get product description
+	 *
+	 * @param \WC_Product      $product Product object.
+	 * @param \WC_Product|null $parent  Parent product (unused).
+	 * @return string Product description with HTML tags stripped.
+	 */
 	protected function getDescription( \WC_Product $product, ?\WC_Product $parent ): string {
 		$description = $product->get_description() ?: $product->get_short_description();
 		return wp_strip_all_tags( $description );
 	}
 
+	/**
+	 * Get product permalink
+	 *
+	 * @param \WC_Product      $product Product object.
+	 * @param \WC_Product|null $parent  Parent product (unused).
+	 * @return string Product permalink URL.
+	 */
 	protected function getLink( \WC_Product $product, ?\WC_Product $parent ): string {
 		return get_permalink( $product->get_id() );
 	}
