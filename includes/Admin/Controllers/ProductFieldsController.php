@@ -10,11 +10,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Handles WooCommerce product data tab for OpenAI feed attributes
+ * 
+ * Adds custom product fields for OpenAI feed data that can't be automatically
+ * derived from WooCommerce's existing product data structure.
  */
 class ProductFieldsController {
 
 	/**
 	 * Initialize product fields functionality
+	 * 
+	 * Hooks into WooCommerce product editing to add OpenAI-specific fields.
 	 */
 	public function init(): void {
 		add_filter( 'woocommerce_product_data_tabs', array( $this, 'addProductDataTab' ) );
@@ -40,6 +45,8 @@ class ProductFieldsController {
 
 	/**
 	 * Render the OpenAI Feed product data panel
+	 * 
+	 * Displays custom fields for OpenAI feed attributes in the WooCommerce product editor.
 	 */
 	public function renderProductDataPanel(): void {
 		echo '<div id="oapfw_product_data" class="panel woocommerce_options_panel hidden">';
@@ -49,7 +56,6 @@ class ProductFieldsController {
 		echo '<p class="description">' . esc_html__( 'These fields inherit from WooCommerce global settings and existing product data (title, pricing, attributes). Set a value here only if you want to override the inherited value.', 'openai-product-feed-for-woo' ) . '</p>';
 		echo '<div class="options_group">';
 
-		// Product identifiers
 		woocommerce_wp_text_input(
 			array(
 				'id'          => '_gtin',
@@ -68,20 +74,18 @@ class ProductFieldsController {
 			)
 		);
 
-		$brand_placeholder = ( $product && $product->get_attribute( 'pa_brand' ) ) ? $product->get_attribute( 'pa_brand' ) : '';
 		woocommerce_wp_text_input(
 			array(
 				'id'          => '_brand',
 				'label'       => __( 'Brand (fallback)', 'openai-product-feed-for-woo' ),
 				'desc_tip'    => true,
 				'description' => __( 'Used if attribute pa_brand is not set.', 'openai-product-feed-for-woo' ),
-				'placeholder' => $brand_placeholder,
+				'placeholder' => $this->getAttributePlaceholder( $product, 'pa_brand' ),
 			)
 		);
 
 		echo '</div><div class="options_group">';
 
-		// ChatGPT flags - using WooCommerce's pattern
 		woocommerce_wp_checkbox(
 			array(
 				'id'          => '_oapfw_disable_search',
@@ -126,7 +130,6 @@ class ProductFieldsController {
 			)
 		);
 
-		$age_placeholder = ( $product && $product->get_attribute( 'pa_age_group' ) ) ? $product->get_attribute( 'pa_age_group' ) : '';
 		woocommerce_wp_select(
 			array(
 				'id'          => '_oapfw_age_group',
@@ -139,7 +142,7 @@ class ProductFieldsController {
 					'kids'    => 'kids',
 					'adult'   => 'adult',
 				),
-				'placeholder' => $age_placeholder,
+				'placeholder' => $this->getAttributePlaceholder( $product, 'pa_age_group' ),
 			)
 		);
 
@@ -176,23 +179,21 @@ class ProductFieldsController {
 		echo '</div><div class="options_group">';
 
 		// Variant attributes
-		$color_placeholder = ( $product && $product->get_attribute( 'pa_color' ) ) ? $product->get_attribute( 'pa_color' ) : '';
 		woocommerce_wp_text_input(
 			array(
 				'id'          => '_oapfw_color',
 				'label'       => __( 'Color (override)', 'openai-product-feed-for-woo' ),
 				'description' => __( 'Used if attribute pa_color is not set.', 'openai-product-feed-for-woo' ),
-				'placeholder' => $color_placeholder,
+				'placeholder' => $this->getAttributePlaceholder( $product, 'pa_color' ),
 			)
 		);
 
-		$size_placeholder = ( $product && $product->get_attribute( 'pa_size' ) ) ? $product->get_attribute( 'pa_size' ) : '';
 		woocommerce_wp_text_input(
 			array(
 				'id'          => '_oapfw_size',
 				'label'       => __( 'Size (override)', 'openai-product-feed-for-woo' ),
 				'description' => __( 'Used if attribute pa_size is not set.', 'openai-product-feed-for-woo' ),
-				'placeholder' => $size_placeholder,
+				'placeholder' => $this->getAttributePlaceholder( $product, 'pa_size' ),
 			)
 		);
 
@@ -383,9 +384,22 @@ class ProductFieldsController {
 	}
 
 	/**
+	 * Get placeholder text from product attribute
+	 * 
+	 * Helper method to reduce redundancy when showing attribute fallbacks.
+	 *
+	 * @param \WC_Product|null $product Product object.
+	 * @param string           $attribute_name Attribute name (e.g., 'pa_brand').
+	 * @return string Placeholder text from attribute or empty string.
+	 */
+	private function getAttributePlaceholder( ?\WC_Product $product, string $attribute_name ): string {
+		return ( $product && $product->get_attribute( $attribute_name ) ) ? $product->get_attribute( $attribute_name ) : '';
+	}
+
+	/**
 	 * Save product fields when product is saved
 	 *
-	 * @param \WC_Product $product Product object.
+	 * @param \WC_Product $product Product object being saved.
 	 */
 	public function saveProductFields( \WC_Product $product ): void {
 		// Text fields
