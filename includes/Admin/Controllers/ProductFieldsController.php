@@ -102,6 +102,15 @@ class ProductFieldsController {
 
 		echo '</div><div class="options_group">';
 
+		// Material and other product details
+		woocommerce_wp_text_input(
+			array(
+				'id'          => '_oapfw_material',
+				'label'       => __( 'Material', 'openai-product-feed-for-woo' ),
+				'description' => __( 'Primary material (e.g., cotton, plastic, metal)', 'openai-product-feed-for-woo' ),
+			)
+		);
+
 		// Product condition and age group
 		woocommerce_wp_select(
 			array(
@@ -161,6 +170,63 @@ class ProductFieldsController {
 				'id'          => '_oapfw_warning_url',
 				'label'       => __( 'Warning URL', 'openai-product-feed-for-woo' ),
 				'placeholder' => 'https://',
+			)
+		);
+
+		echo '</div><div class="options_group">';
+
+		// Variant attributes
+		$color_placeholder = ( $product && $product->get_attribute( 'pa_color' ) ) ? $product->get_attribute( 'pa_color' ) : '';
+		woocommerce_wp_text_input(
+			array(
+				'id'          => '_oapfw_color',
+				'label'       => __( 'Color (override)', 'openai-product-feed-for-woo' ),
+				'description' => __( 'Used if attribute pa_color is not set.', 'openai-product-feed-for-woo' ),
+				'placeholder' => $color_placeholder,
+			)
+		);
+
+		$size_placeholder = ( $product && $product->get_attribute( 'pa_size' ) ) ? $product->get_attribute( 'pa_size' ) : '';
+		woocommerce_wp_text_input(
+			array(
+				'id'          => '_oapfw_size',
+				'label'       => __( 'Size (override)', 'openai-product-feed-for-woo' ),
+				'description' => __( 'Used if attribute pa_size is not set.', 'openai-product-feed-for-woo' ),
+				'placeholder' => $size_placeholder,
+			)
+		);
+
+		woocommerce_wp_select(
+			array(
+				'id'          => '_oapfw_size_system',
+				'label'       => __( 'Size system', 'openai-product-feed-for-woo' ),
+				'options'     => array(
+					''     => __( '— Select —', 'openai-product-feed-for-woo' ),
+					'US'   => 'US',
+					'UK'   => 'UK',
+					'EU'   => 'EU',
+					'FR'   => 'FR',
+					'DE'   => 'DE',
+					'IT'   => 'IT',
+					'JP'   => 'JP',
+					'CN'   => 'CN',
+					'MEX'  => 'MEX',
+					'BR'   => 'BR',
+				),
+				'description' => __( 'Size measurement system.', 'openai-product-feed-for-woo' ),
+			)
+		);
+
+		woocommerce_wp_select(
+			array(
+				'id'          => '_oapfw_gender',
+				'label'       => __( 'Target gender', 'openai-product-feed-for-woo' ),
+				'options'     => array(
+					''       => __( '— Select —', 'openai-product-feed-for-woo' ),
+					'male'   => 'Male',
+					'female' => 'Female',
+					'unisex' => 'Unisex',
+				),
 			)
 		);
 
@@ -327,6 +393,11 @@ class ProductFieldsController {
 			'_gtin',
 			'_mpn',
 			'_brand',
+			'_oapfw_material',
+			'_oapfw_color',
+			'_oapfw_size',
+			'_oapfw_size_system',
+			'_oapfw_gender',
 			'_oapfw_warning',
 			'_oapfw_q_and_a',
 			'_oapfw_condition',
