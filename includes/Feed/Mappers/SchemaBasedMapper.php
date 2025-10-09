@@ -45,7 +45,9 @@ abstract class SchemaBasedMapper {
 	 * Map individual field based on configuration
 	 */
 	protected function mapField( \WC_Product $product, ?\WC_Product $parent, string $field, array $config ) {
-		$mapperMethod = $config['mapper'] ?? null;
+		// Get field mappings from implementing class
+		$fieldMappings = $this->getFieldMappings();
+		$mapperMethod = $fieldMappings[$field] ?? null;
 
 		if ( $mapperMethod && method_exists( $this, $mapperMethod ) ) {
 			$value = $this->$mapperMethod( $product, $parent );
@@ -148,8 +150,18 @@ abstract class SchemaBasedMapper {
 		$value = $this->product_meta_cache[ $product_id ][ $key ][0] ?? null;
 		return ! empty( $value ) ? wp_strip_all_tags( $value ) : null;
 	}
-
-	// Abstract methods that implementing classes must define
+	
+	/**
+	 * Get field mappings for this mapper
+	 * 
+	 * Maps schema field names to mapper method names.
+	 * This allows different AI platforms to use different field mappings.
+	 * 
+	 * @return array Field name to method name mappings
+	 */
+	abstract protected function getFieldMappings(): array;
+	
+	// Required field mappers - implementing classes must provide these
 	abstract protected function getId( \WC_Product $product, ?\WC_Product $parent ): string;
 	abstract protected function getTitle( \WC_Product $product, ?\WC_Product $parent ): string;
 	abstract protected function getDescription( \WC_Product $product, ?\WC_Product $parent ): string;
