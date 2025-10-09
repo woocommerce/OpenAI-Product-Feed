@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace OAPFW\Feed\Mappers;
+namespace OAPFW\Platforms\OpenAI\Mappers;
 
 use OAPFW\Core\ProductMapperInterface;
 use OAPFW\Core\SettingsRepositoryInterface;

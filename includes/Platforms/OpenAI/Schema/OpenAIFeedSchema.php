@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace OAPFW\Feed\Schema;
+namespace OAPFW\Platforms\OpenAI\Schema;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

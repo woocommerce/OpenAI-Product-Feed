@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace OAPFW\Feed\Mappers;
+namespace OAPFW\Platforms\OpenAI\Mappers;
 
-use OAPFW\Feed\Schema\OpenAIFeedSchema;
+use OAPFW\Platforms\OpenAI\Schema\OpenAIFeedSchema;
 use OAPFW\Core\SettingsRepositoryInterface;
 use OAPFW\Utils\StringHelper;
 
