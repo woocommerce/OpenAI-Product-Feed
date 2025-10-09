@@ -20,10 +20,8 @@ class CsvSerializer extends AbstractSerializer {
 
 		$handle = fopen( 'php://temp', 'w+' );
 
-		// Write header
 		fputcsv( $handle, array_keys( $data[0] ) );
 
-		// Write data rows
 		foreach ( $data as $row ) {
 			fputcsv( $handle, $this->stringifyValues( $row ) );
 		}

@@ -45,7 +45,6 @@ abstract class SchemaBasedMapper {
 	 * Map individual field based on configuration
 	 */
 	protected function mapField( \WC_Product $product, ?\WC_Product $parent, string $field, array $config ) {
-		// Get field mappings from implementing class
 		$fieldMappings = $this->getFieldMappings();
 		$mapperMethod = $fieldMappings[$field] ?? null;
 
@@ -55,12 +54,10 @@ abstract class SchemaBasedMapper {
 			$value = $this->getMetaValue( $product, "_oapfw_{$field}" );
 		}
 
-		// Apply default if empty and default is specified
 		if ( empty( $value ) && isset( $config['default'] ) ) {
 			$value = $config['default'];
 		}
 
-		// Apply type conversion and validation
 		return $this->convertType( $value, $config );
 	}
 
@@ -103,7 +100,6 @@ abstract class SchemaBasedMapper {
 				continue;
 			}
 
-			// Handle dependencies (e.g., checkout requires search)
 			if ( isset( $config['depends_on'] ) ) {
 				foreach ( $config['depends_on'] as $depField => $depValue ) {
 					if ( ( $row[ $depField ] ?? null ) !== $depValue ) {
@@ -117,7 +113,6 @@ abstract class SchemaBasedMapper {
 				}
 			}
 
-			// Pattern validation
 			if ( isset( $config['pattern'] ) && ! empty( $row[ $field ] ) ) {
 				if ( ! preg_match( $config['pattern'], (string) $row[ $field ] ) ) {
 					if ( $field === 'gtin' ) {
@@ -127,7 +122,6 @@ abstract class SchemaBasedMapper {
 			}
 		}
 
-		// Remove null and empty values
 		return array_filter(
 			$row,
 			function ( $value ) {
@@ -142,7 +136,6 @@ abstract class SchemaBasedMapper {
 	protected function getMetaValue( \WC_Product $product, string $key ): ?string {
 		$product_id = $product->get_id();
 		
-		// Load all meta for this product if not cached yet
 		if ( ! isset( $this->product_meta_cache[ $product_id ] ) ) {
 			$this->product_meta_cache[ $product_id ] = get_post_meta( $product_id );
 		}

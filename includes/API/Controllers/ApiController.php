@@ -38,7 +38,7 @@ class ApiController {
 	 * Register REST API routes
 	 */
 	public function registerRoutes(): void {
-		// Admin-only preview endpoint following WooCommerce v3 patterns
+		// Admin-only preview endpoint
 		register_rest_route(
 			'wc/v3',
 			'/openai-feed',
@@ -67,22 +67,17 @@ class ApiController {
 	 * @return bool|\WP_Error True if user has permission, WP_Error otherwise.
 	 */
 	public function checkAdminPermission( \WP_REST_Request $request ) {
-		// Check if user is logged in via WordPress session (cookie auth)
 		if ( is_user_logged_in() && current_user_can( 'manage_woocommerce' ) ) {
-			// Verify nonce for cookie authentication
 			$nonce = $request->get_header( 'X-WP-Nonce' ) ?: $request->get_param( '_wpnonce' );
 			if ( $nonce && wp_verify_nonce( $nonce, 'wp_rest' ) ) {
 				return true;
 			}
 			
-			// For direct browser access without nonce, still allow if user can manage WooCommerce
-			// This enables preview links to work for logged-in admins
 			if ( current_user_can( 'manage_woocommerce' ) ) {
 				return true;
 			}
 		}
 
-		// Fallback to WooCommerce authentication patterns
 		if ( ! current_user_can( 'manage_woocommerce' ) ) {
 			return new \WP_Error(
 				'woocommerce_rest_cannot_view',

@@ -54,14 +54,13 @@ final class Plugin {
 			return;
 		}
 
-		// Check WooCommerce dependency
 		if ( ! class_exists( 'WooCommerce' ) ) {
 			add_action( 'admin_notices', array( $this, 'showWooCommerceMissingNotice' ) );
 			$this->initialized = true;
 			return;
 		}
 
-		// Initialize components on WordPress init hook
+		// Initialize components on WordPress init hook.
 		add_action( 'init', array( $this, 'init' ), 0 );
 
 		$this->initialized = true;
@@ -90,7 +89,6 @@ final class Plugin {
 	 * Register services in container
 	 */
 	private function registerServices(): void {
-		// Settings
 		$this->container->set(
 			'settings.repository',
 			function () {
@@ -105,7 +103,6 @@ final class Plugin {
 			}
 		);
 
-		// Feed components
 		$this->container->set(
 			'feed.mapper',
 			function () {
@@ -127,7 +124,6 @@ final class Plugin {
 			}
 		);
 
-		// Controllers
 		$this->container->set(
 			'admin.controller',
 			function () {
@@ -161,16 +157,12 @@ final class Plugin {
 	 * Initialize components
 	 */
 	private function initializeComponents(): void {
-		// Initialize settings renderer
 		$this->container->get( 'settings.renderer' )->register();
 
-		// Initialize admin controller
 		$this->container->get( 'admin.controller' )->init();
 
-		// Initialize product fields controller
 		$this->container->get( 'admin.product_fields_controller' )->init();
 
-		// Initialize API controller
 		$this->container->get( 'api.controller' )->init();
 	}
 
@@ -188,7 +180,6 @@ final class Plugin {
 			);
 		}
 
-		// Set default options if they don't exist - create SettingsRepository directly
 		$settings = new SettingsRepository();
 		if ( ! get_option( $settings->getOptionName() ) ) {
 			update_option( $settings->getOptionName(), $settings->getDefaults() );

@@ -98,8 +98,6 @@ class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface 
 		return $this->mapProductBySchema( $product, $parent );
 	}
 
-	// Schema mapper method implementations
-
 	/**
 	 * Get enable/disable setting with product override support
 	 * 
@@ -391,10 +389,6 @@ class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface 
 		return $this->getMetaValue( $product, '_oapfw_q_and_a' );
 	}
 
-	// Keep existing business logic methods
-
-
-
 	/**
 	 * Get category path
 	 */
@@ -404,7 +398,6 @@ class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface 
 			return null;
 		}
 
-		// Find deepest category
 		$deepest_term = null;
 		$max_depth    = -1;
 
@@ -557,7 +550,6 @@ class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface 
 	 * Get shipping data from WooCommerce zones (cached globally to prevent repeated queries)
 	 */
 	private function getShippingData(): array {
-		// Return cached data if available
 		if ( self::$cached_shipping_data !== null ) {
 			return self::$cached_shipping_data;
 		}
@@ -587,7 +579,6 @@ class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface 
 			}
 		}
 
-		// Cache the result globally
 		self::$cached_shipping_data = array_values( array_unique( $shipping_data ) );
 		return self::$cached_shipping_data;
 	}
@@ -660,7 +651,6 @@ class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface 
 	 * Check if local pickup is available (cached to prevent repeated zone queries)
 	 */
 	private function hasLocalPickup(): bool {
-		// Return cached result if available
 		if ( self::$cached_has_local_pickup !== null ) {
 			return self::$cached_has_local_pickup;
 		}

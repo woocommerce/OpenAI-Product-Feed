@@ -180,7 +180,6 @@ class AdminViewRenderer {
 
 		echo '<tr><th>' . esc_html__( 'Feed Validation', 'openai-product-feed-for-woo' ) . '</th><td>';
 		if ( $status['has_issues'] ) {
-			// Check if the issue is specifically about empty feed
 			$is_empty_feed = false;
 			foreach ( $status['validation_issues'] as $issue ) {
 				if ( isset( $issue['id'] ) && $issue['id'] === 'feed' && 

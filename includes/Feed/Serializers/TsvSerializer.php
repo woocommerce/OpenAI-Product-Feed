@@ -20,10 +20,8 @@ class TsvSerializer extends AbstractSerializer {
 
 		$handle = fopen( 'php://temp', 'w+' );
 
-		// Write header
 		fwrite( $handle, implode( "\t", array_keys( $data[0] ) ) . "\n" );
 
-		// Write data rows
 		foreach ( $data as $row ) {
 			fwrite( $handle, implode( "\t", $this->stringifyValues( $row ) ) . "\n" );
 		}

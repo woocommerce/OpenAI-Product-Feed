@@ -67,7 +67,6 @@ class FeedValidator implements ValidatorInterface {
 	private function validateField( array $row, string $field, array $config, array &$issues ): void {
 		$value = $row[ $field ] ?? null;
 
-		// Check required fields.
 		if ( OpenAIFeedSchema::isFieldRequired( $field, $row ) ) {
 			if ( empty( $value ) && '0' !== $value ) {
 				$message  = $config['error_message'] ?? "Missing {$field}";
@@ -76,12 +75,10 @@ class FeedValidator implements ValidatorInterface {
 			}
 		}
 
-		// Skip validation if field is empty and not required.
 		if ( empty( $value ) && '0' !== $value ) {
 			return;
 		}
 
-		// Type and format validation.
 		$this->validateFieldType( $field, $value, $config, $issues );
 		$this->validateFieldPattern( $field, $value, $config, $issues );
 		$this->validateFieldEnum( $field, $value, $config, $issues );

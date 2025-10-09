@@ -358,12 +358,10 @@ class OpenAIFeedSchema {
 			return false;
 		}
 
-		// Direct requirement
 		if ( isset( $fieldConfig['required'] ) && $fieldConfig['required'] === true ) {
 			return true;
 		}
 
-		// Conditional requirement
 		if ( isset( $fieldConfig['required_when'] ) ) {
 			foreach ( $fieldConfig['required_when'] as $dependField => $dependValue ) {
 				if ( ( $data[ $dependField ] ?? null ) === $dependValue ) {
