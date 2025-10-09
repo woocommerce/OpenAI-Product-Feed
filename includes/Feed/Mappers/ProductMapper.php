@@ -25,6 +25,67 @@ class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface 
 	private static ?bool $cached_has_local_pickup = null;
 
 	/**
+	 * Get field mappings for OpenAI feed format
+	 * 
+	 * Maps OpenAI field names to ProductMapper method names.
+	 * This keeps the mapping logic separate from the schema.
+	 *
+	 * @return array Field name to method name mappings.
+	 */
+	protected function getFieldMappings(): array {
+		return [
+			'enable_search'             => 'getEnableSearch',
+			'enable_checkout'           => 'getEnableCheckout',
+			'id'                        => 'getId',
+			'title'                     => 'getTitle',
+			'description'               => 'getDescription',
+			'link'                      => 'getLink',
+			'gtin'                      => 'getGtin',
+			'mpn'                       => 'getMpn',
+			'product_category'          => 'getProductCategory',
+			'brand'                     => 'getBrand',
+			'material'                  => 'getMaterial',
+			'condition'                 => 'getCondition',
+			'age_group'                 => 'getAgeGroup',
+			'weight'                    => 'getWeight',
+			'length'                    => 'getLength',
+			'width'                     => 'getWidth',
+			'height'                    => 'getHeight',
+			'dimensions'                => 'getDimensions',
+			'image_link'                => 'getImageLink',
+			'additional_image_link'     => 'getAdditionalImageLink',
+			'video_link'                => 'getVideoLink',
+			'model_3d_link'             => 'getModel3dLink',
+			'price'                     => 'getPrice',
+			'sale_price'                => 'getSalePrice',
+			'sale_price_effective_date' => 'getSalePriceEffectiveDate',
+			'availability'              => 'getAvailability',
+			'inventory_quantity'        => 'getInventoryQuantity',
+			'availability_date'         => 'getAvailabilityDate',
+			'expiration_date'           => 'getExpirationDate',
+			'item_group_id'             => 'getItemGroupId',
+			'item_group_title'          => 'getItemGroupTitle',
+			'color'                     => 'getColor',
+			'size'                      => 'getSize',
+			'size_system'               => 'getSizeSystem',
+			'gender'                    => 'getGender',
+			'seller_name'               => 'getSellerName',
+			'seller_url'                => 'getSellerUrl',
+			'seller_privacy_policy'     => 'getSellerPrivacyPolicy',
+			'seller_tos'                => 'getSellerTos',
+			'return_policy'             => 'getReturnPolicy',
+			'return_window'             => 'getReturnWindow',
+			'shipping'                  => 'getShipping',
+			'pickup_method'             => 'getPickupMethod',
+			'pickup_sla'                => 'getPickupSla',
+			'warning'                   => 'getWarning',
+			'warning_url'               => 'getWarningUrl',
+			'age_restriction'           => 'getAgeRestriction',
+			'q_and_a'                   => 'getQAndA',
+		];
+	}
+
+	/**
 	 * Map WooCommerce product to feed row
 	 * 
 	 * Main entry point for converting a WooCommerce product into OpenAI feed format.
