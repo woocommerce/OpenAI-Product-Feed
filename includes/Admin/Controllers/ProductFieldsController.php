@@ -106,7 +106,6 @@ class ProductFieldsController {
 
 		echo '</div><div class="options_group">';
 
-		// Material and other product details
 		woocommerce_wp_text_input(
 			array(
 				'id'          => '_oapfw_material',
@@ -115,7 +114,6 @@ class ProductFieldsController {
 			)
 		);
 
-		// Product condition and age group
 		woocommerce_wp_select(
 			array(
 				'id'          => '_oapfw_condition',
@@ -148,7 +146,6 @@ class ProductFieldsController {
 
 		echo '</div><div class="options_group">';
 
-		// Compliance fields
 		woocommerce_wp_text_input(
 			array(
 				'id'                => '_oapfw_age_restriction',
@@ -178,7 +175,6 @@ class ProductFieldsController {
 
 		echo '</div><div class="options_group">';
 
-		// Variant attributes
 		woocommerce_wp_text_input(
 			array(
 				'id'          => '_oapfw_color',
@@ -233,7 +229,6 @@ class ProductFieldsController {
 
 		echo '</div><div class="options_group">';
 
-		// Media extras
 		woocommerce_wp_text_input(
 			array(
 				'id'          => '_oapfw_video_link',
@@ -252,7 +247,6 @@ class ProductFieldsController {
 
 		echo '</div><div class="options_group">';
 
-		// Q&A
 		woocommerce_wp_textarea_input(
 			array(
 				'id'    => '_oapfw_q_and_a',
@@ -263,7 +257,6 @@ class ProductFieldsController {
 
 		echo '</div><div class="options_group">';
 
-		// Pricing extras
 		woocommerce_wp_text_input(
 			array(
 				'id'    => '_oapfw_applicable_taxes_fees',
@@ -294,7 +287,6 @@ class ProductFieldsController {
 
 		echo '</div><div class="options_group">';
 
-		// Availability extras
 		woocommerce_wp_text_input(
 			array(
 				'id'    => '_oapfw_availability_date',
@@ -311,7 +303,6 @@ class ProductFieldsController {
 
 		echo '</div><div class="options_group">';
 
-		// Performance & Geo
 		woocommerce_wp_text_input(
 			array(
 				'id'    => '_oapfw_popularity_score',
@@ -342,7 +333,6 @@ class ProductFieldsController {
 
 		echo '</div><div class="options_group">';
 
-		// Related products
 		woocommerce_wp_text_input(
 			array(
 				'id'    => '_oapfw_related_product_id',
@@ -368,7 +358,6 @@ class ProductFieldsController {
 
 		echo '</div>';
 
-		// Preview link
 		$rest_url = rest_url( 'wc/v3/openai-feed' );
 		$preview_url = add_query_arg( 
 			array( 
@@ -410,7 +399,6 @@ class ProductFieldsController {
 			return;
 		}
 
-		// Text fields
 		$text_keys = array(
 			'_gtin',
 			'_mpn',
@@ -445,7 +433,6 @@ class ProductFieldsController {
 			}
 		}
 
-		// URL fields
 		$url_keys = array(
 			'_oapfw_warning_url',
 			'_oapfw_video_link',
@@ -459,7 +446,6 @@ class ProductFieldsController {
 			}
 		}
 
-		// Number fields
 		if ( isset( $_POST['_oapfw_age_restriction'] ) ) {
 			$product->update_meta_data( '_oapfw_age_restriction', max( 0, absint( wp_unslash( $_POST['_oapfw_age_restriction'] ) ) ) );
 		}
