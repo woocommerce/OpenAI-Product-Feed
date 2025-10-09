@@ -189,7 +189,29 @@ class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface 
 
 	protected function getGtin( \WC_Product $product, ?\WC_Product $parent ): ?string {
 		$gtin = $this->getMetaValue( $product, '_gtin' );
-		return $gtin ?: 'MISSING';
+		if ( $gtin ) {
+			return $gtin;
+		}
+		
+		return $this->generateGtin( $product );
+	}
+
+	/**
+	 * Generate GTIN using product ID and trimmed product name
+	 *
+	 * @param \WC_Product $product Product object.
+	 * @return string Generated GTIN.
+	 */
+	private function generateGtin( \WC_Product $product ): string {
+		$product_id = $product->get_id();
+		$product_name = trim( wp_strip_all_tags( $product->get_name() ) );
+		
+		$hash_input = $product_id . '_' . $product_name;
+		$hash = hash( 'crc32', $hash_input );
+		
+		// Convert to numeric string and pad to create a valid GTIN-like format
+		// Using a prefix to indicate this is generated
+		return 'GEN' . str_pad( $hash, 10, '0', STR_PAD_LEFT );
 	}
 
 	protected function getMpn( \WC_Product $product, ?\WC_Product $parent ): ?string {
