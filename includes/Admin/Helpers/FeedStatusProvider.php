@@ -11,20 +11,57 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * Provides feed status information and validation services
+ * 
+ * Handles feed validation, scheduled push tracking, and status reporting
+ * for the admin interface.
+ */
 class FeedStatusProvider {
 
+	/**
+	 * Hook name for scheduled feed push actions
+	 */
 	const SCHEDULED_ACTION_HOOK = 'oapfw_push_feed_event';
 
+	/**
+	 * Feed generator instance
+	 *
+	 * @var FeedGeneratorInterface
+	 */
 	private FeedGeneratorInterface $feedGenerator;
+
+	/**
+	 * Feed validator instance
+	 *
+	 * @var ValidatorInterface
+	 */
 	private ValidatorInterface $validator;
+
+	/**
+	 * WooCommerce logger instance
+	 *
+	 * @var \WC_Logger_Interface|null
+	 */
 	private $logger;
 
+	/**
+	 * Initialize feed status provider
+	 *
+	 * @param FeedGeneratorInterface $feedGenerator Feed generator instance.
+	 * @param ValidatorInterface     $validator     Feed validator instance.
+	 */
 	public function __construct( FeedGeneratorInterface $feedGenerator, ValidatorInterface $validator ) {
 		$this->feedGenerator = $feedGenerator;
 		$this->validator = $validator;
 		$this->logger = function_exists( 'wc_get_logger' ) ? wc_get_logger() : null;
 	}
 
+	/**
+	 * Get timestamp of next scheduled feed push
+	 *
+	 * @return int|null Unix timestamp of next push, or null if none scheduled.
+	 */
 	public function getNextScheduledPush(): ?int {
 		if ( ! function_exists( 'as_get_scheduled_actions' ) ) {
 			return null;
@@ -45,6 +82,13 @@ class FeedStatusProvider {
 		return null;
 	}
 
+	/**
+	 * Validate the current feed and log results
+	 *
+	 * Generates the feed, validates it, caches results, and logs issues/success.
+	 *
+	 * @return array Array of validation issues (empty if valid).
+	 */
 	public function validateFeedNow(): array {
 		$rows = $this->feedGenerator->buildFeed();
 		$issues = $this->validator->validateFeed( $rows );
@@ -91,6 +135,12 @@ class FeedStatusProvider {
 		return $issues;
 	}
 
+	/**
+	 * Get validation issues
+	 *
+	 * @param bool $fresh Whether to run fresh validation or use cached results.
+	 * @return array Array of validation issues.
+	 */
 	public function getValidationIssues( bool $fresh = true ): array {
 		if ( $fresh ) {
 			return $this->validateFeedNow();
@@ -100,18 +150,41 @@ class FeedStatusProvider {
 		return ! empty( $issues ) && is_array( $issues ) ? $issues : array();
 	}
 
+	/**
+	 * Check if feed has validation issues
+	 *
+	 * @param bool $fresh Whether to run fresh validation or use cached results.
+	 * @return bool True if feed has validation issues.
+	 */
 	public function hasValidationIssues( bool $fresh = true ): bool {
 		return ! empty( $this->getValidationIssues( $fresh ) );
 	}
 
+	/**
+	 * Get count of validation issues
+	 *
+	 * @param bool $fresh Whether to run fresh validation or use cached results.
+	 * @return int Number of validation issues.
+	 */
 	public function getValidationIssueCount( bool $fresh = true ): int {
 		return count( $this->getValidationIssues( $fresh ) );
 	}
 
+	/**
+	 * Get URL to WooCommerce logs filtered for this plugin
+	 *
+	 * @return string Admin URL to plugin logs.
+	 */
 	public function getLogsUrl(): string {
 		return admin_url( 'admin.php?page=wc-status&tab=logs&source=oapfw&paged=1' );
 	}
 
+	/**
+	 * Get complete feed status information
+	 *
+	 * @param bool $fresh_validation Whether to run fresh validation or use cached results.
+	 * @return array Complete status array with next_push, validation_issues, etc.
+	 */
 	public function getFeedStatus( bool $fresh_validation = true ): array {
 		$validation_issues = $this->getValidationIssues( $fresh_validation );
 		
