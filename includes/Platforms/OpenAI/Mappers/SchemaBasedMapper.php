@@ -147,7 +147,9 @@ abstract class SchemaBasedMapper {
 			$this->product_meta_cache[ $product_id ] = get_post_meta( $product_id );
 		}
 		
-		$value = $this->product_meta_cache[ $product_id ][ $key ][0] ?? null;
+		$value = isset( $this->product_meta_cache[ $product_id ][ $key ][0] ) 
+			? $this->product_meta_cache[ $product_id ][ $key ][0] 
+			: null;
 		return ! empty( $value ) ? wp_strip_all_tags( $value ) : null;
 	}
 	
