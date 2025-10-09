@@ -8,13 +8,13 @@ A WooCommerce plugin that automatically generates and delivers product feeds to 
 
 ### Core Features
 
-- ✅ **Complete OpenAI Specification Coverage** - All required and optional fields supported
-- 🔄 **Real-time Updates** - Products sync within 30 seconds of changes
-- 📅 **Scheduled Delivery** - Automatic full feed updates every 15 minutes  
-- 🎯 **Per-Product Control** - Override global settings for individual products
-- 🔍 **Feed Validation** - Built-in validation against OpenAI specifications
-- 📊 **Multiple Formats** - JSON, CSV, XML, TSV export options
-- 🔐 **Secure API Access** - Admin-only REST endpoints for integration
+- **Complete OpenAI Specification Coverage** - All required and optional fields supported
+- **Real-time Updates** - Products sync within 30 seconds of changes
+- **Scheduled Delivery** - Automatic full feed updates every 15 minutes  
+- **Per-Product Control** - Override global settings for individual products
+- **Feed Validation** - Built-in validation against OpenAI specifications
+- **Multiple Formats** - JSON, CSV, XML, TSV export options
+- **Secure API Access** - Admin-only REST endpoints for integration
 
 ## Quick Start
 
@@ -98,14 +98,14 @@ Override global settings for specific products:
 
 ## Required vs Optional Fields
 
-### ✅ Required Fields (Always Included)
+### Required Fields (Always Included)
 - `enable_search`, `enable_checkout` - AI platform flags
 - `id`, `title`, `description`, `link` - Basic product info
 - `gtin`, `brand` - Product identifiers (with fallbacks)
 - `availability`, `inventory_quantity` - Stock info
 - `weight` - Product weight
 
-### 📝 Optional Fields (When Available)
+### Optional Fields (When Available)
 - **Product Details** - MPN, category, material, condition, age group
 - **Dimensions** - Length, width, height, combined dimensions
 - **Media** - Additional images, videos, 3D models
@@ -162,29 +162,6 @@ Content-Type: application/json
 - Check WooCommerce logs for HTTP errors
 - Verify network connectivity
 
-## Technical Architecture
-
-### Extensible Design
-Built to support multiple AI platforms:
-- **Schema-Mapper Separation** - Easy to add new platforms
-- **Platform Adapters** - Self-contained implementations
-- **Serializer Factory** - Multiple output formats
-- **Dependency Injection** - Clean, testable code
-
-### Performance Considerations
-- **Caching** - Schema and meta data cached
-- **Efficient Queries** - Bulk operations where possible
-- **Background Processing** - Uses Action Scheduler
-- **Validation Caching** - 5-minute validation cache
-
-## Requirements
-
-- **WordPress** 5.0+
-- **WooCommerce** 5.0+
-- **PHP** 7.4+
-- **Action Scheduler** (included with WooCommerce)
-
-## Support
 
 ### Getting Help
 - Check WooCommerce > Status > Logs (source: oapfw)
