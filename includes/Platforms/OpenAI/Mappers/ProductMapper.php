@@ -192,34 +192,37 @@ class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface 
 	}
 
 	protected function getGtin( \WC_Product $product, ?\WC_Product $parent ): ?string {
+		return $this->getMetaValue( $product, '_gtin' );
+	}
+
+	protected function getMpn( \WC_Product $product, ?\WC_Product $parent ): ?string {
+		$mpn = $this->getMetaValue( $product, '_mpn' );
+		if ( $mpn ) {
+			return $mpn;
+		}
+
 		$gtin = $this->getMetaValue( $product, '_gtin' );
-		if ( $gtin ) {
-			return $gtin;
+		if ( ! $gtin ) {
+			return $this->generateMpn( $product );
 		}
 		
-		return $this->generateGtin( $product );
+		return null;
 	}
 
 	/**
-	 * Generate GTIN using product ID and trimmed product name
+	 * Generate MPN using product ID and trimmed product name
 	 *
 	 * @param \WC_Product $product Product object.
-	 * @return string Generated GTIN.
+	 * @return string Generated MPN.
 	 */
-	private function generateGtin( \WC_Product $product ): string {
+	private function generateMpn( \WC_Product $product ): string {
 		$product_id = $product->get_id();
 		$product_name = trim( wp_strip_all_tags( $product->get_name() ) );
 		
 		$hash_input = $product_id . '_' . $product_name;
 		$hash = hash( 'crc32', $hash_input );
 		
-		// Convert to numeric string and pad to create a valid GTIN-like format
-		// Using a prefix to indicate this is generated
-		return 'GEN' . str_pad( $hash, 10, '0', STR_PAD_LEFT );
-	}
-
-	protected function getMpn( \WC_Product $product, ?\WC_Product $parent ): ?string {
-		return $this->getMetaValue( $product, '_mpn' );
+		return 'MPN-' . str_pad( $hash, 8, '0', STR_PAD_LEFT );
 	}
 
 	protected function getProductCategory( \WC_Product $product, ?\WC_Product $parent ): ?string {
