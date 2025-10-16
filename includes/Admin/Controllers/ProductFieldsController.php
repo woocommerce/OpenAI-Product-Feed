@@ -1,4 +1,9 @@
 <?php
+/**
+ *  Product Fields Controller class.
+ *
+ * @package OAPFW
+ */
 
 declare(strict_types=1);
 
@@ -22,9 +27,9 @@ class ProductFieldsController {
 	 * Hooks into WooCommerce product editing to add OpenAI-specific fields.
 	 */
 	public function init(): void {
-		add_filter( 'woocommerce_product_data_tabs', array( $this, 'addProductDataTab' ) );
-		add_action( 'woocommerce_product_data_panels', array( $this, 'renderProductDataPanel' ) );
-		add_action( 'woocommerce_admin_process_product_object', array( $this, 'saveProductFields' ) );
+		add_filter( 'woocommerce_product_data_tabs', array( $this, 'add_product_data_tab' ) );
+		add_action( 'woocommerce_product_data_panels', array( $this, 'render_product_data_panel' ) );
+		add_action( 'woocommerce_admin_process_product_object', array( $this, 'save_product_fields' ) );
 	}
 
 	/**
@@ -33,7 +38,7 @@ class ProductFieldsController {
 	 * @param array $tabs Existing product data tabs.
 	 * @return array Modified tabs array.
 	 */
-	public function addProductDataTab( array $tabs ): array {
+	public function add_product_data_tab( array $tabs ): array {
 		$tabs['oapfw'] = array(
 			'label'    => __( 'OpenAI Feed', 'openai-product-feed-for-woo' ),
 			'target'   => 'oapfw_product_data',
@@ -48,7 +53,7 @@ class ProductFieldsController {
 	 *
 	 * Displays custom fields for OpenAI feed attributes in the WooCommerce product editor.
 	 */
-	public function renderProductDataPanel(): void {
+	public function render_product_data_panel(): void {
 		echo '<div id="oapfw_product_data" class="panel woocommerce_options_panel hidden">';
 
 		$product = function_exists( 'wc_get_product' ) ? wc_get_product( get_the_ID() ) : null;
@@ -390,7 +395,7 @@ class ProductFieldsController {
 	 *
 	 * @param \WC_Product $product Product object being saved.
 	 */
-	public function saveProductFields( \WC_Product $product ): void {
+	public function save_product_fields( \WC_Product $product ): void {
 		if ( ! isset( $_POST['woocommerce_meta_nonce'] ) || ! wp_verify_nonce( $_POST['woocommerce_meta_nonce'], 'woocommerce_save_data' ) ) {
 			return;
 		}

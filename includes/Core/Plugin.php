@@ -1,4 +1,9 @@
 <?php
+/**
+ *  Plugin class.
+ *
+ * @package OAPFW
+ */
 
 declare(strict_types=1);
 
@@ -22,16 +27,34 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 final class Plugin {
 
+	/**
+	 * Plugin instance.
+	 *
+	 * @var Plugin|null
+	 */
 	private static ?Plugin $instance = null;
 
+	/**
+	 * Dependency injection container.
+	 *
+	 * @var Container
+	 */
 	private Container $container;
+
+	/**
+	 * Whether plugin has been initialized.
+	 *
+	 * @var bool
+	 */
 	private bool $initialized = false;
 
 	/**
-	 * Get singleton instance
+	 * Get singleton instance.
+	 *
+	 * @return Plugin The plugin instance.
 	 */
-	public static function getInstance(): Plugin {
-		if ( self::$instance === null ) {
+	public static function get_instance(): Plugin {
+		if ( null === self::$instance ) {
 			self::$instance = new self();
 		}
 		return self::$instance;
@@ -53,7 +76,7 @@ final class Plugin {
 		}
 
 		if ( ! class_exists( 'WooCommerce' ) ) {
-			add_action( 'admin_notices', array( $this, 'showWooCommerceMissingNotice' ) );
+			add_action( 'admin_notices', array( $this, 'show_woo_commerce_missing_notice' ) );
 			$this->initialized = true;
 			return;
 		}
@@ -68,14 +91,14 @@ final class Plugin {
 	 * Initialize plugin components
 	 */
 	public function init(): void {
-		$this->registerServices();
-		$this->initializeComponents();
+		$this->register_services();
+		$this->initialize_components();
 	}
 
 	/**
-	 * Register services in container
+	 * Register services in container.
 	 */
-	private function registerServices(): void {
+	private function register_services(): void {
 		$this->container->set(
 			'settings.repository',
 			function () {
@@ -141,9 +164,9 @@ final class Plugin {
 	}
 
 	/**
-	 * Initialize components
+	 * Initialize components.
 	 */
-	private function initializeComponents(): void {
+	private function initialize_components(): void {
 		$this->container->get( 'settings.renderer' )->register();
 
 		$this->container->get( 'admin.controller' )->init();
@@ -168,8 +191,8 @@ final class Plugin {
 		}
 
 		$settings = new SettingsRepository();
-		if ( ! get_option( $settings->getOptionName() ) ) {
-			update_option( $settings->getOptionName(), $settings->getDefaults() );
+		if ( ! get_option( $settings->get_option_name() ) ) {
+			update_option( $settings->get_option_name(), $settings->get_defaults() );
 		}
 	}
 
@@ -177,7 +200,7 @@ final class Plugin {
 	 * Plugin deactivation
 	 */
 	public function deactivate(): void {
-		// Clean up scheduled events using Action Scheduler
+		// Clean up scheduled events using Action Scheduler.
 		if ( function_exists( 'as_cancel_all_actions' ) ) {
 			as_cancel_all_actions( 'oapfw_push_feed_event' );
 			as_cancel_all_actions( 'oapfw_push_delta_event' );
@@ -185,9 +208,9 @@ final class Plugin {
 	}
 
 	/**
-	 * Show WooCommerce missing notice
+	 * Show WooCommerce missing notice.
 	 */
-	public function showWooCommerceMissingNotice(): void {
+	public function show_woo_commerce_missing_notice(): void {
 		echo '<div class="notice notice-error"><p>' .
 			esc_html__(
 				'OpenAI Product Feed for Woo requires WooCommerce to be installed and active.',
@@ -197,30 +220,39 @@ final class Plugin {
 	}
 
 	/**
-	 * Get service from container
+	 * Get service from container.
+	 *
+	 * @param string $id The service ID.
+	 * @return mixed The service instance.
 	 */
 	public function get( string $id ) {
 		return $this->container->get( $id );
 	}
 
 	/**
-	 * Get plugin version
+	 * Get plugin version.
+	 *
+	 * @return string The plugin version.
 	 */
-	public function getVersion(): string {
+	public function get_version(): string {
 		return OAPFW_VERSION;
 	}
 
 	/**
-	 * Get plugin directory
+	 * Get plugin directory.
+	 *
+	 * @return string The plugin directory.
 	 */
-	public function getPluginDir(): string {
+	public function get_plugin_dir(): string {
 		return OAPFW_PLUGIN_DIR;
 	}
 
 	/**
-	 * Get plugin URL
+	 * Get plugin URL.
+	 *
+	 * @return string The plugin URL.
 	 */
-	public function getPluginUrl(): string {
+	public function get_plugin_url(): string {
 		return OAPFW_PLUGIN_URL;
 	}
 }

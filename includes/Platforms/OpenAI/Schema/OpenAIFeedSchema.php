@@ -1,4 +1,9 @@
 <?php
+/**
+ *  Open A I Feed Schema class.
+ *
+ * @package OAPFW
+ */
 
 declare(strict_types=1);
 
@@ -24,13 +29,13 @@ class OpenAIFeedSchema {
 	/**
 	 * Get the complete feed schema definition (cached)
 	 */
-	public static function getSchema(): array {
-		if ( self::$cached_schema !== null ) {
+	public static function get_schema(): array {
+		if ( null !== self::$cached_schema ) {
 			return self::$cached_schema;
 		}
 
 		self::$cached_schema = array(
-			// OpenAI flags (required)
+			// OpenAI flags (required).
 			'enable_search'             => array(
 				'required'    => true,
 				'type'        => 'boolean_string',
@@ -45,7 +50,7 @@ class OpenAIFeedSchema {
 				'depends_on'  => array( 'enable_search' => 'true' ),
 			),
 
-			// Basic product data (required)
+			// Basic product data (required).
 			'id'                        => array(
 				'required'    => true,
 				'type'        => 'string',
@@ -70,7 +75,7 @@ class OpenAIFeedSchema {
 				'description' => 'Product page URL',
 			),
 
-			// Product identifiers
+			// Product identifiers.
 			'gtin'                      => array(
 				'required'    => true,
 				'type'        => 'string',
@@ -82,7 +87,7 @@ class OpenAIFeedSchema {
 				'description' => 'Manufacturer Part Number',
 			),
 
-			// Item information
+			// Item information.
 			'product_category'          => array(
 				'required'    => false,
 				'type'        => 'string',
@@ -113,7 +118,7 @@ class OpenAIFeedSchema {
 				'description' => 'Target age group',
 			),
 
-			// Dimensions & weight
+			// Dimensions & weight.
 			'weight'                    => array(
 				'required'    => true,
 				'type'        => 'string_with_unit',
@@ -141,7 +146,7 @@ class OpenAIFeedSchema {
 				'description' => 'Combined dimensions (LxWxH unit)',
 			),
 
-			// Media
+			// Media.
 			'image_link'                => array(
 				'required'    => false,
 				'type'        => 'url',
@@ -163,7 +168,7 @@ class OpenAIFeedSchema {
 				'description' => '3D model URL',
 			),
 
-			// Price & promotions
+			// Price & promotions.
 			'price'                     => array(
 				'required'    => false,
 				'type'        => 'price',
@@ -181,7 +186,7 @@ class OpenAIFeedSchema {
 				'description' => 'Sale price date range (YYYY-MM-DD / YYYY-MM-DD)',
 			),
 
-			// Availability & inventory
+			// Availability & inventory.
 			'availability'              => array(
 				'required'    => true,
 				'type'        => 'enum',
@@ -206,7 +211,7 @@ class OpenAIFeedSchema {
 				'description' => 'Product expiration date',
 			),
 
-			// Variants
+			// Variants.
 			'item_group_id'             => array(
 				'required'    => false,
 				'type'        => 'string',
@@ -239,7 +244,7 @@ class OpenAIFeedSchema {
 				'description' => 'Target gender',
 			),
 
-			// Merchant info
+			// Merchant info.
 			'seller_name'               => array(
 				'required'    => false,
 				'type'        => 'string',
@@ -271,7 +276,7 @@ class OpenAIFeedSchema {
 				'description' => 'Return window (e.g., "30 days")',
 			),
 
-			// Shipping & fulfillment
+			// Shipping & fulfillment.
 			'shipping'                  => array(
 				'required'    => false,
 				'type'        => 'array',
@@ -289,7 +294,7 @@ class OpenAIFeedSchema {
 				'description' => 'Pickup service level agreement',
 			),
 
-			// Additional fields
+			// Additional fields.
 			'warning'                   => array(
 				'required'    => false,
 				'type'        => 'string',
@@ -318,12 +323,12 @@ class OpenAIFeedSchema {
 	/**
 	 * Get required fields only
 	 */
-	public static function getRequiredFields(): array {
+	public static function get_required_fields(): array {
 		return array_keys(
 			array_filter(
-				self::getSchema(),
+				self::get_schema(),
 				function ( $field ) {
-					return $field['required'] === true;
+					return true === $field['required'];
 				}
 			)
 		);
@@ -332,9 +337,9 @@ class OpenAIFeedSchema {
 	/**
 	 * Get conditional required fields
 	 */
-	public static function getConditionalFields(): array {
+	public static function get_conditional_fields(): array {
 		return array_filter(
-			self::getSchema(),
+			self::get_schema(),
 			function ( $field ) {
 				return isset( $field['required_when'] );
 			}
@@ -343,28 +348,36 @@ class OpenAIFeedSchema {
 
 	/**
 	 * Get field configuration
+	 *
+	 * @param string $field Field name.
+	 * @return array|null Field configuration or null if not found.
 	 */
-	public static function getField( string $field ): ?array {
-		$schema = self::getSchema();
+	public static function get_field( string $field ): ?array {
+		$schema = self::get_schema();
 		return $schema[ $field ] ?? null;
 	}
 
 	/**
 	 * Check if field is required
+	 *
+	 * @param string $field Field name to check.
+	 * @param array  $data  Product data for conditional checks.
+	 * @return bool True if field is required, false otherwise.
 	 */
-	public static function isFieldRequired( string $field, array $data = array() ): bool {
-		$fieldConfig = self::getField( $field );
-		if ( ! $fieldConfig ) {
+	public static function is_field_required( string $field, array $data = array() ): bool {
+		$field_config = self::get_field( $field );
+		if ( ! $field_config ) {
 			return false;
 		}
 
-		if ( isset( $fieldConfig['required'] ) && $fieldConfig['required'] === true ) {
+		if ( isset( $field_config['required'] ) && true === $field_config['required'] ) {
 			return true;
 		}
 
-		if ( isset( $fieldConfig['required_when'] ) ) {
-			foreach ( $fieldConfig['required_when'] as $dependField => $dependValue ) {
-				if ( ( $data[ $dependField ] ?? null ) === $dependValue ) {
+		if ( isset( $field_config['required_when'] ) ) {
+			foreach ( $field_config['required_when'] as $depend_field => $depend_value ) {
+				$current_value = $data[ $depend_field ] ?? null;
+				if ( $depend_value === $current_value ) {
 					return true;
 				}
 			}

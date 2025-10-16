@@ -1,8 +1,9 @@
 <?php
-
-declare(strict_types=1);
-
 /**
+ * OpenAI Product Feed for WooCommerce main plugin file.
+ *
+ * @package OAPFW
+ *
  * Plugin Name:          OpenAI Product Feed for Woo
  * Plugin URI:           https://automattic.ai
  * Description:          Generate and manage AI-optimized product feeds for WooCommerce.
@@ -17,6 +18,8 @@ declare(strict_types=1);
  * WC tested up to:      9.6
  */
 
+declare(strict_types=1);
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit();
 }
@@ -28,11 +31,14 @@ define( 'OAPFW_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
 require_once OAPFW_PLUGIN_DIR . 'vendor/autoload.php';
 
-// Initialize plugin after all plugins are loaded to ensure WooCommerce is available
-add_action( 'plugins_loaded', function() {
-	$plugin = \OAPFW\Core\Plugin::getInstance();
-	$plugin->initialize();
-} );
+// Initialize plugin after all plugins are loaded to ensure WooCommerce is available.
+add_action(
+	'plugins_loaded',
+	function () {
+		$plugin = \OAPFW\Core\Plugin::get_instance();
+		$plugin->initialize();
+	}
+);
 
 add_action(
 	'before_woocommerce_init',
@@ -43,25 +49,36 @@ add_action(
 	}
 );
 
-// Activation and deactivation hooks - logic handled in Plugin class
-register_activation_hook( __FILE__, function() {
-	$plugin = \OAPFW\Core\Plugin::getInstance();
-	$plugin->activate();
-} );
-register_deactivation_hook( __FILE__, function() {
-	$plugin = \OAPFW\Core\Plugin::getInstance();
-	$plugin->deactivate();
-} );
+// Activation and deactivation hooks - logic handled in Plugin class.
+register_activation_hook(
+	__FILE__,
+	function () {
+		$plugin = \OAPFW\Core\Plugin::get_instance();
+		$plugin->activate();
+	}
+);
+register_deactivation_hook(
+	__FILE__,
+	function () {
+		$plugin = \OAPFW\Core\Plugin::get_instance();
+		$plugin->deactivate();
+	}
+);
 
 /**
- * Helper function to get plugin instance
+ * Helper function to get plugin instance.
+ *
+ * @return \OAPFW\Core\Plugin Plugin instance.
  */
 function oapfw_plugin(): \OAPFW\Core\Plugin {
-	return \OAPFW\Core\Plugin::getInstance();
+	return \OAPFW\Core\Plugin::get_instance();
 }
 
 /**
- * Helper function to get service from container
+ * Helper function to get service from container.
+ *
+ * @param string $service_id Service identifier.
+ * @return mixed Service instance.
  */
 function oapfw_get_service( string $service_id ) {
 	return oapfw_plugin()->get( $service_id );

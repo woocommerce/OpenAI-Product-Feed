@@ -1,4 +1,9 @@
 <?php
+/**
+ *  String Helper class.
+ *
+ * @package OAPFW
+ */
 
 declare(strict_types=1);
 
@@ -19,9 +24,9 @@ class StringHelper {
 	 * @param mixed $value Value to convert.
 	 * @return string 'true' or 'false'.
 	 */
-	public static function boolString( $value ): string {
+	public static function bool_string( $value ): string {
 		$value = strtolower( (string) $value );
-		return ( $value === 'true' || $value === '1' || $value === 'yes' ) ? 'true' : 'false';
+		return ( 'true' === $value || '1' === $value || 'yes' === $value ) ? 'true' : 'false';
 	}
 
 	/**

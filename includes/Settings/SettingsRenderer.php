@@ -1,4 +1,9 @@
 <?php
+/**
+ *  Settings Renderer class.
+ *
+ * @package OAPFW
+ */
 
 declare(strict_types=1);
 
@@ -15,8 +20,18 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class SettingsRenderer {
 
+	/**
+	 * Settings repository instance.
+	 *
+	 * @var SettingsRepositoryInterface
+	 */
 	private SettingsRepositoryInterface $repository;
 
+	/**
+	 * Constructor.
+	 *
+	 * @param SettingsRepositoryInterface $repository The settings repository.
+	 */
 	public function __construct( SettingsRepositoryInterface $repository ) {
 		$this->repository = $repository;
 	}
@@ -25,16 +40,16 @@ class SettingsRenderer {
 	 * Register WordPress settings
 	 */
 	public function register(): void {
-		add_action( 'admin_init', array( $this, 'registerSettings' ) );
+		add_action( 'admin_init', array( $this, 'register_settings' ) );
 	}
 
 	/**
 	 * Register settings with WordPress
 	 */
-	public function registerSettings(): void {
+	public function register_settings(): void {
 		register_setting(
-			$this->repository->getOptionName(),
-			$this->repository->getOptionName(),
+			$this->repository->get_option_name(),
+			$this->repository->get_option_name(),
 			array(
 				'sanitize_callback' => array( $this->repository, 'sanitize' ),
 			)
@@ -43,48 +58,48 @@ class SettingsRenderer {
 		add_settings_section(
 			'oapfw_main',
 			esc_html__( 'Feed Settings', 'openai-product-feed-for-woo' ),
-			array( $this, 'renderSectionDescription' ),
-			$this->repository->getOptionName()
+			array( $this, 'render_section_description' ),
+			$this->repository->get_option_name()
 		);
 
-		$this->addSettingsFields();
+		$this->add_settings_fields();
 	}
 
 	/**
 	 * Render section description
 	 */
-	public function renderSectionDescription(): void {
+	public function render_section_description(): void {
 		echo '<p>' . esc_html__( 'Configure feed format and merchant metadata. These values populate required fields in the feed. No external network calls are made by default.', 'openai-product-feed-for-woo' ) . '</p>';
 	}
 
 	/**
 	 * Add all settings fields
 	 */
-	private function addSettingsFields(): void {
+	private function add_settings_fields(): void {
 		$fields = array(
 			'format'                => array(
 				'label'    => esc_html__( 'Feed Format', 'openai-product-feed-for-woo' ),
-				'callback' => array( $this, 'renderFormatField' ),
+				'callback' => array( $this, 'render_format_field' ),
 			),
 			'pull_endpoint_enabled' => array(
 				'label'    => esc_html__( 'Enable Pull Endpoint (REST)', 'openai-product-feed-for-woo' ),
-				'callback' => array( $this, 'renderPullEndpointField' ),
+				'callback' => array( $this, 'render_pull_endpoint_field' ),
 			),
 			'pull_access_token'     => array(
 				'label'    => esc_html__( 'Pull Access Token', 'openai-product-feed-for-woo' ),
-				'callback' => array( $this, 'renderPullTokenField' ),
+				'callback' => array( $this, 'render_pull_token_field' ),
 			),
 			'delivery_enabled'      => array(
 				'label'    => esc_html__( 'Enable External Delivery (cron)', 'openai-product-feed-for-woo' ),
-				'callback' => array( $this, 'renderDeliveryEnabledField' ),
+				'callback' => array( $this, 'render_delivery_enabled_field' ),
 			),
 			'endpoint_url'          => array(
 				'label'    => esc_html__( 'Endpoint URL (HTTPS)', 'openai-product-feed-for-woo' ),
-				'callback' => array( $this, 'renderEndpointUrlField' ),
+				'callback' => array( $this, 'render_endpoint_url_field' ),
 			),
 			'auth_token'            => array(
 				'label'    => esc_html__( 'Authorization Bearer Token', 'openai-product-feed-for-woo' ),
-				'callback' => array( $this, 'renderAuthTokenField' ),
+				'callback' => array( $this, 'render_auth_token_field' ),
 			),
 		);
 
@@ -93,7 +108,7 @@ class SettingsRenderer {
 				$key,
 				$config['label'],
 				$config['callback'],
-				$this->repository->getOptionName(),
+				$this->repository->get_option_name(),
 				'oapfw_main'
 			);
 		}
@@ -102,9 +117,9 @@ class SettingsRenderer {
 	/**
 	 * Render format field
 	 */
-	public function renderFormatField(): void {
+	public function render_format_field(): void {
 		$value       = $this->repository->get( 'format', 'json' );
-		$option_name = $this->repository->getOptionName();
+		$option_name = $this->repository->get_option_name();
 
 		echo '<select name="' . esc_attr( $option_name ) . '[format]">';
 		foreach ( array( 'json', 'csv', 'xml', 'tsv' ) as $format ) {
@@ -120,9 +135,9 @@ class SettingsRenderer {
 	/**
 	 * Render pull endpoint enabled field
 	 */
-	public function renderPullEndpointField(): void {
+	public function render_pull_endpoint_field(): void {
 		$value       = $this->repository->get( 'pull_endpoint_enabled', 'false' );
-		$option_name = $this->repository->getOptionName();
+		$option_name = $this->repository->get_option_name();
 
 		printf(
 			'<label><input type="checkbox" name="%s[pull_endpoint_enabled]" value="true" %s /> %s</label>',
@@ -135,16 +150,16 @@ class SettingsRenderer {
 	/**
 	 * Render pull token field
 	 */
-	public function renderPullTokenField(): void {
-		$this->renderTextField( 'pull_access_token' );
+	public function render_pull_token_field(): void {
+		$this->render_text_field( 'pull_access_token' );
 	}
 
 	/**
 	 * Render delivery enabled field
 	 */
-	public function renderDeliveryEnabledField(): void {
+	public function render_delivery_enabled_field(): void {
 		$value       = $this->repository->get( 'delivery_enabled', 'false' );
-		$option_name = $this->repository->getOptionName();
+		$option_name = $this->repository->get_option_name();
 
 		printf(
 			'<label><input type="checkbox" name="%s[delivery_enabled]" value="true" %s /> %s</label>',
@@ -157,23 +172,26 @@ class SettingsRenderer {
 	/**
 	 * Render endpoint URL field
 	 */
-	public function renderEndpointUrlField(): void {
-		$this->renderTextField( 'endpoint_url', 'url' );
+	public function render_endpoint_url_field(): void {
+		$this->render_text_field( 'endpoint_url', 'url' );
 	}
 
 	/**
 	 * Render auth token field
 	 */
-	public function renderAuthTokenField(): void {
-		$this->renderTextField( 'auth_token' );
+	public function render_auth_token_field(): void {
+		$this->render_text_field( 'auth_token' );
 	}
 
 	/**
-	 * Generic text field renderer
+	 * Generic text field renderer.
+	 *
+	 * @param string $key The field key.
+	 * @param string $type The input type.
 	 */
-	private function renderTextField( string $key, string $type = 'text' ): void {
+	private function render_text_field( string $key, string $type = 'text' ): void {
 		$value       = $this->repository->get( $key, '' );
-		$option_name = $this->repository->getOptionName();
+		$option_name = $this->repository->get_option_name();
 
 		printf(
 			'<input type="%s" class="regular-text" name="%s[%s]" value="%s" />',

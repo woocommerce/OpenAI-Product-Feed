@@ -1,4 +1,9 @@
 <?php
+/**
+ * Abstract  Abstract Serializer class.
+ *
+ * @package OAPFW
+ */
 
 declare(strict_types=1);
 
@@ -16,7 +21,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 abstract class AbstractSerializer implements SerializerInterface {
 
 	/**
-	 * Stringify array values for serialization
+	 * Stringify array values for serialization.
+	 *
+	 * @param array $row The row data.
+	 * @return array Stringified values.
 	 */
 	protected function stringifyValues( array $row ): array {
 		foreach ( $row as $key => $value ) {

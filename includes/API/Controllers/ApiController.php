@@ -1,4 +1,9 @@
 <?php
+/**
+ *  Api Controller class.
+ *
+ * @package OAPFW
+ */
 
 declare(strict_types=1);
 
@@ -16,38 +21,55 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class ApiController {
 
+	/**
+	 * Settings repository instance.
+	 *
+	 * @var SettingsRepositoryInterface
+	 */
 	private SettingsRepositoryInterface $settings;
-	private FeedGeneratorInterface $feedGenerator;
 
+	/**
+	 * Feed generator instance.
+	 *
+	 * @var FeedGeneratorInterface
+	 */
+	private FeedGeneratorInterface $feed_generator;
+
+	/**
+	 * Constructor.
+	 *
+	 * @param SettingsRepositoryInterface $settings The settings repository.
+	 * @param FeedGeneratorInterface      $feed_generator The feed generator.
+	 */
 	public function __construct(
 		SettingsRepositoryInterface $settings,
-		FeedGeneratorInterface $feedGenerator
+		FeedGeneratorInterface $feed_generator
 	) {
-		$this->settings      = $settings;
-		$this->feedGenerator = $feedGenerator;
+		$this->settings       = $settings;
+		$this->feed_generator = $feed_generator;
 	}
 
 	/**
 	 * Initialize API endpoints
 	 */
 	public function init(): void {
-		add_action( 'rest_api_init', array( $this, 'registerRoutes' ) );
+		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
 	}
 
 	/**
 	 * Register REST API routes
 	 */
-	public function registerRoutes(): void {
-		// Admin-only preview endpoint
+	public function register_routes(): void {
+		// Admin-only preview endpoint.
 		register_rest_route(
 			'wc/v3',
 			'/openai-feed',
 			array(
 				'methods'             => 'GET',
 				'permission_callback' => function ( \WP_REST_Request $request ) {
-					return $this->checkAdminPermission( $request );
+					return $this->check_admin_permission( $request );
 				},
-				'callback'            => array( $this, 'handlePreviewFeed' ),
+				'callback'            => array( $this, 'handle_preview_feed' ),
 				'args'                => array(
 					'product_id' => array(
 						'description' => __( 'Product ID to preview in feed.', 'openai-product-feed-for-woo' ),
@@ -66,9 +88,9 @@ class ApiController {
 	 * @param \WP_REST_Request $request Request object.
 	 * @return bool|\WP_Error True if user has permission, WP_Error otherwise.
 	 */
-	public function checkAdminPermission( \WP_REST_Request $request ) {
+	public function check_admin_permission( \WP_REST_Request $request ) {
 		if ( is_user_logged_in() && current_user_can( 'manage_woocommerce' ) ) {
-			$nonce = $request->get_header( 'X-WP-Nonce' ) ?: $request->get_param( '_wpnonce' );
+			$nonce = $request->get_header( 'X-WP-Nonce' ) ? $request->get_header( 'X-WP-Nonce' ) : $request->get_param( '_wpnonce' );
 			if ( $nonce && wp_verify_nonce( $nonce, 'wp_rest' ) ) {
 				return true;
 			}
@@ -95,7 +117,7 @@ class ApiController {
 	 * @param \WP_REST_Request $request Request object.
 	 * @return \WP_REST_Response|\WP_Error Response object or error.
 	 */
-	public function handlePreviewFeed( \WP_REST_Request $request ) {
+	public function handle_preview_feed( \WP_REST_Request $request ) {
 		try {
 			$product_id = $request->get_param( 'product_id' );
 
@@ -108,9 +130,9 @@ class ApiController {
 						array( 'status' => 404 )
 					);
 				}
-				$rows = $this->feedGenerator->buildForProductId( $product_id );
+				$rows = $this->feed_generator->build_for_product_id( $product_id );
 			} else {
-				$rows = $this->feedGenerator->buildFeed();
+				$rows = $this->feed_generator->build_feed();
 			}
 
 			$response = rest_ensure_response( $rows );

@@ -1,4 +1,9 @@
 <?php
+/**
+ *  Serializer Factory class.
+ *
+ * @package OAPFW
+ */
 
 declare(strict_types=1);
 
@@ -16,7 +21,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 class SerializerFactory {
 
 	/**
-	 * Create serializer by format
+	 * Create serializer by format.
+	 *
+	 * @param string $format The format to create serializer for.
+	 * @return SerializerInterface The serializer instance.
 	 */
 	public static function create( string $format ): SerializerInterface {
 		switch ( strtolower( $format ) ) {
@@ -33,16 +41,21 @@ class SerializerFactory {
 	}
 
 	/**
-	 * Get available formats
+	 * Get available formats.
+	 *
+	 * @return array Array of available formats.
 	 */
-	public static function getAvailableFormats(): array {
+	public static function get_available_formats(): array {
 		return array( 'json', 'csv', 'xml', 'tsv' );
 	}
 
 	/**
-	 * Check if format is supported
+	 * Check if format is supported.
+	 *
+	 * @param string $format The format to check.
+	 * @return bool True if format is supported.
 	 */
-	public static function isFormatSupported( string $format ): bool {
-		return in_array( strtolower( $format ), self::getAvailableFormats(), true );
+	public static function is_format_supported( string $format ): bool {
+		return in_array( strtolower( $format ), self::get_available_formats(), true );
 	}
 }

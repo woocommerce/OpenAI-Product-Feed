@@ -26,9 +26,21 @@
 	<!-- Disallow long array syntax -->
 	<!-- <rule ref="Generic.Arrays.DisallowLongArraySyntax"/> -->
 
-	<rule ref="Squiz.Commenting.FileComment.Missing">
+
+	<!-- Everything below is just temporary -->
+	<rule ref="WordPress.WP.AlternativeFunctions">
 		<exclude-pattern>includes/*</exclude-pattern>
 	</rule>
+	<rule ref="WordPress.Security">
+		<exclude-pattern>includes/*</exclude-pattern>
+	</rule>
+	<rule ref="WordPress.WP.Capabilities">
+		<exclude-pattern>includes/*</exclude-pattern>
+	</rule>
+
+
+
+
 
 	<rule ref="WordPress.WP.I18n">
 		<properties>

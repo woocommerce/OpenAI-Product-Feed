@@ -1,4 +1,9 @@
 <?php
+/**
+ *  Settings Repository class.
+ *
+ * @package OAPFW
+ */
 
 declare(strict_types=1);
 
@@ -18,35 +23,58 @@ class SettingsRepository implements SettingsRepositoryInterface {
 
 	const OPTION_NAME = 'oapfw_settings';
 
+	/**
+	 * Settings cache.
+	 *
+	 * @var array
+	 */
 	private array $cache = array();
+
+	/**
+	 * Whether settings have been loaded.
+	 *
+	 * @var bool
+	 */
 	private bool $loaded = false;
 
 	/**
-	 * Get setting value
+	 * Get setting value.
+	 *
+	 * @param string $key The setting key.
+	 * @param mixed  $default_value Default value if key not found.
+	 * @return mixed The setting value.
 	 */
-	public function get( string $key, $default = '' ) {
-		$this->loadSettings();
-		return $this->cache[ $key ] ?? $default;
+	public function get( string $key, $default_value = '' ) {
+		$this->load_settings();
+		return $this->cache[ $key ] ?? $default_value;
 	}
 
 	/**
-	 * Set setting value
+	 * Set setting value.
+	 *
+	 * @param string $key The setting key.
+	 * @param mixed  $value The setting value.
 	 */
 	public function set( string $key, $value ): void {
-		$this->loadSettings();
+		$this->load_settings();
 		$this->cache[ $key ] = $value;
 	}
 
 	/**
-	 * Get all settings
+	 * Get all settings.
+	 *
+	 * @return array All settings.
 	 */
 	public function all(): array {
-		$this->loadSettings();
+		$this->load_settings();
 		return $this->cache;
 	}
 
 	/**
-	 * Save settings to database
+	 * Save settings to database.
+	 *
+	 * @param array $settings The settings to save.
+	 * @return bool True on success.
 	 */
 	public function save( array $settings ): bool {
 		$sanitized = $this->sanitize( $settings );
@@ -61,16 +89,18 @@ class SettingsRepository implements SettingsRepositoryInterface {
 	}
 
 	/**
-	 * Get option name
+	 * Get option name.
+	 *
+	 * @return string The option name.
 	 */
-	public function getOptionName(): string {
+	public function get_option_name(): string {
 		return self::OPTION_NAME;
 	}
 
 	/**
-	 * Load settings from database
+	 * Load settings from database.
 	 */
-	private function loadSettings(): void {
+	private function load_settings(): void {
 		if ( ! $this->loaded ) {
 			$this->cache  = get_option( self::OPTION_NAME, array() );
 			$this->loaded = true;
@@ -78,21 +108,24 @@ class SettingsRepository implements SettingsRepositoryInterface {
 	}
 
 	/**
-	 * Sanitize settings input
+	 * Sanitize settings input.
+	 *
+	 * @param array $input The input data to sanitize.
+	 * @return array Sanitized settings.
 	 */
 	public function sanitize( array $input ): array {
-		// Start with existing settings to preserve values not in current form
-		$this->loadSettings();
+		// Start with existing settings to preserve values not in current form.
+		$this->load_settings();
 		$out = $this->cache;
 
-		// Only update fields that are present in the input
+		// Only update fields that are present in the input.
 		if ( isset( $input['format'] ) ) {
-			$out['format'] = in_array( $input['format'], array( 'json', 'csv', 'xml', 'tsv' ), true )
+			$out['format'] = in_array( $input['format'], array( 'json', 'csv', 'xml', 'tsv', true ), true )
 				? $input['format'] : 'json';
 		}
 
-		// Handle delivery_enabled checkbox - always set since unchecked checkboxes don't appear in POST data
-		$out['delivery_enabled'] = isset( $input['delivery_enabled'] ) ? StringHelper::boolString( $input['delivery_enabled'] ) : 'false';
+		// Handle delivery_enabled checkbox - always set since unchecked checkboxes don't appear in POST data.
+		$out['delivery_enabled'] = isset( $input['delivery_enabled'] ) ? StringHelper::bool_string( $input['delivery_enabled'] ) : 'false';
 
 		if ( isset( $input['endpoint_url'] ) ) {
 			$out['endpoint_url'] = esc_url_raw( $input['endpoint_url'] );
@@ -107,13 +140,13 @@ class SettingsRepository implements SettingsRepositoryInterface {
 		}
 
 		if ( array_key_exists( 'enable_search_default', $input ) ) {
-			$out['enable_search_default'] = StringHelper::boolString( $input['enable_search_default'] );
+			$out['enable_search_default'] = StringHelper::bool_string( $input['enable_search_default'] );
 		} elseif ( ! ( isset( $input['delivery_enabled'] ) || isset( $input['endpoint_url'] ) ) ) {
 			$out['enable_search_default'] = 'false';
 		}
 
 		if ( array_key_exists( 'enable_checkout_default', $input ) ) {
-			$out['enable_checkout_default'] = StringHelper::boolString( $input['enable_checkout_default'] );
+			$out['enable_checkout_default'] = StringHelper::bool_string( $input['enable_checkout_default'] );
 		} elseif ( ! ( isset( $input['delivery_enabled'] ) || isset( $input['endpoint_url'] ) ) ) {
 			$out['enable_checkout_default'] = 'false';
 		}
@@ -146,10 +179,12 @@ class SettingsRepository implements SettingsRepositoryInterface {
 	}
 
 	/**
-	 * Get default values with WordPress integration
+	 * Get default values with WordPress integration.
+	 *
+	 * @return array Default settings.
 	 */
-	public function getDefaults(): array {
-		$defaults = array(
+	public function get_defaults(): array {
+		$default_values = array(
 			'format'                  => 'json',
 			'delivery_enabled'        => 'false',
 			'endpoint_url'            => '',
@@ -160,27 +195,27 @@ class SettingsRepository implements SettingsRepositoryInterface {
 			'return_window'           => 30,
 		);
 
-		// WordPress-integrated defaults
-		$defaults['seller_name'] = get_bloginfo( 'name' );
+		// WordPress-integrated defaults.
+		$default_values['seller_name'] = get_bloginfo( 'name' );
 
 		if ( function_exists( 'wc_get_page_permalink' ) ) {
-			$shop_url               = wc_get_page_permalink( 'shop' );
-			$defaults['seller_url'] = $shop_url ?: home_url( '/' );
+			$shop_url                     = wc_get_page_permalink( 'shop' );
+			$default_values['seller_url'] = $shop_url ? $shop_url : home_url( '/' );
 		} else {
-			$defaults['seller_url'] = home_url( '/' );
+			$default_values['seller_url'] = home_url( '/' );
 		}
 
 		if ( function_exists( 'get_privacy_policy_url' ) ) {
-			$defaults['privacy_url'] = get_privacy_policy_url();
+			$default_values['privacy_url'] = get_privacy_policy_url();
 		}
 
 		if ( function_exists( 'wc_terms_and_conditions_page_id' ) ) {
 			$tos_page_id = wc_terms_and_conditions_page_id();
 			if ( $tos_page_id ) {
-				$defaults['tos_url'] = get_permalink( $tos_page_id );
+				$default_values['tos_url'] = get_permalink( $tos_page_id );
 			}
 		}
 
-		return $defaults;
+		return $default_values;
 	}
 }
