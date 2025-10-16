@@ -24,5 +24,5 @@ interface ProductMapperInterface {
 	 * @param \WC_Product|null $parent_product The parent product (for variations).
 	 * @return array Mapped product data.
 	 */
-	public function map_product( \WC_Product $product, ?\WC_Product $parent_product ): array;
+	public function map_product( \WC_Product $product, ?\WC_Product $parent_product = null ): array;
 }
