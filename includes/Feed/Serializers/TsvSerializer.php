@@ -13,6 +13,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// This file works with the buffer stream, so we need to disable the file system operations checks.
+// It should be fine given that we are not touching any files.
+// phpcs:disable WordPress.WP.AlternativeFunctions
+
 /**
  * TSV (Tab-Separated Values) serializer
  */

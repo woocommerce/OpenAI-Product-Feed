@@ -28,7 +28,7 @@
 
 	<!-- Everything below is just temporary -->
 	<rule ref="WordPress.WP.AlternativeFunctions">
-		<exclude-pattern>includes/*</exclude-pattern>
+		<!-- <exclude-pattern>includes/*</exclude-pattern> -->
 	</rule>
 	<rule ref="WordPress.Security">
 		<exclude-pattern>includes/*</exclude-pattern>
@@ -39,10 +39,6 @@
 
 	<rule ref="VariableAnalysis.CodeAnalysis.VariableAnalysis" />
 	<rule ref="VariableAnalysis.CodeAnalysis.VariableAnalysis.UndefinedVariable" />
-
-
-
-
 
 	<rule ref="WordPress.WP.I18n">
 		<properties>

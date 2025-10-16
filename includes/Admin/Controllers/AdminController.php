@@ -111,7 +111,7 @@ class AdminController {
 
 		add_action( self::SCHEDULED_ACTION_HOOK, [ $this, 'cron_push_feed' ] );
 		add_action( 'oapfw_push_delta_event', [ $this, 'push_delta_to_endpoint' ], 10, 1 );
-		add_action( 'update_option_' . $this->settings->get_option_name(), [ $this, 'maybe_reschedule' ], 10, 3 );
+		add_action( 'update_option_' . $this->settings->get_option_name(), [ $this, 'maybe_reschedule' ], 10, 2 );
 
 		add_action( 'woocommerce_update_product', [ $this, 'queue_delta_push' ], 10, 1 );
 		add_action( 'woocommerce_product_set_stock', [ $this, 'queue_delta_push' ], 10, 1 );
@@ -193,6 +193,9 @@ class AdminController {
 
 		$format   = $this->settings->get( 'format', 'json' );
 		$filename = 'openai-feed-' . gmdate( 'Ymd-His' ) . '.' . $format;
+
+		// @see https://github.com/woocommerce/OpenAI-Product-Feed/issues/4
+		$content_type = null;
 
 		$rows    = $this->feed_generator->build_feed();
 		$payload = $this->feed_generator->serialize( $rows, $format, $content_type );
@@ -292,11 +295,10 @@ class AdminController {
 	/**
 	 * Maybe reschedule feed delivery.
 	 *
-	 * @param mixed  $old_value Old option value.
-	 * @param mixed  $value New option value.
-	 * @param string $option Option name.
+	 * @param mixed $old_value Old option value.
+	 * @param mixed $value New option value.
 	 */
-	public function maybe_reschedule( $old_value, $value, $option ): void {
+	public function maybe_reschedule( $old_value, $value ): void {
 		$enabled = isset( $value['delivery_enabled'] ) && 'true' === $value['delivery_enabled'];
 
 		if ( function_exists( 'as_unschedule_all_actions' ) ) {
@@ -375,6 +377,9 @@ class AdminController {
 		if ( empty( $endpoint ) ) {
 			return;
 		}
+
+		// @see https://github.com/woocommerce/OpenAI-Product-Feed/issues/4
+		$content_type = null;
 
 		$payload = $this->feed_generator->serialize( $rows, $format, $content_type );
 
