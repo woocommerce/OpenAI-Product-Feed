@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace OAPFW\Platforms\OpenAI\Mappers;
 
 use OAPFW\Platforms\OpenAI\Schema\OpenAIFeedSchema;
-use OAPFW\Core\SettingsRepositoryInterface;
+use OAPFW\Core\Interfaces\SettingsRepositoryInterface;
 use OAPFW\Utils\StringHelper;
 
 if ( ! defined( 'ABSPATH' ) ) {
