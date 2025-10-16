@@ -34,288 +34,288 @@ class OpenAIFeedSchema {
 			return self::$cached_schema;
 		}
 
-		self::$cached_schema = array(
+		self::$cached_schema = [
 			// OpenAI flags (required).
-			'enable_search'             => array(
+			'enable_search'             => [
 				'required'    => true,
 				'type'        => 'boolean_string',
 				'default'     => 'true',
 				'description' => 'Enable product in search results',
-			),
-			'enable_checkout'           => array(
+			],
+			'enable_checkout'           => [
 				'required'    => true,
 				'type'        => 'boolean_string',
 				'default'     => 'false',
 				'description' => 'Enable direct checkout',
-				'depends_on'  => array( 'enable_search' => 'true' ),
-			),
+				'depends_on'  => [ 'enable_search' => 'true' ],
+			],
 
 			// Basic product data (required).
-			'id'                        => array(
+			'id'                        => [
 				'required'    => true,
 				'type'        => 'string',
 				'max_length'  => 100,
 				'description' => 'Unique product identifier',
-			),
-			'title'                     => array(
+			],
+			'title'                     => [
 				'required'    => true,
 				'type'        => 'string',
 				'max_length'  => 150,
 				'description' => 'Product name',
-			),
-			'description'               => array(
+			],
+			'description'               => [
 				'required'    => true,
 				'type'        => 'string',
 				'max_length'  => 5000,
 				'description' => 'Product description',
-			),
-			'link'                      => array(
+			],
+			'link'                      => [
 				'required'    => true,
 				'type'        => 'url',
 				'description' => 'Product page URL',
-			),
+			],
 
 			// Product identifiers.
-			'gtin'                      => array(
+			'gtin'                      => [
 				'required'    => true,
 				'type'        => 'string',
 				'description' => 'Global Trade Item Number',
-			),
-			'mpn'                       => array(
+			],
+			'mpn'                       => [
 				'required'    => false,
 				'type'        => 'string',
 				'description' => 'Manufacturer Part Number',
-			),
+			],
 
 			// Item information.
-			'product_category'          => array(
+			'product_category'          => [
 				'required'    => false,
 				'type'        => 'string',
 				'description' => 'Product category path',
-			),
-			'brand'                     => array(
+			],
+			'brand'                     => [
 				'required'          => true,
 				'type'              => 'string',
 				'description'       => 'Product brand',
-				'exempt_categories' => array( 'books', 'movies', 'music', 'media' ),
+				'exempt_categories' => [ 'books', 'movies', 'music', 'media' ],
 				'default'           => 'Generic',
-			),
-			'material'                  => array(
+			],
+			'material'                  => [
 				'required'    => false,
 				'type'        => 'string',
 				'description' => 'Product material',
-			),
-			'condition'                 => array(
+			],
+			'condition'                 => [
 				'required'    => false,
 				'type'        => 'enum',
-				'values'      => array( 'new', 'refurbished', 'used' ),
+				'values'      => [ 'new', 'refurbished', 'used' ],
 				'description' => 'Product condition',
-			),
-			'age_group'                 => array(
+			],
+			'age_group'                 => [
 				'required'    => false,
 				'type'        => 'enum',
-				'values'      => array( 'newborn', 'infant', 'toddler', 'kids', 'adult' ),
+				'values'      => [ 'newborn', 'infant', 'toddler', 'kids', 'adult' ],
 				'description' => 'Target age group',
-			),
+			],
 
 			// Dimensions & weight.
-			'weight'                    => array(
+			'weight'                    => [
 				'required'    => true,
 				'type'        => 'string_with_unit',
 				'description' => 'Product weight with unit',
 				'default'     => '0 kg',
-			),
-			'length'                    => array(
+			],
+			'length'                    => [
 				'required'    => false,
 				'type'        => 'string_with_unit',
 				'description' => 'Product length with unit',
-			),
-			'width'                     => array(
+			],
+			'width'                     => [
 				'required'    => false,
 				'type'        => 'string_with_unit',
 				'description' => 'Product width with unit',
-			),
-			'height'                    => array(
+			],
+			'height'                    => [
 				'required'    => false,
 				'type'        => 'string_with_unit',
 				'description' => 'Product height with unit',
-			),
-			'dimensions'                => array(
+			],
+			'dimensions'                => [
 				'required'    => false,
 				'type'        => 'string',
 				'description' => 'Combined dimensions (LxWxH unit)',
-			),
+			],
 
 			// Media.
-			'image_link'                => array(
+			'image_link'                => [
 				'required'    => false,
 				'type'        => 'url',
 				'description' => 'Main product image URL',
-			),
-			'additional_image_link'     => array(
+			],
+			'additional_image_link'     => [
 				'required'    => false,
 				'type'        => 'array',
 				'description' => 'Additional product images',
-			),
-			'video_link'                => array(
+			],
+			'video_link'                => [
 				'required'    => false,
 				'type'        => 'url',
 				'description' => 'Product video URL',
-			),
-			'model_3d_link'             => array(
+			],
+			'model_3d_link'             => [
 				'required'    => false,
 				'type'        => 'url',
 				'description' => '3D model URL',
-			),
+			],
 
 			// Price & promotions.
-			'price'                     => array(
+			'price'                     => [
 				'required'    => false,
 				'type'        => 'price',
 				'description' => 'Regular price with currency',
-			),
-			'sale_price'                => array(
+			],
+			'sale_price'                => [
 				'required'    => false,
 				'type'        => 'price',
 				'description' => 'Sale price with currency',
 				'validation'  => 'validateSalePrice',
-			),
-			'sale_price_effective_date' => array(
+			],
+			'sale_price_effective_date' => [
 				'required'    => false,
 				'type'        => 'date_range',
 				'description' => 'Sale price date range (YYYY-MM-DD / YYYY-MM-DD)',
-			),
+			],
 
 			// Availability & inventory.
-			'availability'              => array(
+			'availability'              => [
 				'required'    => true,
 				'type'        => 'enum',
-				'values'      => array( 'in_stock', 'out_of_stock', 'preorder' ),
+				'values'      => [ 'in_stock', 'out_of_stock', 'preorder' ],
 				'description' => 'Product availability status',
-			),
-			'inventory_quantity'        => array(
+			],
+			'inventory_quantity'        => [
 				'required'    => true,
 				'type'        => 'integer',
 				'description' => 'Available quantity',
 				'default'     => 0,
-			),
-			'availability_date'         => array(
+			],
+			'availability_date'         => [
 				'required'      => false,
-				'required_when' => array( 'availability' => 'preorder' ),
+				'required_when' => [ 'availability' => 'preorder' ],
 				'type'          => 'date',
 				'description'   => 'When product becomes available',
-			),
-			'expiration_date'           => array(
+			],
+			'expiration_date'           => [
 				'required'    => false,
 				'type'        => 'date',
 				'description' => 'Product expiration date',
-			),
+			],
 
 			// Variants.
-			'item_group_id'             => array(
+			'item_group_id'             => [
 				'required'    => false,
 				'type'        => 'string',
 				'description' => 'Parent product ID for variations',
-			),
-			'item_group_title'          => array(
+			],
+			'item_group_title'          => [
 				'required'    => false,
 				'type'        => 'string',
 				'description' => 'Parent product title',
-			),
-			'color'                     => array(
+			],
+			'color'                     => [
 				'required'    => false,
 				'type'        => 'string',
 				'description' => 'Product color',
-			),
-			'size'                      => array(
+			],
+			'size'                      => [
 				'required'    => false,
 				'type'        => 'string',
 				'description' => 'Product size',
-			),
-			'size_system'               => array(
+			],
+			'size_system'               => [
 				'required'    => false,
 				'type'        => 'string',
 				'description' => 'Size system (US, EU, UK, etc.)',
-			),
-			'gender'                    => array(
+			],
+			'gender'                    => [
 				'required'    => false,
 				'type'        => 'enum',
-				'values'      => array( 'male', 'female', 'unisex' ),
+				'values'      => [ 'male', 'female', 'unisex' ],
 				'description' => 'Target gender',
-			),
+			],
 
 			// Merchant info.
-			'seller_name'               => array(
+			'seller_name'               => [
 				'required'    => false,
 				'type'        => 'string',
 				'description' => 'Merchant name',
-			),
-			'seller_url'                => array(
+			],
+			'seller_url'                => [
 				'required'    => false,
 				'type'        => 'url',
 				'description' => 'Merchant website',
-			),
-			'seller_privacy_policy'     => array(
+			],
+			'seller_privacy_policy'     => [
 				'required'    => false,
 				'type'        => 'url',
 				'description' => 'Privacy policy URL',
-			),
-			'seller_tos'                => array(
+			],
+			'seller_tos'                => [
 				'required'    => false,
 				'type'        => 'url',
 				'description' => 'Terms of service URL',
-			),
-			'return_policy'             => array(
+			],
+			'return_policy'             => [
 				'required'    => false,
 				'type'        => 'url',
 				'description' => 'Return policy URL',
-			),
-			'return_window'             => array(
+			],
+			'return_window'             => [
 				'required'    => false,
 				'type'        => 'string',
 				'description' => 'Return window (e.g., "30 days")',
-			),
+			],
 
 			// Shipping & fulfillment.
-			'shipping'                  => array(
+			'shipping'                  => [
 				'required'    => false,
 				'type'        => 'array',
 				'description' => 'Shipping options',
-			),
-			'pickup_method'             => array(
+			],
+			'pickup_method'             => [
 				'required'    => false,
 				'type'        => 'enum',
-				'values'      => array( 'in_store', 'curbside' ),
+				'values'      => [ 'in_store', 'curbside' ],
 				'description' => 'Pickup method',
-			),
-			'pickup_sla'                => array(
+			],
+			'pickup_sla'                => [
 				'required'    => false,
 				'type'        => 'string',
 				'description' => 'Pickup service level agreement',
-			),
+			],
 
 			// Additional fields.
-			'warning'                   => array(
+			'warning'                   => [
 				'required'    => false,
 				'type'        => 'string',
 				'description' => 'Product warning text',
-			),
-			'warning_url'               => array(
+			],
+			'warning_url'               => [
 				'required'    => false,
 				'type'        => 'url',
 				'description' => 'Warning details URL',
-			),
-			'age_restriction'           => array(
+			],
+			'age_restriction'           => [
 				'required'    => false,
 				'type'        => 'integer',
 				'description' => 'Minimum age requirement',
-			),
-			'q_and_a'                   => array(
+			],
+			'q_and_a'                   => [
 				'required'    => false,
 				'type'        => 'string',
 				'description' => 'Questions and answers',
-			),
-		);
+			],
+		];
 
 		return self::$cached_schema;
 	}
@@ -364,7 +364,7 @@ class OpenAIFeedSchema {
 	 * @param array  $data  Product data for conditional checks.
 	 * @return bool True if field is required, false otherwise.
 	 */
-	public static function is_field_required( string $field, array $data = array() ): bool {
+	public static function is_field_required( string $field, array $data = [] ): bool {
 		$field_config = self::get_field( $field );
 		if ( ! $field_config ) {
 			return false;

@@ -16,16 +16,15 @@
 
 	<!-- Rules -->
 	<rule ref="WooCommerce-Core" >
-		<exclude name="Generic.Commenting.Todo"/>
-
 		<!-- These sniffs are superceded by the VariableAnalysis sniffs. -->
 		<exclude name="Generic.CodeAnalysis.UnusedFunctionParameter.Found" />
 		<exclude name="Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed" />
+
+		<!-- We want short array syntax instead -->
+		<exclude name="Universal.Arrays.DisallowShortArraySyntax"/>
 	</rule>
 
-	<!-- Disallow long array syntax -->
-	<!-- <rule ref="Generic.Arrays.DisallowLongArraySyntax"/> -->
-
+	<rule ref="Generic.Arrays.DisallowLongArraySyntax"/>
 
 	<!-- Everything below is just temporary -->
 	<rule ref="WordPress.WP.AlternativeFunctions">
@@ -37,6 +36,9 @@
 	<rule ref="WordPress.WP.Capabilities">
 		<exclude-pattern>includes/*</exclude-pattern>
 	</rule>
+
+	<!-- <rule ref="VariableAnalysis.CodeAnalysis.VariableAnalysis" />
+	<rule ref="VariableAnalysis.CodeAnalysis.VariableAnalysis.UndefinedVariable" /> -->
 
 
 

@@ -45,11 +45,11 @@ class FeedGenerator implements FeedGeneratorInterface {
 	 */
 	public function build_feed(): array {
 		if ( ! class_exists( 'WC_Product' ) ) {
-			return array();
+			return [];
 		}
 
 		$products = $this->getProducts();
-		$rows     = array();
+		$rows     = [];
 
 		foreach ( $products as $product ) {
 			$product_rows = $this->process_product( $product );
@@ -73,12 +73,12 @@ class FeedGenerator implements FeedGeneratorInterface {
 	 */
 	public function build_for_product_id( int $product_id ): array {
 		if ( ! class_exists( 'WC_Product' ) ) {
-			return array();
+			return [];
 		}
 
 		$product = wc_get_product( $product_id );
 		if ( ! $product ) {
-			return array();
+			return [];
 		}
 
 		$rows = $this->process_product( $product );
@@ -111,12 +111,12 @@ class FeedGenerator implements FeedGeneratorInterface {
 	 * Get products for feed generation
 	 */
 	private function getProducts(): array {
-		$args = array(
-			'status' => array( 'publish' ),
+		$args = [
+			'status' => [ 'publish' ],
 			'limit'  => -1,
-			'type'   => array( 'simple', 'variable', 'variation' ),
+			'type'   => [ 'simple', 'variable', 'variation' ],
 			'return' => 'objects',
-		);
+		];
 
 		return wc_get_products( $args );
 	}
@@ -128,7 +128,7 @@ class FeedGenerator implements FeedGeneratorInterface {
 	 * @return array Product rows.
 	 */
 	private function process_product( \WC_Product $product ): array {
-		$rows = array();
+		$rows = [];
 
 		if ( $product->is_type( 'variable' ) ) {
 			// Variable product - process all variations.

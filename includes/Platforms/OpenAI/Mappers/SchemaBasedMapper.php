@@ -41,7 +41,7 @@ abstract class SchemaBasedMapper {
 	 *
 	 * @var array
 	 */
-	protected array $product_meta_cache = array();
+	protected array $product_meta_cache = [];
 
 	/**
 	 * Constructor.
@@ -61,7 +61,7 @@ abstract class SchemaBasedMapper {
 	 * @return array Mapped product data.
 	 */
 	public function map_product_by_schema( \WC_Product $product, ?\WC_Product $parent_product = null ): array {
-		$row = array();
+		$row = [];
 
 		foreach ( $this->schema as $field => $config ) {
 			$row[ $field ] = $this->map_field( $product, $parent_product, $field, $config );
@@ -133,7 +133,7 @@ abstract class SchemaBasedMapper {
 				return $value;
 
 			case 'array':
-				return is_array( $value ) ? $value : array();
+				return is_array( $value ) ? $value : [];
 
 			default:
 				return $value;

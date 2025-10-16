@@ -53,7 +53,7 @@ class ApiController {
 	 * Initialize API endpoints
 	 */
 	public function init(): void {
-		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
+		add_action( 'rest_api_init', [ $this, 'register_routes' ] );
 	}
 
 	/**
@@ -64,20 +64,20 @@ class ApiController {
 		register_rest_route(
 			'wc/v3',
 			'/openai-feed',
-			array(
+			[
 				'methods'             => 'GET',
 				'permission_callback' => function ( \WP_REST_Request $request ) {
 					return $this->check_admin_permission( $request );
 				},
-				'callback'            => array( $this, 'handle_preview_feed' ),
-				'args'                => array(
-					'product_id' => array(
+				'callback'            => [ $this, 'handle_preview_feed' ],
+				'args'                => [
+					'product_id' => [
 						'description' => __( 'Product ID to preview in feed.', 'openai-product-feed-for-woo' ),
 						'type'        => 'integer',
 						'minimum'     => 1,
-					),
-				),
-			)
+					],
+				],
+			]
 		);
 	}
 
@@ -104,7 +104,7 @@ class ApiController {
 			return new \WP_Error(
 				'woocommerce_rest_cannot_view',
 				__( 'Sorry, you cannot view this resource. Please ensure you are logged in as an administrator.', 'openai-product-feed-for-woo' ),
-				array( 'status' => rest_authorization_required_code() )
+				[ 'status' => rest_authorization_required_code() ]
 			);
 		}
 
@@ -127,7 +127,7 @@ class ApiController {
 					return new \WP_Error(
 						'woocommerce_rest_product_invalid_id',
 						__( 'Invalid product ID.', 'openai-product-feed-for-woo' ),
-						array( 'status' => 404 )
+						[ 'status' => 404 ]
 					);
 				}
 				$rows = $this->feed_generator->build_for_product_id( $product_id );
@@ -144,7 +144,7 @@ class ApiController {
 			return new \WP_Error(
 				'woocommerce_rest_feed_error',
 				$e->getMessage(),
-				array( 'status' => 500 )
+				[ 'status' => 500 ]
 			);
 		}
 	}

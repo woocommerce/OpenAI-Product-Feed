@@ -40,7 +40,7 @@ class SettingsRenderer {
 	 * Register WordPress settings
 	 */
 	public function register(): void {
-		add_action( 'admin_init', array( $this, 'register_settings' ) );
+		add_action( 'admin_init', [ $this, 'register_settings' ] );
 	}
 
 	/**
@@ -50,15 +50,15 @@ class SettingsRenderer {
 		register_setting(
 			$this->repository->get_option_name(),
 			$this->repository->get_option_name(),
-			array(
-				'sanitize_callback' => array( $this->repository, 'sanitize' ),
-			)
+			[
+				'sanitize_callback' => [ $this->repository, 'sanitize' ],
+			]
 		);
 
 		add_settings_section(
 			'oapfw_main',
 			esc_html__( 'Feed Settings', 'openai-product-feed-for-woo' ),
-			array( $this, 'render_section_description' ),
+			[ $this, 'render_section_description' ],
 			$this->repository->get_option_name()
 		);
 
@@ -76,32 +76,32 @@ class SettingsRenderer {
 	 * Add all settings fields
 	 */
 	private function add_settings_fields(): void {
-		$fields = array(
-			'format'                => array(
+		$fields = [
+			'format'                => [
 				'label'    => esc_html__( 'Feed Format', 'openai-product-feed-for-woo' ),
-				'callback' => array( $this, 'render_format_field' ),
-			),
-			'pull_endpoint_enabled' => array(
+				'callback' => [ $this, 'render_format_field' ],
+			],
+			'pull_endpoint_enabled' => [
 				'label'    => esc_html__( 'Enable Pull Endpoint (REST)', 'openai-product-feed-for-woo' ),
-				'callback' => array( $this, 'render_pull_endpoint_field' ),
-			),
-			'pull_access_token'     => array(
+				'callback' => [ $this, 'render_pull_endpoint_field' ],
+			],
+			'pull_access_token'     => [
 				'label'    => esc_html__( 'Pull Access Token', 'openai-product-feed-for-woo' ),
-				'callback' => array( $this, 'render_pull_token_field' ),
-			),
-			'delivery_enabled'      => array(
+				'callback' => [ $this, 'render_pull_token_field' ],
+			],
+			'delivery_enabled'      => [
 				'label'    => esc_html__( 'Enable External Delivery (cron)', 'openai-product-feed-for-woo' ),
-				'callback' => array( $this, 'render_delivery_enabled_field' ),
-			),
-			'endpoint_url'          => array(
+				'callback' => [ $this, 'render_delivery_enabled_field' ],
+			],
+			'endpoint_url'          => [
 				'label'    => esc_html__( 'Endpoint URL (HTTPS)', 'openai-product-feed-for-woo' ),
-				'callback' => array( $this, 'render_endpoint_url_field' ),
-			),
-			'auth_token'            => array(
+				'callback' => [ $this, 'render_endpoint_url_field' ],
+			],
+			'auth_token'            => [
 				'label'    => esc_html__( 'Authorization Bearer Token', 'openai-product-feed-for-woo' ),
-				'callback' => array( $this, 'render_auth_token_field' ),
-			),
-		);
+				'callback' => [ $this, 'render_auth_token_field' ],
+			],
+		];
 
 		foreach ( $fields as $key => $config ) {
 			add_settings_field(
@@ -122,7 +122,7 @@ class SettingsRenderer {
 		$option_name = $this->repository->get_option_name();
 
 		echo '<select name="' . esc_attr( $option_name ) . '[format]">';
-		foreach ( array( 'json', 'csv', 'xml', 'tsv' ) as $format ) {
+		foreach ( [ 'json', 'csv', 'xml', 'tsv' ] as $format ) {
 			printf(
 				'<option value="%1$s" %2$s>%1$s</option>',
 				esc_attr( $format ),

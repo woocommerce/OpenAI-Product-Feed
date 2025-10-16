@@ -102,22 +102,22 @@ class AdminController {
 	 * Initialize the admin controller.
 	 */
 	public function init(): void {
-		add_filter( 'woocommerce_settings_tabs_array', array( $this, 'add_wc_settings_tab' ), 50 );
-		add_action( 'woocommerce_settings_tabs_oapfw', array( $this, 'render_wc_settings_tab' ) );
-		add_action( 'woocommerce_update_options_oapfw', array( $this, 'save_wc_settings' ) );
+		add_filter( 'woocommerce_settings_tabs_array', [ $this, 'add_wc_settings_tab' ], 50 );
+		add_action( 'woocommerce_settings_tabs_oapfw', [ $this, 'render_wc_settings_tab' ] );
+		add_action( 'woocommerce_update_options_oapfw', [ $this, 'save_wc_settings' ] );
 
-		add_action( 'admin_post_oapfw_download_feed', array( $this, 'handle_download_feed' ) );
-		add_action( 'admin_post_oapfw_push_now', array( $this, 'handle_push_now' ) );
+		add_action( 'admin_post_oapfw_download_feed', [ $this, 'handle_download_feed' ] );
+		add_action( 'admin_post_oapfw_push_now', [ $this, 'handle_push_now' ] );
 
-		add_action( self::SCHEDULED_ACTION_HOOK, array( $this, 'cron_push_feed' ) );
-		add_action( 'oapfw_push_delta_event', array( $this, 'push_delta_to_endpoint' ), 10, 1 );
-		add_action( 'update_option_' . $this->settings->get_option_name(), array( $this, 'maybe_reschedule' ), 10, 3 );
+		add_action( self::SCHEDULED_ACTION_HOOK, [ $this, 'cron_push_feed' ] );
+		add_action( 'oapfw_push_delta_event', [ $this, 'push_delta_to_endpoint' ], 10, 1 );
+		add_action( 'update_option_' . $this->settings->get_option_name(), [ $this, 'maybe_reschedule' ], 10, 3 );
 
-		add_action( 'woocommerce_update_product', array( $this, 'queue_delta_push' ), 10, 1 );
-		add_action( 'woocommerce_product_set_stock', array( $this, 'queue_delta_push' ), 10, 1 );
-		add_action( 'woocommerce_admin_process_product_object', array( $this, 'maybe_push_delta_on_save' ) );
+		add_action( 'woocommerce_update_product', [ $this, 'queue_delta_push' ], 10, 1 );
+		add_action( 'woocommerce_product_set_stock', [ $this, 'queue_delta_push' ], 10, 1 );
+		add_action( 'woocommerce_admin_process_product_object', [ $this, 'maybe_push_delta_on_save' ] );
 
-		add_action( 'admin_notices', array( $this, 'maybe_show_admin_notice' ) );
+		add_action( 'admin_notices', [ $this, 'maybe_show_admin_notice' ] );
 	}
 
 	/**
@@ -176,7 +176,7 @@ class AdminController {
 
 		$posted = isset( $_POST['oapfw_settings'] ) && is_array( $_POST['oapfw_settings'] )
 			? wp_unslash( $_POST['oapfw_settings'] )
-			: array();
+			: [];
 
 		$this->settings->save( $posted );
 	}
@@ -218,11 +218,11 @@ class AdminController {
 
 		wp_safe_redirect(
 			add_query_arg(
-				array(
+				[
 					'page'          => 'wc-settings',
 					'tab'           => 'oapfw',
 					'oapfw_message' => 'pushed',
-				),
+				],
 				admin_url( 'admin.php' )
 			)
 		);
@@ -268,7 +268,7 @@ class AdminController {
 			as_schedule_single_action(
 				time() + 30,
 				'oapfw_push_delta_event',
-				array( $product_id ),
+				[ $product_id ],
 				'oapfw'
 			);
 		}
@@ -308,17 +308,17 @@ class AdminController {
 				time() + 60,
 				900,
 				self::SCHEDULED_ACTION_HOOK,
-				array(),
+				[],
 				'oapfw'
 			);
 
 			if ( $this->logger && $action_id ) {
 				$this->logger->info(
 					'Feed delivery scheduled',
-					array(
+					[
 						'source' => 'oapfw',
 						'action' => $action_id,
-					)
+					]
 				);
 			}
 		}
@@ -378,7 +378,7 @@ class AdminController {
 
 		$payload = $this->feed_generator->serialize( $rows, $format, $content_type );
 
-		$headers = array( 'Content-Type' => $content_type );
+		$headers = [ 'Content-Type' => $content_type ];
 		if ( $is_delta ) {
 			$headers['X-Feed-Delta'] = 'true';
 		}
@@ -390,24 +390,24 @@ class AdminController {
 
 		$response = wp_remote_post(
 			$endpoint,
-			array(
+			[
 				'headers' => $headers,
 				'timeout' => 30,
 				'body'    => $payload,
-			)
+			]
 		);
 
 		if ( is_wp_error( $response ) ) {
 			if ( $this->logger ) {
-				$this->logger->error( 'Feed push failed: ' . $response->get_error_message(), array( 'source' => 'oapfw' ) );
+				$this->logger->error( 'Feed push failed: ' . $response->get_error_message(), [ 'source' => 'oapfw' ] );
 			}
 		} else {
 			$code = wp_remote_retrieve_response_code( $response );
 			if ( $this->logger ) {
 				if ( $code >= 200 && $code < 300 ) {
-					$this->logger->info( 'Feed push successful: HTTP ' . $code, array( 'source' => 'oapfw' ) );
+					$this->logger->info( 'Feed push successful: HTTP ' . $code, [ 'source' => 'oapfw' ] );
 				} else {
-					$this->logger->warning( 'Feed push returned HTTP ' . $code, array( 'source' => 'oapfw' ) );
+					$this->logger->warning( 'Feed push returned HTTP ' . $code, [ 'source' => 'oapfw' ] );
 				}
 			}
 		}

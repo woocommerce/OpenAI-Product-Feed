@@ -47,7 +47,7 @@ class FeedValidator implements ValidatorInterface {
 	 * @return array Array of validation issues.
 	 */
 	public function validate_row( array $row ): array {
-		$issues = array();
+		$issues = [];
 
 		foreach ( $this->schema as $field => $config ) {
 			$this->validate_field( $row, $field, $config, $issues );
@@ -113,7 +113,7 @@ class FeedValidator implements ValidatorInterface {
 				break;
 
 			case 'boolean_string':
-				if ( ! in_array( $value, array( 'true', 'false', true ), true ) ) {
+				if ( ! in_array( $value, [ 'true', 'false', true ], true ) ) {
 					$issues[] = "{$field} must be 'true' or 'false'";
 				}
 				break;
@@ -177,23 +177,23 @@ class FeedValidator implements ValidatorInterface {
 	 * @return array Array of validation issues.
 	 */
 	public function validate_feed( array $rows ): array {
-		$all_issues = array();
+		$all_issues = [];
 
 		if ( empty( $rows ) ) {
-			$all_issues[] = array(
+			$all_issues[] = [
 				'id'     => 'feed',
-				'issues' => array( 'Feed is empty - no products to export' ),
-			);
+				'issues' => [ 'Feed is empty - no products to export' ],
+			];
 			return $all_issues;
 		}
 
 		foreach ( $rows as $index => $row ) {
 			$row_issues = $this->validate_row( $row );
 			if ( $row_issues ) {
-				$all_issues[] = array(
+				$all_issues[] = [
 					'id'     => $row['id'] ?? ( '#' . $index ),
 					'issues' => $row_issues,
-				);
+				];
 			}
 		}
 
@@ -210,7 +210,7 @@ class FeedValidator implements ValidatorInterface {
 	private function validate_brand_requirement( array $row, array &$issues ): void {
 		$brand_config      = $this->schema['brand'];
 		$category          = strtolower( $row['product_category'] ?? '' );
-		$exempt_categories = $brand_config['exempt_categories'] ?? array();
+		$exempt_categories = $brand_config['exempt_categories'] ?? [];
 
 		$is_exempt = false;
 		foreach ( $exempt_categories as $exempt ) {

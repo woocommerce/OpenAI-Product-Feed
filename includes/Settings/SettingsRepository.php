@@ -28,7 +28,7 @@ class SettingsRepository implements SettingsRepositoryInterface {
 	 *
 	 * @var array
 	 */
-	private array $cache = array();
+	private array $cache = [];
 
 	/**
 	 * Whether settings have been loaded.
@@ -102,7 +102,7 @@ class SettingsRepository implements SettingsRepositoryInterface {
 	 */
 	private function load_settings(): void {
 		if ( ! $this->loaded ) {
-			$this->cache  = get_option( self::OPTION_NAME, array() );
+			$this->cache  = get_option( self::OPTION_NAME, [] );
 			$this->loaded = true;
 		}
 	}
@@ -120,7 +120,7 @@ class SettingsRepository implements SettingsRepositoryInterface {
 
 		// Only update fields that are present in the input.
 		if ( isset( $input['format'] ) ) {
-			$out['format'] = in_array( $input['format'], array( 'json', 'csv', 'xml', 'tsv', true ), true )
+			$out['format'] = in_array( $input['format'], [ 'json', 'csv', 'xml', 'tsv', true ], true )
 				? $input['format'] : 'json';
 		}
 
@@ -184,7 +184,7 @@ class SettingsRepository implements SettingsRepositoryInterface {
 	 * @return array Default settings.
 	 */
 	public function get_defaults(): array {
-		$default_values = array(
+		$default_values = [
 			'format'                  => 'json',
 			'delivery_enabled'        => 'false',
 			'endpoint_url'            => '',
@@ -193,7 +193,7 @@ class SettingsRepository implements SettingsRepositoryInterface {
 			'enable_search_default'   => 'true',
 			'enable_checkout_default' => 'false',
 			'return_window'           => 30,
-		);
+		];
 
 		// WordPress-integrated defaults.
 		$default_values['seller_name'] = get_bloginfo( 'name' );

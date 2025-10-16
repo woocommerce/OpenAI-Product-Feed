@@ -76,13 +76,13 @@ final class Plugin {
 		}
 
 		if ( ! class_exists( 'WooCommerce' ) ) {
-			add_action( 'admin_notices', array( $this, 'show_woo_commerce_missing_notice' ) );
+			add_action( 'admin_notices', [ $this, 'show_woo_commerce_missing_notice' ] );
 			$this->initialized = true;
 			return;
 		}
 
 		// Initialize components on WordPress init hook.
-		add_action( 'init', array( $this, 'init' ), 0 );
+		add_action( 'init', [ $this, 'init' ], 0 );
 
 		$this->initialized = true;
 	}

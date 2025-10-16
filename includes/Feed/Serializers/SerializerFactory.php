@@ -46,7 +46,7 @@ class SerializerFactory {
 	 * @return array Array of available formats.
 	 */
 	public static function get_available_formats(): array {
-		return array( 'json', 'csv', 'xml', 'tsv' );
+		return [ 'json', 'csv', 'xml', 'tsv' ];
 	}
 
 	/**

@@ -55,7 +55,7 @@ class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface 
 	 * @return array Field name to method name mappings.
 	 */
 	protected function get_field_mappings(): array {
-		return array(
+		return [
 			'enable_search'             => 'get_enable_search',
 			'enable_checkout'           => 'get_enable_checkout',
 			'id'                        => 'get_id',
@@ -104,7 +104,7 @@ class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface 
 			'warning_url'               => 'get_warning_url',
 			'age_restriction'           => 'get_age_restriction',
 			'q_and_a'                   => 'get_q_and_a',
-		);
+		];
 	}
 
 	/**
@@ -792,7 +792,7 @@ class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface 
 	 * @return string Category path string.
 	 */
 	private function build_category_path( \WP_Term $term ): string {
-		$path    = array( $term->name );
+		$path    = [ $term->name ];
 		$current = $term;
 
 		while ( $current->parent ) {
@@ -933,11 +933,11 @@ class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface 
 		}
 
 		if ( ! class_exists( 'WC_Shipping_Zones' ) ) {
-			self::$cached_shipping_data = array();
+			self::$cached_shipping_data = [];
 			return self::$cached_shipping_data;
 		}
 
-		$shipping_data = array();
+		$shipping_data = [];
 		$currency      = get_woocommerce_currency();
 		$zones         = $this->get_cached_shipping_zones();
 
@@ -1016,7 +1016,7 @@ class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface 
 				return null;
 		}
 
-		$parts = array_filter( array( $country, $region, $method_title ) );
+		$parts = array_filter( [ $country, $region, $method_title ] );
 
 		if ( '' !== $price ) {
 			$parts[] = sprintf( '%s %s', $price, $currency );

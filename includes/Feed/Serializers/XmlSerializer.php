@@ -55,7 +55,7 @@ class XmlSerializer extends AbstractSerializer {
 			// Log error and return minimal valid XML.
 			if ( function_exists( 'wc_get_logger' ) ) {
 				$logger = wc_get_logger();
-				$logger->error( 'XML serialization failed: ' . $e->getMessage(), array( 'source' => 'oapfw' ) );
+				$logger->error( 'XML serialization failed: ' . $e->getMessage(), [ 'source' => 'oapfw' ] );
 			}
 
 			// Return minimal valid XML structure.

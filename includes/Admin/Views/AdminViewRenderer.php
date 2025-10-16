@@ -68,21 +68,21 @@ class AdminViewRenderer {
 	public function render_tab_navigation( string $current_section ): void {
 		echo '<ul class="subsubsub">';
 
-		$sections = array(
+		$sections = [
 			'push'     => __( 'Feed Delivery', 'openai-product-feed-for-woo' ),
 			'settings' => __( 'Settings', 'openai-product-feed-for-woo' ),
-		);
+		];
 
 		$count = 0;
 		foreach ( $sections as $id => $label ) {
 			++$count;
 			$class = $id === $current_section ? 'class="current"' : '';
 			$url   = add_query_arg(
-				array(
+				[
 					'page'    => 'wc-settings',
 					'tab'     => 'oapfw',
 					'section' => $id,
-				),
+				],
 				admin_url( 'admin.php' )
 			);
 
@@ -285,7 +285,7 @@ class AdminViewRenderer {
 		echo '<table class="form-table">';
 
 		echo '<tr><th>' . esc_html__( 'Default Format', 'openai-product-feed-for-woo' ) . '</th><td><select name="oapfw_settings[format]">';
-		foreach ( array( 'json', 'csv', 'xml', 'tsv' ) as $fmt ) {
+		foreach ( [ 'json', 'csv', 'xml', 'tsv' ] as $fmt ) {
 			printf( '<option value="%1$s" %2$s>%1$s</option>', esc_attr( $fmt ), selected( $this->settings->get( 'format', 'json' ), $fmt, false ) );
 		}
 		echo '</select><p class="description">' . esc_html__( 'Default format for feeds. JSON recommended. Pull requests can override this.', 'openai-product-feed-for-woo' ) . '</p></td></tr>';

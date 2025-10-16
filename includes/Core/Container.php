@@ -23,14 +23,14 @@ class Container {
 	 *
 	 * @var array
 	 */
-	private array $services = array();
+	private array $services = [];
 
 	/**
 	 * Service instances.
 	 *
 	 * @var array
 	 */
-	private array $instances = array();
+	private array $instances = [];
 
 	/**
 	 * Set a service definition.
