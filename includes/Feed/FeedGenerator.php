@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace OAPFW\Feed;
 
-use OAPFW\Core\FeedGeneratorInterface;
-use OAPFW\Core\ProductMapperInterface;
+use OAPFW\Core\Interfaces\FeedGeneratorInterface;
+use OAPFW\Core\Interfaces\ProductMapperInterface;
 use OAPFW\Feed\Serializers\SerializerFactory;
 
 if ( ! defined( 'ABSPATH' ) ) {

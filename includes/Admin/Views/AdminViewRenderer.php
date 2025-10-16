@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace OAPFW\Admin\Views;
 
-use OAPFW\Core\SettingsRepositoryInterface;
+use OAPFW\Core\Interfaces\SettingsRepositoryInterface;
 use OAPFW\Admin\Helpers\CredentialValidator;
 use OAPFW\Admin\Helpers\FeedStatusProvider;
 

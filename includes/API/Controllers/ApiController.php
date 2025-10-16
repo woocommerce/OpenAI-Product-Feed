@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace OAPFW\API\Controllers;
 
-use OAPFW\Core\SettingsRepositoryInterface;
-use OAPFW\Core\FeedGeneratorInterface;
+use OAPFW\Core\Interfaces\SettingsRepositoryInterface;
+use OAPFW\Core\Interfaces\FeedGeneratorInterface;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

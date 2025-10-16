@@ -26,10 +26,7 @@ define( 'OAPFW_PLUGIN_FILE', __FILE__ );
 define( 'OAPFW_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'OAPFW_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
-require_once OAPFW_PLUGIN_DIR . 'includes/Core/Autoloader.php';
-require_once OAPFW_PLUGIN_DIR . 'includes/Core/Interfaces.php';
-require_once OAPFW_PLUGIN_DIR . 'includes/Core/Container.php';
-require_once OAPFW_PLUGIN_DIR . 'includes/Core/Plugin.php';
+require_once OAPFW_PLUGIN_DIR . 'vendor/autoload.php';
 
 // Initialize plugin after all plugins are loaded to ensure WooCommerce is available
 add_action( 'plugins_loaded', function() {

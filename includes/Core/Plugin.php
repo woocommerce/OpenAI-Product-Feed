@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace OAPFW\Core;
 
-use OAPFW\Core\Autoloader;
 use OAPFW\Settings\SettingsRepository;
 use OAPFW\Settings\SettingsRenderer;
 use OAPFW\Feed\FeedGenerator;
@@ -43,7 +42,6 @@ final class Plugin {
 	 */
 	private function __construct() {
 		$this->container = new Container();
-		$this->setupAutoloader();
 	}
 
 	/**
@@ -72,17 +70,6 @@ final class Plugin {
 	public function init(): void {
 		$this->registerServices();
 		$this->initializeComponents();
-	}
-
-	/**
-	 * Setup autoloader
-	 */
-	private function setupAutoloader(): void {
-		$autoloader = new Autoloader();
-		$autoloader->addNamespace( 'OAPFW\\', OAPFW_PLUGIN_DIR . 'includes/' );
-		$autoloader->register();
-
-		$this->container->set( 'autoloader', $autoloader );
 	}
 
 	/**

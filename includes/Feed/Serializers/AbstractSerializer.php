@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace OAPFW\Feed\Serializers;
 
-use OAPFW\Core\SerializerInterface;
+use OAPFW\Core\Interfaces\SerializerInterface;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

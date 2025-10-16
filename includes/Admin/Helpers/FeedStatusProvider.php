@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace OAPFW\Admin\Helpers;
 
-use OAPFW\Core\FeedGeneratorInterface;
-use OAPFW\Core\ValidatorInterface;
+use OAPFW\Core\Interfaces\FeedGeneratorInterface;
+use OAPFW\Core\Interfaces\ValidatorInterface;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

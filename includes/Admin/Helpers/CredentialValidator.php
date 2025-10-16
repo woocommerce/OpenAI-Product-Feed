@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace OAPFW\Admin\Helpers;
 
-use OAPFW\Core\SettingsRepositoryInterface;
+use OAPFW\Core\Interfaces\SettingsRepositoryInterface;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

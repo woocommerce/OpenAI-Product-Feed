@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace OAPFW\Admin\Controllers;
 
-use OAPFW\Core\SettingsRepositoryInterface;
-use OAPFW\Core\FeedGeneratorInterface;
-use OAPFW\Core\ValidatorInterface;
+use OAPFW\Core\Interfaces\SettingsRepositoryInterface;
+use OAPFW\Core\Interfaces\FeedGeneratorInterface;
+use OAPFW\Core\Interfaces\ValidatorInterface;
 use OAPFW\Admin\Helpers\CredentialValidator;
 use OAPFW\Admin\Helpers\FeedStatusProvider;
 use OAPFW\Admin\Views\AdminViewRenderer;

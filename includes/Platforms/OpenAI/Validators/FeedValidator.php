@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace OAPFW\Platforms\OpenAI\Validators;
 
-use OAPFW\Core\ValidatorInterface;
+use OAPFW\Core\Interfaces\ValidatorInterface;
 use OAPFW\Platforms\OpenAI\Schema\OpenAIFeedSchema;
 
 if ( ! defined( 'ABSPATH' ) ) {
