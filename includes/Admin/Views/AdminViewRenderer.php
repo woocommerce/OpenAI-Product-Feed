@@ -88,6 +88,7 @@ class AdminViewRenderer {
 
 			printf(
 				'<li><a %s href="%s">%s</a>%s</li>',
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 				$class,
 				esc_url( $url ),
 				esc_html( $label ),
@@ -252,7 +253,7 @@ class AdminViewRenderer {
 				echo '<span style="color:#d63638;">⚠ ' . sprintf(
 					/* translators: %d: Number of validation issues */
 					esc_html__( '%d validation issues found', 'openai-product-feed-for-woo' ),
-					$status['issue_count']
+					absint( $status['issue_count'] )
 				) . '</span>';
 				echo '<br><small style="color:#666;">' . esc_html__( 'Your feed has issues that need attention before it can be successfully processed by OpenAI.', 'openai-product-feed-for-woo' ) . '</small>';
 				echo '<br><a href="' . esc_url( $status['logs_url'] ) . '">' .

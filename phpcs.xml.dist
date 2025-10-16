@@ -25,13 +25,10 @@
 	</rule>
 
 	<rule ref="Generic.Arrays.DisallowLongArraySyntax"/>
-
-	<rule ref="WordPress.Security">
-		<exclude-pattern>includes/*</exclude-pattern>
-	</rule>
-
 	<rule ref="VariableAnalysis.CodeAnalysis.VariableAnalysis" />
 	<rule ref="VariableAnalysis.CodeAnalysis.VariableAnalysis.UndefinedVariable" />
+	<rule ref="Squiz.Commenting.FunctionCommentThrowTag" />
+	<rule ref="PEAR.WhiteSpace.ObjectOperatorIndent" />
 
 	<rule ref="WordPress.WP.I18n">
 		<properties>
@@ -51,8 +48,4 @@
 			</property>
 		</properties>
 	</rule>
-
-	<rule ref="Squiz.Commenting.FunctionCommentThrowTag" />
-
-	<rule ref="PEAR.WhiteSpace.ObjectOperatorIndent" />
 </ruleset>

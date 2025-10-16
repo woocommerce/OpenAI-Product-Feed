@@ -135,7 +135,8 @@ class AdminController {
 	 * Render WooCommerce settings tab.
 	 */
 	public function render_wc_settings_tab(): void {
-		$section = isset( $_GET['section'] ) ? sanitize_key( $_GET['section'] ) : 'push';
+		global $current_section;
+		$section = $current_section ? $current_section : 'push';
 
 		$this->view_renderer->render_tab_navigation( $section );
 		$this->render_tab_content( $section );
@@ -166,6 +167,7 @@ class AdminController {
 	 * Save WooCommerce settings.
 	 */
 	public function save_wc_settings(): void {
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		if ( ! isset( $_POST['_wpnonce'] ) || ! wp_verify_nonce( wp_unslash( $_POST['_wpnonce'] ), 'woocommerce-settings' ) ) {
 			return;
 		}
@@ -175,6 +177,8 @@ class AdminController {
 		}
 
 		$posted = isset( $_POST['oapfw_settings'] ) && is_array( $_POST['oapfw_settings'] )
+			// @see https://github.com/woocommerce/OpenAI-Product-Feed/issues/5
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 			? wp_unslash( $_POST['oapfw_settings'] )
 			: [];
 
@@ -225,6 +229,7 @@ class AdminController {
 					'page'          => 'wc-settings',
 					'tab'           => 'oapfw',
 					'oapfw_message' => 'pushed',
+					'oapfw_nonce'   => wp_create_nonce( 'oapfw_push_now' ),
 				],
 				admin_url( 'admin.php' )
 			)
@@ -330,7 +335,14 @@ class AdminController {
 	 * Maybe show admin notice.
 	 */
 	public function maybe_show_admin_notice(): void {
-		if ( ! isset( $_GET['page'] ) || 'wc-settings' !== $_GET['page'] ) {
+		global $current_screen;
+
+		if ( ! isset( $current_screen ) || 'woocommerce_page_wc-settings' !== $current_screen->id ) {
+			return;
+		}
+
+		$nonce = isset( $_GET['oapfw_nonce'] ) ? sanitize_key( $_GET['oapfw_nonce'] ) : '';
+		if ( ! wp_verify_nonce( $nonce, 'oapfw_push_now' ) ) {
 			return;
 		}
 

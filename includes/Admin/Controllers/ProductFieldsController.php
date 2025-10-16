@@ -396,7 +396,8 @@ class ProductFieldsController {
 	 * @param \WC_Product $product Product object being saved.
 	 */
 	public function save_product_fields( \WC_Product $product ): void {
-		if ( ! isset( $_POST['woocommerce_meta_nonce'] ) || ! wp_verify_nonce( $_POST['woocommerce_meta_nonce'], 'woocommerce_save_data' ) ) {
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		if ( ! isset( $_POST['woocommerce_meta_nonce'] ) || ! wp_verify_nonce( wp_unslash( $_POST['woocommerce_meta_nonce'] ), 'woocommerce_save_data' ) ) {
 			return;
 		}
 

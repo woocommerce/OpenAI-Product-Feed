@@ -57,6 +57,8 @@ class Container {
 		}
 
 		if ( ! isset( $this->services[ $id ] ) ) {
+			// Just a service class name. This should not require escaping.
+			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			throw new \InvalidArgumentException( "Service '{$id}' not found." );
 		}
 
