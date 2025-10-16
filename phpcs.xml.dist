@@ -26,14 +26,7 @@
 
 	<rule ref="Generic.Arrays.DisallowLongArraySyntax"/>
 
-	<!-- Everything below is just temporary -->
-	<rule ref="WordPress.WP.AlternativeFunctions">
-		<!-- <exclude-pattern>includes/*</exclude-pattern> -->
-	</rule>
 	<rule ref="WordPress.Security">
-		<exclude-pattern>includes/*</exclude-pattern>
-	</rule>
-	<rule ref="WordPress.WP.Capabilities">
 		<exclude-pattern>includes/*</exclude-pattern>
 	</rule>
 
@@ -54,6 +47,7 @@
 		<properties>
 			<property name="custom_capabilities" type="array">
 				<element value="manage_woocommerce" />
+				<element value="edit_products" />
 			</property>
 		</properties>
 	</rule>
