@@ -1,4 +1,9 @@
 <?php
+/**
+ *  Credential Validator class.
+ *
+ * @package OAPFW
+ */
 
 declare(strict_types=1);
 
@@ -10,36 +15,79 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * Validates credentials and configuration for feed delivery.
+ */
 class CredentialValidator {
 
+	/**
+	 * Settings repository instance.
+	 *
+	 * @var SettingsRepositoryInterface
+	 */
 	private SettingsRepositoryInterface $settings;
 
+	/**
+	 * Constructor.
+	 *
+	 * @param SettingsRepositoryInterface $settings The settings repository.
+	 */
 	public function __construct( SettingsRepositoryInterface $settings ) {
 		$this->settings = $settings;
 	}
 
-	public function areCredentialsConfigured(): bool {
-		return $this->isEndpointConfigured() && $this->isTokenConfigured();
+	/**
+	 * Check if credentials are configured.
+	 *
+	 * @return bool True if credentials are configured.
+	 */
+	public function are_credentials_configured(): bool {
+		return $this->is_endpoint_configured() && $this->is_token_configured();
 	}
 
-	public function isEndpointConfigured(): bool {
+	/**
+	 * Check if endpoint is configured.
+	 *
+	 * @return bool True if endpoint is configured.
+	 */
+	public function is_endpoint_configured(): bool {
 		return trim( (string) $this->settings->get( 'endpoint_url', '' ) ) !== '';
 	}
 
-	public function isTokenConfigured(): bool {
+	/**
+	 * Check if token is configured.
+	 *
+	 * @return bool True if token is configured.
+	 */
+	public function is_token_configured(): bool {
 		return trim( (string) $this->settings->get( 'auth_token', '' ) ) !== '';
 	}
 
-	public function canPushFeed(): bool {
-		$delivery_enabled = $this->settings->get( 'delivery_enabled', 'false' ) === 'true';
-		return $delivery_enabled && $this->areCredentialsConfigured();
+	/**
+	 * Check if feed can be pushed.
+	 *
+	 * @return bool True if feed can be pushed.
+	 */
+	public function can_push_feed(): bool {
+		$delivery_enabled = 'true' === $this->settings->get( 'delivery_enabled', 'false' );
+		return $delivery_enabled && $this->are_credentials_configured();
 	}
 
-	public function getEndpointUrl(): string {
+	/**
+	 * Get endpoint URL.
+	 *
+	 * @return string The endpoint URL.
+	 */
+	public function get_endpoint_url(): string {
 		return trim( (string) $this->settings->get( 'endpoint_url', '' ) );
 	}
 
-	public function getAuthToken(): string {
+	/**
+	 * Get auth token.
+	 *
+	 * @return string The auth token.
+	 */
+	public function get_auth_token(): string {
 		return trim( (string) $this->settings->get( 'auth_token', '' ) );
 	}
 }

@@ -1,4 +1,9 @@
 <?php
+/**
+ *  Feed Generator class.
+ *
+ * @package OAPFW
+ */
 
 declare(strict_types=1);
 
@@ -17,54 +22,87 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class FeedGenerator implements FeedGeneratorInterface {
 
-	private ProductMapperInterface $productMapper;
+	/**
+	 * Product mapper instance.
+	 *
+	 * @var ProductMapperInterface
+	 */
+	private ProductMapperInterface $product_mapper;
 
-	public function __construct( ProductMapperInterface $productMapper ) {
-		$this->productMapper = $productMapper;
+	/**
+	 * Constructor.
+	 *
+	 * @param ProductMapperInterface $product_mapper The product mapper.
+	 */
+	public function __construct( ProductMapperInterface $product_mapper ) {
+		$this->product_mapper = $product_mapper;
 	}
 
 	/**
-	 * Build complete feed
+	 * Build complete feed.
+	 *
+	 * @return array Feed rows.
 	 */
-	public function buildFeed(): array {
+	public function build_feed(): array {
 		if ( ! class_exists( 'WC_Product' ) ) {
-			return array();
+			return [];
 		}
 
 		$products = $this->getProducts();
-		$rows     = array();
+		$rows     = [];
 
 		foreach ( $products as $product ) {
-			$product_rows = $this->processProduct( $product );
+			$product_rows = $this->process_product( $product );
 			$rows         = array_merge( $rows, $product_rows );
 		}
 
+		/**
+		 * Filter feed rows before returning.
+		 *
+		 * @param array $rows The feed rows.
+		 * @since 1.0.0
+		 */
 		return apply_filters( 'oapfw_feed_rows', $rows );
 	}
 
 	/**
-	 * Build feed for specific product ID
+	 * Build feed for specific product ID.
+	 *
+	 * @param int $product_id The product ID.
+	 * @return array Feed rows.
 	 */
-	public function buildForProductId( int $product_id ): array {
+	public function build_for_product_id( int $product_id ): array {
 		if ( ! class_exists( 'WC_Product' ) ) {
-			return array();
+			return [];
 		}
 
 		$product = wc_get_product( $product_id );
 		if ( ! $product ) {
-			return array();
+			return [];
 		}
 
-		$rows = $this->processProduct( $product );
+		$rows = $this->process_product( $product );
+		/**
+		 * Filter single product feed rows.
+		 *
+		 * @param array $rows The feed rows.
+		 * @param int   $product_id The product ID.
+		 * @since 1.0.0
+		 */
 		return apply_filters( 'oapfw_feed_rows_single', $rows, $product_id );
 	}
 
 	/**
-	 * Serialize feed data to specified format
+	 * Serialize feed data to specified format.
+	 *
+	 * @param array       $rows The feed rows.
+	 * @param string      $format The output format.
+	 * @param string|null $content_type The content type (passed by reference).
+	 * @return string Serialized data.
 	 */
 	public function serialize( array $rows, string $format, ?string &$content_type = null ): string {
 		$serializer   = SerializerFactory::create( $format );
-		$content_type = $serializer->getContentType();
+		$content_type = $serializer->get_content_type();
 
 		return $serializer->serialize( $rows );
 	}
@@ -73,37 +111,40 @@ class FeedGenerator implements FeedGeneratorInterface {
 	 * Get products for feed generation
 	 */
 	private function getProducts(): array {
-		$args = array(
-			'status' => array( 'publish' ),
+		$args = [
+			'status' => [ 'publish' ],
 			'limit'  => -1,
-			'type'   => array( 'simple', 'variable', 'variation' ),
+			'type'   => [ 'simple', 'variable', 'variation' ],
 			'return' => 'objects',
-		);
+		];
 
 		return wc_get_products( $args );
 	}
 
 	/**
-	 * Process individual product (handles variations)
+	 * Process individual product (handles variations).
+	 *
+	 * @param \WC_Product $product The product to process.
+	 * @return array Product rows.
 	 */
-	private function processProduct( \WC_Product $product ): array {
-		$rows = array();
+	private function process_product( \WC_Product $product ): array {
+		$rows = [];
 
 		if ( $product->is_type( 'variable' ) ) {
-			// Variable product - process all variations
+			// Variable product - process all variations.
 			foreach ( $product->get_children() as $variation_id ) {
 				$variation = wc_get_product( $variation_id );
 				if ( $variation ) {
-					$rows[] = $this->productMapper->mapProduct( $variation, $product );
+					$rows[] = $this->product_mapper->map_product( $variation, $product );
 				}
 			}
 		} elseif ( $product->is_type( 'variation' ) ) {
-			// Individual variation
-			$parent = wc_get_product( $product->get_parent_id() );
-			$rows[] = $this->productMapper->mapProduct( $product, $parent );
+			// Individual variation.
+			$parent_product = wc_get_product( $product->get_parent_id() );
+			$rows[]         = $this->product_mapper->map_product( $product, $parent_product );
 		} else {
-			// Simple product
-			$rows[] = $this->productMapper->mapProduct( $product );
+			// Simple product.
+			$rows[] = $this->product_mapper->map_product( $product );
 		}
 
 		return $rows;

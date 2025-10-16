@@ -1,4 +1,9 @@
 <?php
+/**
+ *  Open A I Feed Schema class.
+ *
+ * @package OAPFW
+ */
 
 declare(strict_types=1);
 
@@ -24,293 +29,293 @@ class OpenAIFeedSchema {
 	/**
 	 * Get the complete feed schema definition (cached)
 	 */
-	public static function getSchema(): array {
-		if ( self::$cached_schema !== null ) {
+	public static function get_schema(): array {
+		if ( null !== self::$cached_schema ) {
 			return self::$cached_schema;
 		}
 
-		self::$cached_schema = array(
-			// OpenAI flags (required)
-			'enable_search'             => array(
+		self::$cached_schema = [
+			// OpenAI flags (required).
+			'enable_search'             => [
 				'required'    => true,
 				'type'        => 'boolean_string',
 				'default'     => 'true',
 				'description' => 'Enable product in search results',
-			),
-			'enable_checkout'           => array(
+			],
+			'enable_checkout'           => [
 				'required'    => true,
 				'type'        => 'boolean_string',
 				'default'     => 'false',
 				'description' => 'Enable direct checkout',
-				'depends_on'  => array( 'enable_search' => 'true' ),
-			),
+				'depends_on'  => [ 'enable_search' => 'true' ],
+			],
 
-			// Basic product data (required)
-			'id'                        => array(
+			// Basic product data (required).
+			'id'                        => [
 				'required'    => true,
 				'type'        => 'string',
 				'max_length'  => 100,
 				'description' => 'Unique product identifier',
-			),
-			'title'                     => array(
+			],
+			'title'                     => [
 				'required'    => true,
 				'type'        => 'string',
 				'max_length'  => 150,
 				'description' => 'Product name',
-			),
-			'description'               => array(
+			],
+			'description'               => [
 				'required'    => true,
 				'type'        => 'string',
 				'max_length'  => 5000,
 				'description' => 'Product description',
-			),
-			'link'                      => array(
+			],
+			'link'                      => [
 				'required'    => true,
 				'type'        => 'url',
 				'description' => 'Product page URL',
-			),
+			],
 
-			// Product identifiers
-			'gtin'                      => array(
-				'required'      => true,
-				'type'          => 'string',
-				'description'   => 'Global Trade Item Number',
-			),
-			'mpn'                       => array(
+			// Product identifiers.
+			'gtin'                      => [
+				'required'    => true,
+				'type'        => 'string',
+				'description' => 'Global Trade Item Number',
+			],
+			'mpn'                       => [
 				'required'    => false,
 				'type'        => 'string',
 				'description' => 'Manufacturer Part Number',
-			),
+			],
 
-			// Item information
-			'product_category'          => array(
+			// Item information.
+			'product_category'          => [
 				'required'    => false,
 				'type'        => 'string',
 				'description' => 'Product category path',
-			),
-			'brand'                     => array(
+			],
+			'brand'                     => [
 				'required'          => true,
 				'type'              => 'string',
 				'description'       => 'Product brand',
-				'exempt_categories' => array( 'books', 'movies', 'music', 'media' ),
+				'exempt_categories' => [ 'books', 'movies', 'music', 'media' ],
 				'default'           => 'Generic',
-			),
-			'material'                  => array(
+			],
+			'material'                  => [
 				'required'    => false,
 				'type'        => 'string',
 				'description' => 'Product material',
-			),
-			'condition'                 => array(
+			],
+			'condition'                 => [
 				'required'    => false,
 				'type'        => 'enum',
-				'values'      => array( 'new', 'refurbished', 'used' ),
+				'values'      => [ 'new', 'refurbished', 'used' ],
 				'description' => 'Product condition',
-			),
-			'age_group'                 => array(
+			],
+			'age_group'                 => [
 				'required'    => false,
 				'type'        => 'enum',
-				'values'      => array( 'newborn', 'infant', 'toddler', 'kids', 'adult' ),
+				'values'      => [ 'newborn', 'infant', 'toddler', 'kids', 'adult' ],
 				'description' => 'Target age group',
-			),
+			],
 
-			// Dimensions & weight
-			'weight'                    => array(
+			// Dimensions & weight.
+			'weight'                    => [
 				'required'    => true,
 				'type'        => 'string_with_unit',
 				'description' => 'Product weight with unit',
 				'default'     => '0 kg',
-			),
-			'length'                    => array(
+			],
+			'length'                    => [
 				'required'    => false,
 				'type'        => 'string_with_unit',
 				'description' => 'Product length with unit',
-			),
-			'width'                     => array(
+			],
+			'width'                     => [
 				'required'    => false,
 				'type'        => 'string_with_unit',
 				'description' => 'Product width with unit',
-			),
-			'height'                    => array(
+			],
+			'height'                    => [
 				'required'    => false,
 				'type'        => 'string_with_unit',
 				'description' => 'Product height with unit',
-			),
-			'dimensions'                => array(
+			],
+			'dimensions'                => [
 				'required'    => false,
 				'type'        => 'string',
 				'description' => 'Combined dimensions (LxWxH unit)',
-			),
+			],
 
-			// Media
-			'image_link'                => array(
+			// Media.
+			'image_link'                => [
 				'required'    => false,
 				'type'        => 'url',
 				'description' => 'Main product image URL',
-			),
-			'additional_image_link'     => array(
+			],
+			'additional_image_link'     => [
 				'required'    => false,
 				'type'        => 'array',
 				'description' => 'Additional product images',
-			),
-			'video_link'                => array(
+			],
+			'video_link'                => [
 				'required'    => false,
 				'type'        => 'url',
 				'description' => 'Product video URL',
-			),
-			'model_3d_link'             => array(
+			],
+			'model_3d_link'             => [
 				'required'    => false,
 				'type'        => 'url',
 				'description' => '3D model URL',
-			),
+			],
 
-			// Price & promotions
-			'price'                     => array(
+			// Price & promotions.
+			'price'                     => [
 				'required'    => false,
 				'type'        => 'price',
 				'description' => 'Regular price with currency',
-			),
-			'sale_price'                => array(
+			],
+			'sale_price'                => [
 				'required'    => false,
 				'type'        => 'price',
 				'description' => 'Sale price with currency',
 				'validation'  => 'validateSalePrice',
-			),
-			'sale_price_effective_date' => array(
+			],
+			'sale_price_effective_date' => [
 				'required'    => false,
 				'type'        => 'date_range',
 				'description' => 'Sale price date range (YYYY-MM-DD / YYYY-MM-DD)',
-			),
+			],
 
-			// Availability & inventory
-			'availability'              => array(
+			// Availability & inventory.
+			'availability'              => [
 				'required'    => true,
 				'type'        => 'enum',
-				'values'      => array( 'in_stock', 'out_of_stock', 'preorder' ),
+				'values'      => [ 'in_stock', 'out_of_stock', 'preorder' ],
 				'description' => 'Product availability status',
-			),
-			'inventory_quantity'        => array(
+			],
+			'inventory_quantity'        => [
 				'required'    => true,
 				'type'        => 'integer',
 				'description' => 'Available quantity',
 				'default'     => 0,
-			),
-			'availability_date'         => array(
+			],
+			'availability_date'         => [
 				'required'      => false,
-				'required_when' => array( 'availability' => 'preorder' ),
+				'required_when' => [ 'availability' => 'preorder' ],
 				'type'          => 'date',
 				'description'   => 'When product becomes available',
-			),
-			'expiration_date'           => array(
+			],
+			'expiration_date'           => [
 				'required'    => false,
 				'type'        => 'date',
 				'description' => 'Product expiration date',
-			),
+			],
 
-			// Variants
-			'item_group_id'             => array(
+			// Variants.
+			'item_group_id'             => [
 				'required'    => false,
 				'type'        => 'string',
 				'description' => 'Parent product ID for variations',
-			),
-			'item_group_title'          => array(
+			],
+			'item_group_title'          => [
 				'required'    => false,
 				'type'        => 'string',
 				'description' => 'Parent product title',
-			),
-			'color'                     => array(
+			],
+			'color'                     => [
 				'required'    => false,
 				'type'        => 'string',
 				'description' => 'Product color',
-			),
-			'size'                      => array(
+			],
+			'size'                      => [
 				'required'    => false,
 				'type'        => 'string',
 				'description' => 'Product size',
-			),
-			'size_system'               => array(
+			],
+			'size_system'               => [
 				'required'    => false,
 				'type'        => 'string',
 				'description' => 'Size system (US, EU, UK, etc.)',
-			),
-			'gender'                    => array(
+			],
+			'gender'                    => [
 				'required'    => false,
 				'type'        => 'enum',
-				'values'      => array( 'male', 'female', 'unisex' ),
+				'values'      => [ 'male', 'female', 'unisex' ],
 				'description' => 'Target gender',
-			),
+			],
 
-			// Merchant info
-			'seller_name'               => array(
+			// Merchant info.
+			'seller_name'               => [
 				'required'    => false,
 				'type'        => 'string',
 				'description' => 'Merchant name',
-			),
-			'seller_url'                => array(
+			],
+			'seller_url'                => [
 				'required'    => false,
 				'type'        => 'url',
 				'description' => 'Merchant website',
-			),
-			'seller_privacy_policy'     => array(
+			],
+			'seller_privacy_policy'     => [
 				'required'    => false,
 				'type'        => 'url',
 				'description' => 'Privacy policy URL',
-			),
-			'seller_tos'                => array(
+			],
+			'seller_tos'                => [
 				'required'    => false,
 				'type'        => 'url',
 				'description' => 'Terms of service URL',
-			),
-			'return_policy'             => array(
+			],
+			'return_policy'             => [
 				'required'    => false,
 				'type'        => 'url',
 				'description' => 'Return policy URL',
-			),
-			'return_window'             => array(
+			],
+			'return_window'             => [
 				'required'    => false,
 				'type'        => 'string',
 				'description' => 'Return window (e.g., "30 days")',
-			),
+			],
 
-			// Shipping & fulfillment
-			'shipping'                  => array(
+			// Shipping & fulfillment.
+			'shipping'                  => [
 				'required'    => false,
 				'type'        => 'array',
 				'description' => 'Shipping options',
-			),
-			'pickup_method'             => array(
+			],
+			'pickup_method'             => [
 				'required'    => false,
 				'type'        => 'enum',
-				'values'      => array( 'in_store', 'curbside' ),
+				'values'      => [ 'in_store', 'curbside' ],
 				'description' => 'Pickup method',
-			),
-			'pickup_sla'                => array(
+			],
+			'pickup_sla'                => [
 				'required'    => false,
 				'type'        => 'string',
 				'description' => 'Pickup service level agreement',
-			),
+			],
 
-			// Additional fields
-			'warning'                   => array(
+			// Additional fields.
+			'warning'                   => [
 				'required'    => false,
 				'type'        => 'string',
 				'description' => 'Product warning text',
-			),
-			'warning_url'               => array(
+			],
+			'warning_url'               => [
 				'required'    => false,
 				'type'        => 'url',
 				'description' => 'Warning details URL',
-			),
-			'age_restriction'           => array(
+			],
+			'age_restriction'           => [
 				'required'    => false,
 				'type'        => 'integer',
 				'description' => 'Minimum age requirement',
-			),
-			'q_and_a'                   => array(
+			],
+			'q_and_a'                   => [
 				'required'    => false,
 				'type'        => 'string',
 				'description' => 'Questions and answers',
-			),
-		);
+			],
+		];
 
 		return self::$cached_schema;
 	}
@@ -318,12 +323,12 @@ class OpenAIFeedSchema {
 	/**
 	 * Get required fields only
 	 */
-	public static function getRequiredFields(): array {
+	public static function get_required_fields(): array {
 		return array_keys(
 			array_filter(
-				self::getSchema(),
+				self::get_schema(),
 				function ( $field ) {
-					return $field['required'] === true;
+					return true === $field['required'];
 				}
 			)
 		);
@@ -332,9 +337,9 @@ class OpenAIFeedSchema {
 	/**
 	 * Get conditional required fields
 	 */
-	public static function getConditionalFields(): array {
+	public static function get_conditional_fields(): array {
 		return array_filter(
-			self::getSchema(),
+			self::get_schema(),
 			function ( $field ) {
 				return isset( $field['required_when'] );
 			}
@@ -343,28 +348,36 @@ class OpenAIFeedSchema {
 
 	/**
 	 * Get field configuration
+	 *
+	 * @param string $field Field name.
+	 * @return array|null Field configuration or null if not found.
 	 */
-	public static function getField( string $field ): ?array {
-		$schema = self::getSchema();
+	public static function get_field( string $field ): ?array {
+		$schema = self::get_schema();
 		return $schema[ $field ] ?? null;
 	}
 
 	/**
 	 * Check if field is required
+	 *
+	 * @param string $field Field name to check.
+	 * @param array  $data  Product data for conditional checks.
+	 * @return bool True if field is required, false otherwise.
 	 */
-	public static function isFieldRequired( string $field, array $data = array() ): bool {
-		$fieldConfig = self::getField( $field );
-		if ( ! $fieldConfig ) {
+	public static function is_field_required( string $field, array $data = [] ): bool {
+		$field_config = self::get_field( $field );
+		if ( ! $field_config ) {
 			return false;
 		}
 
-		if ( isset( $fieldConfig['required'] ) && $fieldConfig['required'] === true ) {
+		if ( isset( $field_config['required'] ) && true === $field_config['required'] ) {
 			return true;
 		}
 
-		if ( isset( $fieldConfig['required_when'] ) ) {
-			foreach ( $fieldConfig['required_when'] as $dependField => $dependValue ) {
-				if ( ( $data[ $dependField ] ?? null ) === $dependValue ) {
+		if ( isset( $field_config['required_when'] ) ) {
+			foreach ( $field_config['required_when'] as $depend_field => $depend_value ) {
+				$current_value = $data[ $depend_field ] ?? null;
+				if ( $depend_value === $current_value ) {
 					return true;
 				}
 			}

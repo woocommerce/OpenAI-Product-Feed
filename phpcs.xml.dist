@@ -1,0 +1,51 @@
+<?xml version="1.0"?>
+<ruleset name="WordPress Coding Standards">
+	<description>WooCommerce dev PHP_CodeSniffer ruleset.</description>
+
+	<arg value="ps"/>
+	<arg name="parallel" value="20"/>
+	<arg name="extensions" value="php"/>
+
+    <!-- Exclude paths -->
+	<exclude-pattern>./node_modules/*</exclude-pattern>
+	<exclude-pattern>./vendor/*</exclude-pattern>
+
+	<!-- Configs -->
+	<config name="minimum_supported_wp_version" value="6.0" />
+	<config name="testVersion" value="7.4" />
+
+	<!-- Rules -->
+	<rule ref="WooCommerce-Core" >
+		<!-- These sniffs are superceded by the VariableAnalysis sniffs. -->
+		<exclude name="Generic.CodeAnalysis.UnusedFunctionParameter.Found" />
+		<exclude name="Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed" />
+
+		<!-- We want short array syntax instead -->
+		<exclude name="Universal.Arrays.DisallowShortArraySyntax"/>
+	</rule>
+
+	<rule ref="Generic.Arrays.DisallowLongArraySyntax"/>
+	<rule ref="VariableAnalysis.CodeAnalysis.VariableAnalysis" />
+	<rule ref="VariableAnalysis.CodeAnalysis.VariableAnalysis.UndefinedVariable" />
+	<rule ref="Squiz.Commenting.FunctionCommentThrowTag" />
+	<rule ref="PEAR.WhiteSpace.ObjectOperatorIndent" />
+
+	<rule ref="WordPress.WP.I18n">
+		<properties>
+			<property name="text_domain" type="array" value="openai-product-feed-for-woo" />
+		</properties>
+	</rule>
+
+	<rule ref="WordPress.Files.FileName">
+		<exclude-pattern>includes/*</exclude-pattern>
+	</rule>
+
+	<rule ref="WordPress.WP.Capabilities">
+		<properties>
+			<property name="custom_capabilities" type="array">
+				<element value="manage_woocommerce" />
+				<element value="edit_products" />
+			</property>
+		</properties>
+	</rule>
+</ruleset>
