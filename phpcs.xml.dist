@@ -37,8 +37,8 @@
 		<exclude-pattern>includes/*</exclude-pattern>
 	</rule>
 
-	<!-- <rule ref="VariableAnalysis.CodeAnalysis.VariableAnalysis" />
-	<rule ref="VariableAnalysis.CodeAnalysis.VariableAnalysis.UndefinedVariable" /> -->
+	<rule ref="VariableAnalysis.CodeAnalysis.VariableAnalysis" />
+	<rule ref="VariableAnalysis.CodeAnalysis.VariableAnalysis.UndefinedVariable" />
 
 
 

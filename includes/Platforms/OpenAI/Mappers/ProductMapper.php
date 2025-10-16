@@ -1,6 +1,6 @@
 <?php
 /**
- *  Product Mapper class.
+ * Product Mapper class.
  *
  * @package OAPFW
  */
@@ -11,6 +11,7 @@ namespace OAPFW\Platforms\OpenAI\Mappers;
 
 use OAPFW\Core\Interfaces\ProductMapperInterface;
 use OAPFW\Core\Interfaces\SettingsRepositoryInterface;
+use OAPFW\Platforms\OpenAI\Schema\OpenAIFeedSchema;
 use OAPFW\Utils\StringHelper;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -23,7 +24,28 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Converts WooCommerce product data into OpenAI Product Feed specification format.
  * Uses a schema-driven approach to ensure all required fields are mapped correctly.
  */
-class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface {
+class ProductMapper implements ProductMapperInterface {
+
+	/**
+	 * Settings repository instance.
+	 *
+	 * @var SettingsRepositoryInterface
+	 */
+	protected SettingsRepositoryInterface $settings;
+
+	/**
+	 * OpenAI feed schema definition.
+	 *
+	 * @var array
+	 */
+	protected array $schema;
+
+	/**
+	 * Product meta cache to prevent N+1 queries.
+	 *
+	 * @var array
+	 */
+	protected array $product_meta_cache = [];
 
 	/**
 	 * Cached shipping data to prevent repeated queries.
@@ -45,6 +67,168 @@ class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface 
 	 * @var bool|null
 	 */
 	private static ?bool $cached_has_local_pickup = null;
+
+	/**
+	 * Constructor.
+	 *
+	 * @param SettingsRepositoryInterface $settings Settings repository.
+	 */
+	public function __construct( SettingsRepositoryInterface $settings ) {
+		$this->settings = $settings;
+		$this->schema   = OpenAIFeedSchema::get_schema();
+	}
+
+	/**
+	 * Map WooCommerce product to feed row
+	 *
+	 * Main entry point for converting a WooCommerce product into OpenAI feed format.
+	 *
+	 * @param \WC_Product      $product Product to map.
+	 * @param \WC_Product|null $parent_product  Parent product for variations.
+	 * @return array Mapped product data array.
+	 */
+	public function map_product( \WC_Product $product, ?\WC_Product $parent_product = null ): array {
+		$row = [];
+
+		foreach ( $this->schema as $field => $config ) {
+			$row[ $field ] = $this->map_field( $product, $parent_product, $field, $config );
+		}
+
+		$row = $this->validate_and_clean_row( $row );
+
+		/**
+		 * Filter mapped product data before validation.
+		 *
+		 * @since 1.0.0
+		 * @param array            $row     Mapped product data.
+		 * @param \WC_Product      $product Product object.
+		 * @param \WC_Product|null $parent_product  Parent product for variations.
+		 */
+		return apply_filters( 'oapfw_map_product', $row, $product, $parent_product );
+	}
+
+	/**
+	 * Map individual field based on configuration
+	 *
+	 * @param \WC_Product      $product Product object.
+	 * @param \WC_Product|null $parent_product  Parent product for variations.
+	 * @param string           $field   Field name to map.
+	 * @param array            $config  Field configuration from schema.
+	 * @return mixed Mapped field value.
+	 */
+	protected function map_field( \WC_Product $product, ?\WC_Product $parent_product = null, string $field, array $config ) {
+		$field_mappings = $this->get_field_mappings();
+		$mapper_method  = $field_mappings[ $field ] ?? null;
+
+		if ( $mapper_method && method_exists( $this, $mapper_method ) ) {
+			$value = $this->$mapper_method( $product, $parent_product );
+		} else {
+			$value = $this->get_meta_value( $product, "_oapfw_{$field}" );
+		}
+
+		if ( empty( $value ) && isset( $config['default'] ) ) {
+			$value = $config['default'];
+		}
+
+		return $this->convert_type( $value, $config );
+	}
+
+	/**
+	 * Convert value to appropriate type
+	 *
+	 * @param mixed $value  Value to convert.
+	 * @param array $config Field configuration.
+	 * @return mixed Converted value.
+	 */
+	protected function convert_type( $value, array $config ) {
+		if ( null === $value || '' === $value ) {
+			return $value;
+		}
+
+		switch ( $config['type'] ) {
+			case 'boolean_string':
+				return StringHelper::bool_string( $value );
+
+			case 'integer':
+				return (int) $value;
+
+			case 'string':
+				$value = (string) $value;
+				if ( isset( $config['max_length'] ) ) {
+					$value = StringHelper::truncate( $value, $config['max_length'] );
+				}
+				return $value;
+
+			case 'array':
+				return is_array( $value ) ? $value : [];
+
+			default:
+				return $value;
+		}
+	}
+
+	/**
+	 * Validate and clean row data using schema
+	 *
+	 * @param array $row Product data row.
+	 * @return array Cleaned product data row.
+	 */
+	protected function validate_and_clean_row( array $row ): array {
+		foreach ( $this->schema as $field => $config ) {
+			if ( ! isset( $row[ $field ] ) ) {
+				continue;
+			}
+
+			if ( isset( $config['depends_on'] ) ) {
+				foreach ( $config['depends_on'] as $dep_field => $dep_value ) {
+					$current_value = $row[ $dep_field ] ?? null;
+					if ( $dep_value !== $current_value ) {
+						if ( 'boolean_string' === $config['type'] ) {
+							$row[ $field ] = 'false';
+						} else {
+							unset( $row[ $field ] );
+						}
+						break;
+					}
+				}
+			}
+
+			if ( isset( $config['pattern'] ) && ! empty( $row[ $field ] ) ) {
+				if ( ! preg_match( $config['pattern'], (string) $row[ $field ] ) ) {
+					if ( 'gtin' === $field ) {
+						$row[ $field ] = 'MISSING'; // Will be caught by validator.
+					}
+				}
+			}
+		}
+
+		return array_filter(
+			$row,
+			function ( $value ) {
+				return null !== $value && '' !== $value;
+			}
+		);
+	}
+
+	/**
+	 * Get meta value with fallback (with caching to prevent N+1 queries)
+	 *
+	 * @param \WC_Product $product Product object.
+	 * @param string      $key     Meta key to retrieve.
+	 * @return string|null Meta value or null if not found.
+	 */
+	protected function get_meta_value( \WC_Product $product, string $key ): ?string {
+		$product_id = $product->get_id();
+
+		if ( ! isset( $this->product_meta_cache[ $product_id ] ) ) {
+			$this->product_meta_cache[ $product_id ] = get_post_meta( $product_id );
+		}
+
+		$value = isset( $this->product_meta_cache[ $product_id ][ $key ][0] )
+			? $this->product_meta_cache[ $product_id ][ $key ][0]
+			: null;
+		return ! empty( $value ) ? wp_strip_all_tags( $value ) : null;
+	}
 
 	/**
 	 * Get field mappings for OpenAI feed format
@@ -108,19 +292,6 @@ class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface 
 	}
 
 	/**
-	 * Map WooCommerce product to feed row
-	 *
-	 * Main entry point for converting a WooCommerce product into OpenAI feed format.
-	 *
-	 * @param \WC_Product      $product Product to map.
-	 * @param \WC_Product|null $parent_product  Parent product for variations.
-	 * @return array Mapped product data array.
-	 */
-	public function mapProduct( \WC_Product $product, ?\WC_Product $parent_product = null ): array {
-		return $this->map_product_by_schema( $product, $parent_product );
-	}
-
-	/**
 	 * Get enable/disable setting with product override support
 	 *
 	 * Helper method to reduce redundancy in enable_search/enable_checkout logic.
@@ -171,33 +342,30 @@ class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface 
 	/**
 	 * Get product ID
 	 *
-	 * @param \WC_Product      $product Product object.
-	 * @param \WC_Product|null $parent_product  Parent product (unused).
+	 * @param \WC_Product $product Product object.
 	 * @return string Product ID as string.
 	 */
-	protected function get_id( \WC_Product $product, ?\WC_Product $parent_product ): string {
+	protected function get_id( \WC_Product $product ): string {
 		return (string) $product->get_id();
 	}
 
 	/**
 	 * Get product title
 	 *
-	 * @param \WC_Product      $product Product object.
-	 * @param \WC_Product|null $parent_product  Parent product (unused).
+	 * @param \WC_Product $product Product object.
 	 * @return string Product title with HTML tags stripped.
 	 */
-	protected function get_title( \WC_Product $product, ?\WC_Product $parent_product ): string {
+	protected function get_title( \WC_Product $product ): string {
 		return wp_strip_all_tags( $product->get_name() );
 	}
 
 	/**
 	 * Get product description
 	 *
-	 * @param \WC_Product      $product Product object.
-	 * @param \WC_Product|null $parent_product  Parent product (unused).
+	 * @param \WC_Product $product Product object.
 	 * @return string Product description with HTML tags stripped.
 	 */
-	protected function get_description( \WC_Product $product, ?\WC_Product $parent_product ): string {
+	protected function get_description( \WC_Product $product ): string {
 		$description = $product->get_description() ? $product->get_description() : $product->get_short_description();
 		return wp_strip_all_tags( $description );
 	}
@@ -205,33 +373,30 @@ class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface 
 	/**
 	 * Get product permalink
 	 *
-	 * @param \WC_Product      $product Product object.
-	 * @param \WC_Product|null $parent_product  Parent product (unused).
+	 * @param \WC_Product $product Product object.
 	 * @return string Product permalink URL.
 	 */
-	protected function get_link( \WC_Product $product, ?\WC_Product $parent_product ): string {
+	protected function get_link( \WC_Product $product ): string {
 		return get_permalink( $product->get_id() );
 	}
 
 	/**
 	 * Get product GTIN.
 	 *
-	 * @param \WC_Product      $product Product object.
-	 * @param \WC_Product|null $parent_product  Parent product (unused).
+	 * @param \WC_Product $product Product object.
 	 * @return string|null Product GTIN or null.
 	 */
-	protected function get_gtin( \WC_Product $product, ?\WC_Product $parent_product ): ?string {
+	protected function get_gtin( \WC_Product $product ): ?string {
 		return $this->get_meta_value( $product, '_gtin' );
 	}
 
 	/**
 	 * Get product MPN.
 	 *
-	 * @param \WC_Product      $product Product object.
-	 * @param \WC_Product|null $parent_product  Parent product (unused).
+	 * @param \WC_Product $product Product object.
 	 * @return string|null Product MPN or null.
 	 */
-	protected function get_mpn( \WC_Product $product, ?\WC_Product $parent_product ): ?string {
+	protected function get_mpn( \WC_Product $product ): ?string {
 		$mpn = $this->get_meta_value( $product, '_mpn' );
 		if ( $mpn ) {
 			return $mpn;
@@ -264,11 +429,10 @@ class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface 
 	/**
 	 * Get product category path.
 	 *
-	 * @param \WC_Product      $product Product object.
-	 * @param \WC_Product|null $parent_product  Parent product (unused).
+	 * @param \WC_Product $product Product object.
 	 * @return string|null Product category path or null.
 	 */
-	protected function get_product_category( \WC_Product $product, ?\WC_Product $parent_product ): ?string {
+	protected function get_product_category( \WC_Product $product ): ?string {
 		return $this->get_category_path( $product );
 	}
 
@@ -279,7 +443,7 @@ class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface 
 	 * @param \WC_Product|null $parent_product  Parent product for fallback.
 	 * @return string|null Product brand or Generic.
 	 */
-	protected function get_brand( \WC_Product $product, ?\WC_Product $parent_product ): ?string {
+	protected function get_brand( \WC_Product $product, ?\WC_Product $parent_product = null ): ?string {
 		$brand = $product->get_attribute( 'pa_brand' );
 		if ( ! $brand && $parent_product ) {
 			$brand = $parent_product->get_attribute( 'pa_brand' );
@@ -293,88 +457,80 @@ class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface 
 	/**
 	 * Get product material.
 	 *
-	 * @param \WC_Product      $product Product object.
-	 * @param \WC_Product|null $parent_product  Parent product (unused).
+	 * @param \WC_Product $product Product object.
 	 * @return string|null Product material or null.
 	 */
-	protected function get_material( \WC_Product $product, ?\WC_Product $parent_product ): ?string {
+	protected function get_material( \WC_Product $product ): ?string {
 		return $product->get_attribute( 'pa_material' ) ? $product->get_attribute( 'pa_material' ) : null;
 	}
 
 	/**
 	 * Get product condition.
 	 *
-	 * @param \WC_Product      $product Product object.
-	 * @param \WC_Product|null $parent_product  Parent product (unused).
+	 * @param \WC_Product $product Product object.
 	 * @return string|null Product condition or null.
 	 */
-	protected function get_condition( \WC_Product $product, ?\WC_Product $parent_product ): ?string {
+	protected function get_condition( \WC_Product $product ): ?string {
 		return $this->get_meta_value( $product, '_oapfw_condition' );
 	}
 
 	/**
 	 * Get product age group.
 	 *
-	 * @param \WC_Product      $product Product object.
-	 * @param \WC_Product|null $parent_product  Parent product (unused).
+	 * @param \WC_Product $product Product object.
 	 * @return string|null Product age group or null.
 	 */
-	protected function get_age_group( \WC_Product $product, ?\WC_Product $parent_product ): ?string {
+	protected function get_age_group( \WC_Product $product ): ?string {
 		return $this->get_meta_value( $product, '_oapfw_age_group' );
 	}
 
 	/**
 	 * Get product weight with unit.
 	 *
-	 * @param \WC_Product      $product Product object.
-	 * @param \WC_Product|null $parent_product  Parent product (unused).
+	 * @param \WC_Product $product Product object.
 	 * @return string|null Product weight with unit or 0 kg.
 	 */
-	protected function get_weight( \WC_Product $product, ?\WC_Product $parent_product ): ?string {
+	protected function get_weight( \WC_Product $product ): ?string {
 		return $this->format_weight( $product ) ? $this->format_weight( $product ) : '0 kg';
 	}
 
 	/**
 	 * Get product length with unit.
 	 *
-	 * @param \WC_Product      $product Product object.
-	 * @param \WC_Product|null $parent_product  Parent product (unused).
+	 * @param \WC_Product $product Product object.
 	 * @return string|null Product length with unit or null.
 	 */
-	protected function get_length( \WC_Product $product, ?\WC_Product $parent_product ): ?string {
+	protected function get_length( \WC_Product $product ): ?string {
 		return $this->format_dimension( $product->get_length() );
 	}
 
 	/**
 	 * Get product width with unit.
 	 *
-	 * @param \WC_Product      $product Product object.
-	 * @param \WC_Product|null $parent_product  Parent product (unused).
+	 * @param \WC_Product $product Product object.
 	 * @return string|null Product width with unit or null.
 	 */
-	protected function get_width( \WC_Product $product, ?\WC_Product $parent_product ): ?string {
+	protected function get_width( \WC_Product $product ): ?string {
 		return $this->format_dimension( $product->get_width() );
 	}
 
 	/**
 	 * Get product height with unit.
 	 *
-	 * @param \WC_Product      $product Product object.
-	 * @param \WC_Product|null $parent_product  Parent product (unused).
+	 * @param \WC_Product $product Product object.
 	 * @return string|null Product height with unit or null.
 	 */
-	protected function get_height( \WC_Product $product, ?\WC_Product $parent_product ): ?string {
+	protected function get_height( \WC_Product $product ): ?string {
 		return $this->format_dimension( $product->get_height() );
 	}
 
 	/**
 	 * Get product dimensions.
 	 *
-	 * @param \WC_Product      $product Product object.
-	 * @param \WC_Product|null $parent_product  Parent product (unused).
+	 * @param \WC_Product $product Product object.
 	 * @return string|null Product dimensions or null.
 	 */
-	protected function get_dimensions( \WC_Product $product, ?\WC_Product $parent_product ): ?string {
+	protected function get_dimensions( \WC_Product $product ): ?string {
 		return $this->format_dimensions( $product );
 	}
 
@@ -403,33 +559,30 @@ class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface 
 	/**
 	 * Get product video link.
 	 *
-	 * @param \WC_Product      $product Product object.
-	 * @param \WC_Product|null $parent_product  Parent product (unused).
+	 * @param \WC_Product $product Product object.
 	 * @return string|null Product video URL or null.
 	 */
-	protected function get_video_link( \WC_Product $product, ?\WC_Product $parent_product ): ?string {
+	protected function get_video_link( \WC_Product $product ): ?string {
 		return $this->get_meta_value( $product, '_oapfw_video_link' );
 	}
 
 	/**
 	 * Get product 3D model link.
 	 *
-	 * @param \WC_Product      $product Product object.
-	 * @param \WC_Product|null $parent_product  Parent product (unused).
+	 * @param \WC_Product $product Product object.
 	 * @return string|null Product 3D model URL or null.
 	 */
-	protected function get_model_3d_link( \WC_Product $product, ?\WC_Product $parent_product ): ?string {
+	protected function get_model_3d_link( \WC_Product $product ): ?string {
 		return $this->get_meta_value( $product, '_oapfw_model_3d_link' );
 	}
 
 	/**
 	 * Get product price with currency.
 	 *
-	 * @param \WC_Product      $product Product object.
-	 * @param \WC_Product|null $parent_product  Parent product (unused).
+	 * @param \WC_Product $product Product object.
 	 * @return string|null Product price or null.
 	 */
-	protected function get_price( \WC_Product $product, ?\WC_Product $parent_product ): ?string {
+	protected function get_price( \WC_Product $product ): ?string {
 		$currency = get_woocommerce_currency();
 		return $this->format_price( $product->get_regular_price(), $currency );
 	}
@@ -437,34 +590,31 @@ class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface 
 	/**
 	 * Get product sale price with currency.
 	 *
-	 * @param \WC_Product      $product Product object.
-	 * @param \WC_Product|null $parent_product  Parent product (unused).
+	 * @param \WC_Product $product Product object.
 	 * @return string|null Product sale price or null.
 	 */
-	protected function get_sale_price( \WC_Product $product, ?\WC_Product $parent_product ): ?string {
+	protected function get_sale_price( \WC_Product $product ): ?string {
 		$currency = get_woocommerce_currency();
 		return $this->format_price( $product->get_sale_price(), $currency );
 	}
 
 	/**
-	 * Get product sale price with currency.
+	 * Get product sale price effective date.
 	 *
-	 * @param \WC_Product      $product Product object.
-	 * @param \WC_Product|null $parent_product  Parent product (unused).
-	 * @return string|null Product sale price or null.
+	 * @param \WC_Product $product Product object.
+	 * @return string|null Product sale price effective date or null.
 	 */
-	protected function get_sale_price_effective_date( \WC_Product $product, ?\WC_Product $parent_product ): ?string {
+	protected function get_sale_price_effective_date( \WC_Product $product ): ?string {
 		return $this->get_sale_date_range( $product );
 	}
 
 	/**
 	 * Get product availability status.
 	 *
-	 * @param \WC_Product      $product Product object.
-	 * @param \WC_Product|null $parent_product  Parent product (unused).
+	 * @param \WC_Product $product Product object.
 	 * @return string Product availability status.
 	 */
-	protected function get_availability( \WC_Product $product, ?\WC_Product $parent_product ): string {
+	protected function get_availability( \WC_Product $product ): string {
 		$stock_status = $product->get_stock_status();
 
 		switch ( $stock_status ) {
@@ -482,33 +632,30 @@ class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface 
 	/**
 	 * Get product inventory quantity.
 	 *
-	 * @param \WC_Product      $product Product object.
-	 * @param \WC_Product|null $parent_product  Parent product (unused).
+	 * @param \WC_Product $product Product object.
 	 * @return int Product inventory quantity.
 	 */
-	protected function get_inventory_quantity( \WC_Product $product, ?\WC_Product $parent_product ): int {
+	protected function get_inventory_quantity( \WC_Product $product ): int {
 		return $product->get_stock_quantity() ?? 0;
 	}
 
 	/**
 	 * Get product availability date.
 	 *
-	 * @param \WC_Product      $product Product object.
-	 * @param \WC_Product|null $parent_product  Parent product (unused).
+	 * @param \WC_Product $product Product object.
 	 * @return string|null Product availability date or null.
 	 */
-	protected function get_availability_date( \WC_Product $product, ?\WC_Product $parent_product ): ?string {
+	protected function get_availability_date( \WC_Product $product ): ?string {
 		return $this->get_meta_value( $product, '_oapfw_availability_date' );
 	}
 
 	/**
 	 * Get product expiration date.
 	 *
-	 * @param \WC_Product      $product Product object.
-	 * @param \WC_Product|null $parent_product  Parent product (unused).
+	 * @param \WC_Product $product Product object.
 	 * @return string|null Product expiration date or null.
 	 */
-	protected function get_expiration_date( \WC_Product $product, ?\WC_Product $parent_product ): ?string {
+	protected function get_expiration_date( \WC_Product $product ): ?string {
 		return $this->get_meta_value( $product, '_oapfw_expiration_date' );
 	}
 
@@ -519,7 +666,7 @@ class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface 
 	 * @param \WC_Product|null $parent_product  Parent product for group ID.
 	 * @return string|null Parent product ID or null.
 	 */
-	protected function get_item_group_id( \WC_Product $product, ?\WC_Product $parent_product ): ?string {
+	protected function get_item_group_id( \WC_Product $product, ?\WC_Product $parent_product = null ): ?string {
 		if ( ! $parent_product ) {
 			return null;
 		}
@@ -533,62 +680,56 @@ class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface 
 	 * @param \WC_Product|null $parent_product  Parent product for title.
 	 * @return string|null Parent product title or null.
 	 */
-	protected function get_item_group_title( \WC_Product $product, ?\WC_Product $parent_product ): ?string {
+	protected function get_item_group_title( \WC_Product $product, ?\WC_Product $parent_product = null ): ?string {
 		return $parent_product ? wp_strip_all_tags( $parent_product->get_name() ) : null;
 	}
 
 	/**
 	 * Get product color.
 	 *
-	 * @param \WC_Product      $product Product object.
-	 * @param \WC_Product|null $parent_product  Parent product (unused).
+	 * @param \WC_Product $product Product object.
 	 * @return string|null Product color or null.
 	 */
-	protected function get_color( \WC_Product $product, ?\WC_Product $parent_product ): ?string {
+	protected function get_color( \WC_Product $product ): ?string {
 		return $product->get_attribute( 'pa_color' ) ? $product->get_attribute( 'pa_color' ) : null;
 	}
 
 	/**
 	 * Get product size.
 	 *
-	 * @param \WC_Product      $product Product object.
-	 * @param \WC_Product|null $parent_product  Parent product (unused).
+	 * @param \WC_Product $product Product object.
 	 * @return string|null Product size or null.
 	 */
-	protected function get_size( \WC_Product $product, ?\WC_Product $parent_product ): ?string {
+	protected function get_size( \WC_Product $product ): ?string {
 		return $product->get_attribute( 'pa_size' ) ? $product->get_attribute( 'pa_size' ) : null;
 	}
 
 	/**
-	 * Get product size.
+	 * Get product size system.
 	 *
-	 * @param \WC_Product      $product Product object.
-	 * @param \WC_Product|null $parent_product  Parent product (unused).
-	 * @return string|null Product size or null.
+	 * @param \WC_Product $product Product object.
+	 * @return string|null Product size system or null.
 	 */
-	protected function get_size_system( \WC_Product $product, ?\WC_Product $parent_product ): ?string {
+	protected function get_size_system( \WC_Product $product ): ?string {
 		return $product->get_attribute( 'pa_size_system' ) ? $product->get_attribute( 'pa_size_system' ) : null;
 	}
 
 	/**
 	 * Get product gender.
 	 *
-	 * @param \WC_Product      $product Product object.
-	 * @param \WC_Product|null $parent_product  Parent product (unused).
+	 * @param \WC_Product $product Product object.
 	 * @return string|null Product gender or null.
 	 */
-	protected function get_gender( \WC_Product $product, ?\WC_Product $parent_product ): ?string {
+	protected function get_gender( \WC_Product $product ): ?string {
 		return $product->get_attribute( 'pa_gender' ) ? $product->get_attribute( 'pa_gender' ) : null;
 	}
 
 	/**
 	 * Get seller name.
 	 *
-	 * @param \WC_Product      $product Product object (unused).
-	 * @param \WC_Product|null $parent_product  Parent product (unused).
 	 * @return string|null Seller name or null.
 	 */
-	protected function get_seller_name( \WC_Product $product, ?\WC_Product $parent_product ): ?string {
+	protected function get_seller_name(): ?string {
 		$seller_name = $this->settings->get( 'seller_name' );
 		return $seller_name ? (string) $seller_name : null;
 	}
@@ -596,11 +737,9 @@ class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface 
 	/**
 	 * Get seller URL.
 	 *
-	 * @param \WC_Product      $product Product object (unused).
-	 * @param \WC_Product|null $parent_product  Parent product (unused).
 	 * @return string|null Seller URL or null.
 	 */
-	protected function get_seller_url( \WC_Product $product, ?\WC_Product $parent_product ): ?string {
+	protected function get_seller_url(): ?string {
 		$seller_url = $this->settings->get( 'seller_url' );
 		return $seller_url ? (string) $seller_url : null;
 	}
@@ -608,11 +747,9 @@ class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface 
 	/**
 	 * Get seller privacy policy URL.
 	 *
-	 * @param \WC_Product      $product Product object (unused).
-	 * @param \WC_Product|null $parent_product  Parent product (unused).
 	 * @return string|null Privacy policy URL or null.
 	 */
-	protected function get_seller_privacy_policy( \WC_Product $product, ?\WC_Product $parent_product ): ?string {
+	protected function get_seller_privacy_policy(): ?string {
 		$privacy_url = $this->settings->get( 'privacy_url' );
 		return $privacy_url ? (string) $privacy_url : null;
 	}
@@ -620,11 +757,9 @@ class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface 
 	/**
 	 * Get seller terms of service URL.
 	 *
-	 * @param \WC_Product      $product Product object (unused).
-	 * @param \WC_Product|null $parent_product  Parent product (unused).
 	 * @return string|null Terms of service URL or null.
 	 */
-	protected function get_seller_tos( \WC_Product $product, ?\WC_Product $parent_product ): ?string {
+	protected function get_seller_tos(): ?string {
 		$tos_url = $this->settings->get( 'tos_url' );
 		return $tos_url ? (string) $tos_url : null;
 	}
@@ -632,11 +767,9 @@ class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface 
 	/**
 	 * Get return policy URL.
 	 *
-	 * @param \WC_Product      $product Product object (unused).
-	 * @param \WC_Product|null $parent_product  Parent product (unused).
 	 * @return string|null Return policy URL or null.
 	 */
-	protected function get_return_policy( \WC_Product $product, ?\WC_Product $parent_product ): ?string {
+	protected function get_return_policy(): ?string {
 		$returns_url = $this->settings->get( 'returns_url' );
 		return $returns_url ? (string) $returns_url : null;
 	}
@@ -644,11 +777,9 @@ class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface 
 	/**
 	 * Get return window.
 	 *
-	 * @param \WC_Product      $product Product object (unused).
-	 * @param \WC_Product|null $parent_product  Parent product (unused).
 	 * @return string|null Return window or null.
 	 */
-	protected function get_return_window( \WC_Product $product, ?\WC_Product $parent_product ): ?string {
+	protected function get_return_window(): ?string {
 		$return_window = $this->settings->get( 'return_window' );
 		return $return_window ? (string) $return_window : null;
 	}
@@ -656,33 +787,27 @@ class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface 
 	/**
 	 * Get shipping data.
 	 *
-	 * @param \WC_Product      $product Product object (unused).
-	 * @param \WC_Product|null $parent_product  Parent product (unused).
 	 * @return array Shipping data array.
 	 */
-	protected function get_shipping( \WC_Product $product, ?\WC_Product $parent_product ): array {
+	protected function get_shipping(): array {
 		return $this->get_shipping_data();
 	}
 
 	/**
 	 * Get pickup method.
 	 *
-	 * @param \WC_Product      $product Product object (unused).
-	 * @param \WC_Product|null $parent_product  Parent product (unused).
 	 * @return string|null Pickup method or null.
 	 */
-	protected function get_pickup_method( \WC_Product $product, ?\WC_Product $parent_product ): ?string {
+	protected function get_pickup_method(): ?string {
 		return $this->has_local_pickup() ? 'in_store' : null;
 	}
 
 	/**
 	 * Get pickup SLA.
 	 *
-	 * @param \WC_Product      $product Product object (unused).
-	 * @param \WC_Product|null $parent_product  Parent product (unused).
 	 * @return string|null Pickup SLA or null.
 	 */
-	protected function get_pickup_sla( \WC_Product $product, ?\WC_Product $parent_product ): ?string {
+	protected function get_pickup_sla(): ?string {
 		if ( $this->has_local_pickup() ) {
 			$pickup_sla = $this->settings->get( 'pickup_sla' );
 			return $pickup_sla ? (string) $pickup_sla : null;
@@ -693,44 +818,40 @@ class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface 
 	/**
 	 * Get product warning.
 	 *
-	 * @param \WC_Product      $product Product object.
-	 * @param \WC_Product|null $parent_product  Parent product (unused).
+	 * @param \WC_Product $product Product object.
 	 * @return string|null Product warning or null.
 	 */
-	protected function get_warning( \WC_Product $product, ?\WC_Product $parent_product ): ?string {
+	protected function get_warning( \WC_Product $product ): ?string {
 		return $this->get_meta_value( $product, '_oapfw_warning' );
 	}
 
 	/**
 	 * Get product warning.
 	 *
-	 * @param \WC_Product      $product Product object.
-	 * @param \WC_Product|null $parent_product  Parent product (unused).
+	 * @param \WC_Product $product Product object.
 	 * @return string|null Product warning or null.
 	 */
-	protected function get_warning_url( \WC_Product $product, ?\WC_Product $parent_product ): ?string {
+	protected function get_warning_url( \WC_Product $product ): ?string {
 		return $this->get_meta_value( $product, '_oapfw_warning_url' );
 	}
 
 	/**
 	 * Get product age restriction.
 	 *
-	 * @param \WC_Product      $product Product object.
-	 * @param \WC_Product|null $parent_product  Parent product (unused).
+	 * @param \WC_Product $product Product object.
 	 * @return string|null Product age restriction or null.
 	 */
-	protected function get_age_restriction( \WC_Product $product, ?\WC_Product $parent_product ): ?string {
+	protected function get_age_restriction( \WC_Product $product ): ?string {
 		return $this->get_meta_value( $product, '_oapfw_age_restriction' );
 	}
 
 	/**
 	 * Get product Q and A.
 	 *
-	 * @param \WC_Product      $product Product object.
-	 * @param \WC_Product|null $parent_product  Parent product (unused).
+	 * @param \WC_Product $product Product object.
 	 * @return string|null Product Q and A or null.
 	 */
-	protected function get_q_and_a( \WC_Product $product, ?\WC_Product $parent_product ): ?string {
+	protected function get_q_and_a( \WC_Product $product ): ?string {
 		return $this->get_meta_value( $product, '_oapfw_q_and_a' );
 	}
 
@@ -921,11 +1042,10 @@ class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface 
 		return null;
 	}
 
-
-
-
 	/**
 	 * Get shipping data from WooCommerce zones (cached globally to prevent repeated queries)
+	 *
+	 * @return array Shipping data array.
 	 */
 	private function get_shipping_data(): array {
 		if ( null !== self::$cached_shipping_data ) {
@@ -963,6 +1083,8 @@ class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface 
 
 	/**
 	 * Get cached shipping zones (prevents repeated API calls)
+	 *
+	 * @return array Shipping zones.
 	 */
 	private function get_cached_shipping_zones(): array {
 		if ( null === self::$cached_shipping_zones ) {
@@ -1033,9 +1155,10 @@ class ProductMapper extends SchemaBasedMapper implements ProductMapperInterface 
 		);
 	}
 
-
 	/**
 	 * Check if local pickup is available (cached to prevent repeated zone queries)
+	 *
+	 * @return bool True if local pickup is available.
 	 */
 	private function has_local_pickup(): bool {
 		if ( null !== self::$cached_has_local_pickup ) {

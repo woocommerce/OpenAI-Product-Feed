@@ -135,16 +135,16 @@ class FeedGenerator implements FeedGeneratorInterface {
 			foreach ( $product->get_children() as $variation_id ) {
 				$variation = wc_get_product( $variation_id );
 				if ( $variation ) {
-					$rows[] = $this->product_mapper->map_product_by_schema( $variation, $product );
+					$rows[] = $this->product_mapper->map_product( $variation, $product );
 				}
 			}
 		} elseif ( $product->is_type( 'variation' ) ) {
 			// Individual variation.
 			$parent_product = wc_get_product( $product->get_parent_id() );
-			$rows[]         = $this->product_mapper->map_product_by_schema( $product, $parent_product );
+			$rows[]         = $this->product_mapper->map_product( $product, $parent_product );
 		} else {
 			// Simple product.
-			$rows[] = $this->product_mapper->map_product_by_schema( $product );
+			$rows[] = $this->product_mapper->map_product( $product );
 		}
 
 		return $rows;
