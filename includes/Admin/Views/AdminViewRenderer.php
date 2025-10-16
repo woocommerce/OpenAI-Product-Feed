@@ -23,9 +23,9 @@ class AdminViewRenderer {
 		CredentialValidator $credentialValidator,
 		FeedStatusProvider $statusProvider
 	) {
-		$this->settings = $settings;
+		$this->settings            = $settings;
 		$this->credentialValidator = $credentialValidator;
-		$this->statusProvider = $statusProvider;
+		$this->statusProvider      = $statusProvider;
 	}
 
 	public function renderTabNavigation( string $current_section ): void {
@@ -74,22 +74,22 @@ class AdminViewRenderer {
 		echo '<div class="notice notice-info" style="margin: 20px 0; padding: 20px; border-left: 4px solid #72aee6;">';
 		echo '<h3>' . esc_html__( 'Get Started with ChatGPT Shopping', 'openai-product-feed-for-woo' ) . '</h3>';
 		echo '<p>' . esc_html__( 'To enable your products in ChatGPT, you need OpenAI credentials. Choose one of the options below:', 'openai-product-feed-for-woo' ) . '</p>';
-		
+
 		echo '<div style="margin: 15px 0;">';
 		echo '<a href="https://chatgpt.com/merchants" target="_blank" rel="noopener" class="button button-primary" style="margin-right: 10px;">';
 		echo esc_html__( 'Apply to ChatGPT', 'openai-product-feed-for-woo' );
 		echo '</a>';
-		
+
 		echo '<button type="button" class="button button-secondary" onclick="document.getElementById(\'oapfw-credentials-form\').style.display=\'block\'; this.style.display=\'none\';">';
 		echo esc_html__( 'I have OpenAI credentials', 'openai-product-feed-for-woo' );
 		echo '</button>';
 		echo '</div>';
-		
+
 		echo '<div id="oapfw-credentials-form" style="display: none; margin-top: 20px; padding: 15px; background: #f9f9f9; border: 1px solid #ddd;">';
 		echo '<h4>' . esc_html__( 'Configure Your Credentials', 'openai-product-feed-for-woo' ) . '</h4>';
 		echo '<p>' . esc_html__( 'Enter your OpenAI endpoint URL and authentication token below, then save settings.', 'openai-product-feed-for-woo' ) . '</p>';
 		echo '</div>';
-		
+
 		echo '</div>';
 	}
 
@@ -165,9 +165,9 @@ class AdminViewRenderer {
 
 	public function renderPushStatus(): void {
 		echo '<div id="oapfw-feed-status">';
-		
+
 		$status = $this->statusProvider->getFeedStatus( true );
-		
+
 		echo '<table class="form-table">';
 
 		echo '<tr><th>' . esc_html__( 'Next Scheduled Push', 'openai-product-feed-for-woo' ) . '</th><td>';
@@ -182,13 +182,13 @@ class AdminViewRenderer {
 		if ( $status['has_issues'] ) {
 			$is_empty_feed = false;
 			foreach ( $status['validation_issues'] as $issue ) {
-				if ( isset( $issue['id'] ) && $issue['id'] === 'feed' && 
-					 isset( $issue['issues'] ) && in_array( 'Feed is empty - no products to export', $issue['issues'] ) ) {
+				if ( isset( $issue['id'] ) && $issue['id'] === 'feed' &&
+					isset( $issue['issues'] ) && in_array( 'Feed is empty - no products to export', $issue['issues'] ) ) {
 					$is_empty_feed = true;
 					break;
 				}
 			}
-			
+
 			if ( $is_empty_feed ) {
 				echo '<span style="color:#d63638;">⚠ ' . esc_html__( 'Feed is empty - no products to export', 'openai-product-feed-for-woo' ) . '</span>';
 				echo '<br><small style="color:#666;">' . esc_html__( 'Add products to your store or check that they are published and in stock.', 'openai-product-feed-for-woo' ) . '</small>';
@@ -198,8 +198,8 @@ class AdminViewRenderer {
 					$status['issue_count']
 				) . '</span>';
 				echo '<br><small style="color:#666;">' . esc_html__( 'Your feed has issues that need attention before it can be successfully processed by OpenAI.', 'openai-product-feed-for-woo' ) . '</small>';
-				echo '<br><a href="' . esc_url( $status['logs_url'] ) . '">' . 
-					 esc_html__( 'View detailed validation results →', 'openai-product-feed-for-woo' ) . '</a>';
+				echo '<br><a href="' . esc_url( $status['logs_url'] ) . '">' .
+					esc_html__( 'View detailed validation results →', 'openai-product-feed-for-woo' ) . '</a>';
 			}
 		} else {
 			echo '<span style="color:#00a32a;">✓ ' . esc_html__( 'Feed meets OpenAI specifications', 'openai-product-feed-for-woo' ) . '</span>';
@@ -208,10 +208,10 @@ class AdminViewRenderer {
 		echo '</td></tr>';
 
 		echo '<tr><th>' . esc_html__( 'Recent Activity', 'openai-product-feed-for-woo' ) . '</th><td>';
-		echo '<a href="' . esc_url( $status['logs_url'] ) . '" class="button button-secondary">' . 
-			 esc_html__( 'View Activity Logs', 'openai-product-feed-for-woo' ) . '</a>';
-		echo '<br><small style="color:#666; margin-top: 5px; display: inline-block;">' . 
-			 esc_html__( 'Last validation: just now', 'openai-product-feed-for-woo' ) . '</small>';
+		echo '<a href="' . esc_url( $status['logs_url'] ) . '" class="button button-secondary">' .
+			esc_html__( 'View Activity Logs', 'openai-product-feed-for-woo' ) . '</a>';
+		echo '<br><small style="color:#666; margin-top: 5px; display: inline-block;">' .
+			esc_html__( 'Last validation: just now', 'openai-product-feed-for-woo' ) . '</small>';
 		echo '</td></tr>';
 
 		echo '</table>';

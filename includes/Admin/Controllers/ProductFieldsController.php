@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Handles WooCommerce product data tab for OpenAI feed attributes
- * 
+ *
  * Adds custom product fields for OpenAI feed data that can't be automatically
  * derived from WooCommerce's existing product data structure.
  */
@@ -18,7 +18,7 @@ class ProductFieldsController {
 
 	/**
 	 * Initialize product fields functionality
-	 * 
+	 *
 	 * Hooks into WooCommerce product editing to add OpenAI-specific fields.
 	 */
 	public function init(): void {
@@ -45,14 +45,14 @@ class ProductFieldsController {
 
 	/**
 	 * Render the OpenAI Feed product data panel
-	 * 
+	 *
 	 * Displays custom fields for OpenAI feed attributes in the WooCommerce product editor.
 	 */
 	public function renderProductDataPanel(): void {
 		echo '<div id="oapfw_product_data" class="panel woocommerce_options_panel hidden">';
-		
+
 		$product = function_exists( 'wc_get_product' ) ? wc_get_product( get_the_ID() ) : null;
-		
+
 		echo '<p class="description">' . esc_html__( 'These fields inherit from WooCommerce global settings and existing product data (title, pricing, attributes). Set a value here only if you want to override the inherited value.', 'openai-product-feed-for-woo' ) . '</p>';
 		echo '<div class="options_group">';
 
@@ -80,7 +80,7 @@ class ProductFieldsController {
 				'label'       => __( 'Brand (fallback)', 'openai-product-feed-for-woo' ),
 				'desc_tip'    => true,
 				'description' => __( 'Used if attribute pa_brand is not set.', 'openai-product-feed-for-woo' ),
-				'placeholder' => $this->getAttributePlaceholder( $product, 'pa_brand' ),
+				'placeholder' => $this->get_attribute_placeholder( $product, 'pa_brand' ),
 			)
 		);
 
@@ -140,7 +140,7 @@ class ProductFieldsController {
 					'kids'    => 'kids',
 					'adult'   => 'adult',
 				),
-				'placeholder' => $this->getAttributePlaceholder( $product, 'pa_age_group' ),
+				'placeholder' => $this->get_attribute_placeholder( $product, 'pa_age_group' ),
 			)
 		);
 
@@ -180,7 +180,7 @@ class ProductFieldsController {
 				'id'          => '_oapfw_color',
 				'label'       => __( 'Color (override)', 'openai-product-feed-for-woo' ),
 				'description' => __( 'Used if attribute pa_color is not set.', 'openai-product-feed-for-woo' ),
-				'placeholder' => $this->getAttributePlaceholder( $product, 'pa_color' ),
+				'placeholder' => $this->get_attribute_placeholder( $product, 'pa_color' ),
 			)
 		);
 
@@ -189,7 +189,7 @@ class ProductFieldsController {
 				'id'          => '_oapfw_size',
 				'label'       => __( 'Size (override)', 'openai-product-feed-for-woo' ),
 				'description' => __( 'Used if attribute pa_size is not set.', 'openai-product-feed-for-woo' ),
-				'placeholder' => $this->getAttributePlaceholder( $product, 'pa_size' ),
+				'placeholder' => $this->get_attribute_placeholder( $product, 'pa_size' ),
 			)
 		);
 
@@ -198,17 +198,17 @@ class ProductFieldsController {
 				'id'          => '_oapfw_size_system',
 				'label'       => __( 'Size system', 'openai-product-feed-for-woo' ),
 				'options'     => array(
-					''     => __( '— Select —', 'openai-product-feed-for-woo' ),
-					'US'   => 'US',
-					'UK'   => 'UK',
-					'EU'   => 'EU',
-					'FR'   => 'FR',
-					'DE'   => 'DE',
-					'IT'   => 'IT',
-					'JP'   => 'JP',
-					'CN'   => 'CN',
-					'MEX'  => 'MEX',
-					'BR'   => 'BR',
+					''    => __( '— Select —', 'openai-product-feed-for-woo' ),
+					'US'  => 'US',
+					'UK'  => 'UK',
+					'EU'  => 'EU',
+					'FR'  => 'FR',
+					'DE'  => 'DE',
+					'IT'  => 'IT',
+					'JP'  => 'JP',
+					'CN'  => 'CN',
+					'MEX' => 'MEX',
+					'BR'  => 'BR',
 				),
 				'description' => __( 'Size measurement system.', 'openai-product-feed-for-woo' ),
 			)
@@ -216,9 +216,9 @@ class ProductFieldsController {
 
 		woocommerce_wp_select(
 			array(
-				'id'          => '_oapfw_gender',
-				'label'       => __( 'Target gender', 'openai-product-feed-for-woo' ),
-				'options'     => array(
+				'id'      => '_oapfw_gender',
+				'label'   => __( 'Target gender', 'openai-product-feed-for-woo' ),
+				'options' => array(
 					''       => __( '— Select —', 'openai-product-feed-for-woo' ),
 					'male'   => 'Male',
 					'female' => 'Female',
@@ -345,26 +345,26 @@ class ProductFieldsController {
 				'id'      => '_oapfw_relationship_type',
 				'label'   => __( 'Relationship type', 'openai-product-feed-for-woo' ),
 				'options' => array(
-					''                    => __( '— Optional —', 'openai-product-feed-for-woo' ),
-					'part_of_set'         => 'part_of_set',
-					'required_part'       => 'required_part',
-					'often_bought_with'   => 'often_bought_with',
-					'substitute'          => 'substitute',
-					'different_brand'     => 'different_brand',
-					'accessory'           => 'accessory',
+					''                  => __( '— Optional —', 'openai-product-feed-for-woo' ),
+					'part_of_set'       => 'part_of_set',
+					'required_part'     => 'required_part',
+					'often_bought_with' => 'often_bought_with',
+					'substitute'        => 'substitute',
+					'different_brand'   => 'different_brand',
+					'accessory'         => 'accessory',
 				),
 			)
 		);
 
 		echo '</div>';
 
-		$rest_url = rest_url( 'wc/v3/openai-feed' );
-		$preview_url = add_query_arg( 
-			array( 
+		$rest_url    = rest_url( 'wc/v3/openai-feed' );
+		$preview_url = add_query_arg(
+			array(
 				'product_id' => get_the_ID(),
-				'_wpnonce'   => wp_create_nonce( 'wp_rest' )
-			), 
-			$rest_url 
+				'_wpnonce'   => wp_create_nonce( 'wp_rest' ),
+			),
+			$rest_url
 		);
 		echo '<p style="margin: 8px 0;">' . esc_html__( 'Preview this product in the feed (admin-only):', 'openai-product-feed-for-woo' ) . ' ';
 		echo '<a href="' . esc_url( $preview_url ) . '" target="_blank">' . esc_html__( 'Open preview', 'openai-product-feed-for-woo' ) . '</a></p>';
@@ -374,14 +374,14 @@ class ProductFieldsController {
 
 	/**
 	 * Get placeholder text from product attribute
-	 * 
+	 *
 	 * Helper method to reduce redundancy when showing attribute fallbacks.
 	 *
 	 * @param \WC_Product|null $product Product object.
 	 * @param string           $attribute_name Attribute name (e.g., 'pa_brand').
 	 * @return string Placeholder text from attribute or empty string.
 	 */
-	private function getAttributePlaceholder( ?\WC_Product $product, string $attribute_name ): string {
+	private function get_attribute_placeholder( ?\WC_Product $product, string $attribute_name ): string {
 		return ( $product && $product->get_attribute( $attribute_name ) ) ? $product->get_attribute( $attribute_name ) : '';
 	}
 

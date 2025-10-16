@@ -72,9 +72,9 @@ class OpenAIFeedSchema {
 
 			// Product identifiers
 			'gtin'                      => array(
-				'required'      => true,
-				'type'          => 'string',
-				'description'   => 'Global Trade Item Number',
+				'required'    => true,
+				'type'        => 'string',
+				'description' => 'Global Trade Item Number',
 			),
 			'mpn'                       => array(
 				'required'    => false,

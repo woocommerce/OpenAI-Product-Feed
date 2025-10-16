@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Schema-driven feed data validator
- * 
+ *
  * Validates product feed data against OpenAI Product Feed specification.
  * Handles field-level validation, data type checking, and business rule validation.
  */
@@ -28,7 +28,7 @@ class FeedValidator implements ValidatorInterface {
 
 	/**
 	 * Initialize the validator with OpenAI feed schema
-	 * 
+	 *
 	 * Loads the complete OpenAI Product Feed schema for validation.
 	 */
 	public function __construct() {

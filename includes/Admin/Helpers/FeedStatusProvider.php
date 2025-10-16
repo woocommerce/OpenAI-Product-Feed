@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Provides feed status information and validation services
- * 
+ *
  * Handles feed validation, scheduled push tracking, and status reporting
  * for the admin interface.
  */
@@ -53,8 +53,8 @@ class FeedStatusProvider {
 	 */
 	public function __construct( FeedGeneratorInterface $feedGenerator, ValidatorInterface $validator ) {
 		$this->feedGenerator = $feedGenerator;
-		$this->validator = $validator;
-		$this->logger = function_exists( 'wc_get_logger' ) ? wc_get_logger() : null;
+		$this->validator     = $validator;
+		$this->logger        = function_exists( 'wc_get_logger' ) ? wc_get_logger() : null;
 	}
 
 	/**
@@ -74,7 +74,7 @@ class FeedStatusProvider {
 				'order'    => 'ASC',
 			)
 		);
-		
+
 		if ( ! empty( $scheduled_actions ) && isset( $scheduled_actions[0] ) ) {
 			return $scheduled_actions[0]->get_schedule()->get_date()->getTimestamp();
 		}
@@ -90,25 +90,30 @@ class FeedStatusProvider {
 	 * @return array Array of validation issues (empty if valid).
 	 */
 	public function validateFeedNow(): array {
-		$rows = $this->feedGenerator->buildFeed();
+		$rows   = $this->feedGenerator->buildFeed();
 		$issues = $this->validator->validateFeed( $rows );
-		
+
 		if ( $issues ) {
 			set_transient( 'oapfw_last_validation', $issues, 5 * MINUTE_IN_SECONDS );
-			
+
 			// Log validation issues
 			if ( $this->logger ) {
-				$issue_count = count( $issues );
-				$total_individual_issues = array_sum( array_map( function( $issue ) { 
-					return count( $issue['issues'] ?? array() ); 
-				}, $issues ) );
-				
+				$issue_count             = count( $issues );
+				$total_individual_issues = array_sum(
+					array_map(
+						function ( $issue ) {
+							return count( $issue['issues'] ?? array() );
+						},
+						$issues
+					)
+				);
+
 				$this->logger->warning( "Feed validation failed: {$total_individual_issues} validation issues across {$issue_count} items", array( 'source' => 'oapfw' ) );
-				
+
 				foreach ( $issues as $issue ) {
-					$product_id = $issue['id'] ?? 'unknown';
+					$product_id     = $issue['id'] ?? 'unknown';
 					$product_issues = $issue['issues'] ?? array();
-					
+
 					if ( $product_id === 'feed' ) {
 						// Feed-level issues (like empty feed)
 						foreach ( $product_issues as $feed_issue ) {
@@ -124,14 +129,14 @@ class FeedStatusProvider {
 			}
 		} else {
 			delete_transient( 'oapfw_last_validation' );
-			
+
 			// Log successful validation
 			if ( $this->logger ) {
 				$product_count = count( $rows );
 				$this->logger->info( "Feed validation passed: {$product_count} products validated successfully", array( 'source' => 'oapfw' ) );
 			}
 		}
-		
+
 		return $issues;
 	}
 
@@ -145,7 +150,7 @@ class FeedStatusProvider {
 		if ( $fresh ) {
 			return $this->validateFeedNow();
 		}
-		
+
 		$issues = get_transient( 'oapfw_last_validation' );
 		return ! empty( $issues ) && is_array( $issues ) ? $issues : array();
 	}
@@ -187,13 +192,13 @@ class FeedStatusProvider {
 	 */
 	public function getFeedStatus( bool $fresh_validation = true ): array {
 		$validation_issues = $this->getValidationIssues( $fresh_validation );
-		
+
 		return array(
-			'next_push' => $this->getNextScheduledPush(),
+			'next_push'         => $this->getNextScheduledPush(),
 			'validation_issues' => $validation_issues,
-			'has_issues' => ! empty( $validation_issues ),
-			'issue_count' => count( $validation_issues ),
-			'logs_url' => $this->getLogsUrl(),
+			'has_issues'        => ! empty( $validation_issues ),
+			'issue_count'       => count( $validation_issues ),
+			'logs_url'          => $this->getLogsUrl(),
 		);
 	}
 }

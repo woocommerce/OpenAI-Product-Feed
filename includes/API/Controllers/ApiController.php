@@ -44,7 +44,7 @@ class ApiController {
 			'/openai-feed',
 			array(
 				'methods'             => 'GET',
-				'permission_callback' => function( \WP_REST_Request $request ) {
+				'permission_callback' => function ( \WP_REST_Request $request ) {
 					return $this->checkAdminPermission( $request );
 				},
 				'callback'            => array( $this, 'handlePreviewFeed' ),
@@ -72,7 +72,7 @@ class ApiController {
 			if ( $nonce && wp_verify_nonce( $nonce, 'wp_rest' ) ) {
 				return true;
 			}
-			
+
 			if ( current_user_can( 'manage_woocommerce' ) ) {
 				return true;
 			}

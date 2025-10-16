@@ -36,10 +36,10 @@ class AdminController {
 		$this->feedGenerator = $feedGenerator;
 		$this->validator     = $validator;
 		$this->logger        = function_exists( 'wc_get_logger' ) ? wc_get_logger() : null;
-		
+
 		$this->credentialValidator = new CredentialValidator( $settings );
-		$this->statusProvider = new FeedStatusProvider( $feedGenerator, $validator );
-		$this->viewRenderer = new AdminViewRenderer( $settings, $this->credentialValidator, $this->statusProvider );
+		$this->statusProvider      = new FeedStatusProvider( $feedGenerator, $validator );
+		$this->viewRenderer        = new AdminViewRenderer( $settings, $this->credentialValidator, $this->statusProvider );
 	}
 
 	public function init(): void {
@@ -165,14 +165,14 @@ class AdminController {
 			return;
 		}
 
-		$product_id = is_numeric( $product_id_or_obj ) 
-			? (int) $product_id_or_obj 
+		$product_id = is_numeric( $product_id_or_obj )
+			? (int) $product_id_or_obj
 			: $product_id_or_obj->get_id();
 
 		if ( function_exists( 'as_schedule_single_action' ) ) {
-			as_schedule_single_action( 
-				time() + 30, 
-				'oapfw_push_delta_event', 
+			as_schedule_single_action(
+				time() + 30,
+				'oapfw_push_delta_event',
 				array( $product_id ),
 				'oapfw'
 			);
@@ -197,19 +197,22 @@ class AdminController {
 		}
 
 		if ( $enabled && function_exists( 'as_schedule_recurring_action' ) ) {
-			$action_id = as_schedule_recurring_action( 
+			$action_id = as_schedule_recurring_action(
 				time() + 60,
 				900,
 				self::SCHEDULED_ACTION_HOOK,
 				array(),
 				'oapfw'
 			);
-			
+
 			if ( $this->logger && $action_id ) {
-				$this->logger->info( 'Feed delivery scheduled', array(
-					'source' => 'oapfw',
-					'action' => $action_id,
-				) );
+				$this->logger->info(
+					'Feed delivery scheduled',
+					array(
+						'source' => 'oapfw',
+						'action' => $action_id,
+					)
+				);
 			}
 		}
 	}
