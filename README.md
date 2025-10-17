@@ -23,7 +23,7 @@ A WooCommerce plugin that automatically generates and delivers product feeds to 
 1. **Download** the latest release from GitHub Releases
 2. **Upload** the zip file via WordPress admin (Plugins > Add New > Upload Plugin) or extract to `/wp-content/plugins/`
 3. **Activate** the plugin through WordPress admin
-4. Go to **WooCommerce > Settings > OpenAI Feed**
+4. Go to **WooCommerce > Settings > Integrations > ChatGPT**
 
 ### Basic Setup
 
@@ -31,17 +31,10 @@ A WooCommerce plugin that automatically generates and delivers product feeds to 
    - Register at [ChatGPT Merchants](https://chatgpt.com/merchants)
    - Verify your feed meets OpenAI specifications
 
-2. **Configure Global Settings**
-   - Set default search/checkout behavior
-   - Add merchant information (store name, URLs, policies)
-   - Configure shipping and pickup options
-   - Configure TOS, Privacy Policy, Return Policy
-
-3. **Set Up Delivery** (Optional)
-   - Add OpenAI commerce endpoint URL
-   - Enter authentication token
-   - Choose feed format (JSON recommended)
-   - Enable scheduled delivery
+2. **Configure Integration Settings**
+   - Set your Feed Delivery URL (endpoint provided by OpenAI)
+   - Set Return Window (days)
+   - Store identity and policy settings are managed in WooCommerce core
 
 4. **Test Your Feed**
    - Click "Preview Feed" to see generated data
@@ -78,9 +71,7 @@ GET /wp-json/wc/v3/openai-feed
 GET /wp-json/wc/v3/openai-feed?product_id=123
 ```
 
-**3. Manual Download**
-- Download feeds directly from admin
-- Available in JSON, CSV, XML, TSV formats
+<!-- Manual download via admin has been removed with simplified settings -->
 
 ## Product Control
 

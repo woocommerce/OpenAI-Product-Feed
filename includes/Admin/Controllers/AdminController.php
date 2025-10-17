@@ -13,8 +13,7 @@ use OAPFW\Core\Interfaces\SettingsRepositoryInterface;
 use OAPFW\Core\Interfaces\FeedGeneratorInterface;
 use OAPFW\Core\Interfaces\ValidatorInterface;
 use OAPFW\Admin\Helpers\CredentialValidator;
-use OAPFW\Admin\Helpers\FeedStatusProvider;
-use OAPFW\Admin\Views\AdminViewRenderer;
+// No additional admin helper/view dependencies needed.
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -53,19 +52,7 @@ class AdminController {
 	 */
 	private CredentialValidator $credential_validator;
 
-	/**
-	 * Status provider instance.
-	 *
-	 * @var FeedStatusProvider
-	 */
-	private FeedStatusProvider $status_provider;
 
-	/**
-	 * View renderer instance.
-	 *
-	 * @var AdminViewRenderer
-	 */
-	private AdminViewRenderer $view_renderer;
 
 	/**
 	 * Logger instance.
@@ -94,96 +81,24 @@ class AdminController {
 		$this->logger         = function_exists( 'wc_get_logger' ) ? wc_get_logger() : null;
 
 		$this->credential_validator = new CredentialValidator( $settings );
-		$this->status_provider      = new FeedStatusProvider( $feed_generator, $validator );
-		$this->view_renderer        = new AdminViewRenderer( $settings, $this->credential_validator, $this->status_provider );
 	}
 
 	/**
 	 * Initialize the admin controller.
 	 */
 	public function init(): void {
-		add_filter( 'woocommerce_settings_tabs_array', [ $this, 'add_wc_settings_tab' ], 50 );
-		add_action( 'woocommerce_settings_tabs_oapfw', [ $this, 'render_wc_settings_tab' ] );
-		add_action( 'woocommerce_update_options_oapfw', [ $this, 'save_wc_settings' ] );
-
 		add_action( 'admin_post_oapfw_download_feed', [ $this, 'handle_download_feed' ] );
 		add_action( 'admin_post_oapfw_push_now', [ $this, 'handle_push_now' ] );
 
 		add_action( self::SCHEDULED_ACTION_HOOK, [ $this, 'cron_push_feed' ] );
 		add_action( 'oapfw_push_delta_event', [ $this, 'push_delta_to_endpoint' ], 10, 1 );
-		add_action( 'update_option_' . $this->settings->get_option_name(), [ $this, 'maybe_reschedule' ], 10, 2 );
 
 		add_action( 'woocommerce_update_product', [ $this, 'queue_delta_push' ], 10, 1 );
 		add_action( 'woocommerce_product_set_stock', [ $this, 'queue_delta_push' ], 10, 1 );
 		add_action( 'woocommerce_admin_process_product_object', [ $this, 'maybe_push_delta_on_save' ] );
-
-		add_action( 'admin_notices', [ $this, 'maybe_show_admin_notice' ] );
 	}
 
-	/**
-	 * Add WooCommerce settings tab.
-	 *
-	 * @param array $tabs Existing tabs.
-	 * @return array Modified tabs.
-	 */
-	public function add_wc_settings_tab( array $tabs ): array {
-		$tabs['oapfw'] = __( 'OpenAI Feed', 'openai-product-feed-for-woo' );
-		return $tabs;
-	}
 
-	/**
-	 * Render WooCommerce settings tab.
-	 */
-	public function render_wc_settings_tab(): void {
-		global $current_section;
-		$section = $current_section ? $current_section : 'push';
-
-		$this->view_renderer->render_tab_navigation( $section );
-		$this->render_tab_content( $section );
-	}
-
-	/**
-	 * Render tab content.
-	 *
-	 * @param string $section The section to render.
-	 */
-	private function render_tab_content( string $section ): void {
-		$this->view_renderer->render_tab_header();
-
-		switch ( $section ) {
-			case 'push':
-				$this->view_renderer->render_push_section();
-				break;
-			case 'settings':
-				$this->view_renderer->render_settings_section();
-				break;
-			default:
-				$this->view_renderer->render_push_section();
-				break;
-		}
-	}
-
-	/**
-	 * Save WooCommerce settings.
-	 */
-	public function save_wc_settings(): void {
-		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-		if ( ! isset( $_POST['_wpnonce'] ) || ! wp_verify_nonce( wp_unslash( $_POST['_wpnonce'] ), 'woocommerce-settings' ) ) {
-			return;
-		}
-
-		if ( ! current_user_can( 'manage_woocommerce' ) ) {
-			return;
-		}
-
-		$posted = isset( $_POST['oapfw_settings'] ) && is_array( $_POST['oapfw_settings'] )
-			// @see https://github.com/woocommerce/OpenAI-Product-Feed/issues/5
-			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-			? wp_unslash( $_POST['oapfw_settings'] )
-			: [];
-
-		$this->settings->save( $posted );
-	}
 
 	/**
 	 * Handle feed download.
@@ -297,61 +212,7 @@ class AdminController {
 		}
 	}
 
-	/**
-	 * Maybe reschedule feed delivery.
-	 *
-	 * @param mixed $old_value Old option value.
-	 * @param mixed $value New option value.
-	 */
-	public function maybe_reschedule( $old_value, $value ): void {
-		$enabled = isset( $value['delivery_enabled'] ) && 'true' === $value['delivery_enabled'];
 
-		if ( function_exists( 'as_unschedule_all_actions' ) ) {
-			as_unschedule_all_actions( self::SCHEDULED_ACTION_HOOK );
-		}
-
-		if ( $enabled && function_exists( 'as_schedule_recurring_action' ) ) {
-			$action_id = as_schedule_recurring_action(
-				time() + 60,
-				900,
-				self::SCHEDULED_ACTION_HOOK,
-				[],
-				'oapfw'
-			);
-
-			if ( $this->logger && $action_id ) {
-				$this->logger->info(
-					'Feed delivery scheduled',
-					[
-						'source' => 'oapfw',
-						'action' => $action_id,
-					]
-				);
-			}
-		}
-	}
-
-	/**
-	 * Maybe show admin notice.
-	 */
-	public function maybe_show_admin_notice(): void {
-		global $current_screen;
-
-		if ( ! isset( $current_screen ) || 'woocommerce_page_wc-settings' !== $current_screen->id ) {
-			return;
-		}
-
-		$nonce = isset( $_GET['oapfw_nonce'] ) ? sanitize_key( $_GET['oapfw_nonce'] ) : '';
-		if ( ! wp_verify_nonce( $nonce, 'oapfw_push_now' ) ) {
-			return;
-		}
-
-		if ( isset( $_GET['oapfw_message'] ) && 'pushed' === $_GET['oapfw_message'] ) {
-			echo '<div class="notice notice-success"><p>' .
-				esc_html__( 'Feed push triggered. Check debug log for status.', 'openai-product-feed-for-woo' ) .
-				'</p></div>';
-		}
-	}
 
 	/**
 	 * Check if feed can be pushed.

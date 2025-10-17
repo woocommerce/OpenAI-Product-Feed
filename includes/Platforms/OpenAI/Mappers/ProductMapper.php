@@ -323,7 +323,7 @@ class ProductMapper implements ProductMapperInterface {
 	protected function get_enable_search( \WC_Product $product, ?\WC_Product $parent_product ): string {
 		// For variations, check parent product meta; for simple products, check product meta.
 		$check_product = $parent_product ? $parent_product : $product;
-		return $this->get_enable_with_override( $check_product, '_oapfw_disable_search', 'enable_search_default', 'true' );
+		return $this->get_enable_with_override( $check_product, '_oapfw_disable_search', 'enable_products_default', 'true' );
 	}
 
 	/**
@@ -336,7 +336,7 @@ class ProductMapper implements ProductMapperInterface {
 	protected function get_enable_checkout( \WC_Product $product, ?\WC_Product $parent_product ): string {
 		// For variations, check parent product meta; for simple products, check product meta.
 		$check_product = $parent_product ? $parent_product : $product;
-		return $this->get_enable_with_override( $check_product, '_oapfw_disable_checkout', 'enable_checkout_default', 'false' );
+		return $this->get_enable_with_override( $check_product, '_oapfw_disable_checkout', 'enable_products_default', 'false' );
 	}
 
 	/**

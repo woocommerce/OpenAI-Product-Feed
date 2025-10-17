@@ -22,6 +22,7 @@
             "OAPFW\\": "includes"
         }
     },
+    "autoload-dev": {},
     "scripts": {
         "phpcs": "phpcs --standard=phpcs.xml.dist",
         "phpcbf": "phpcbf --standard=phpcs.xml.dist",
