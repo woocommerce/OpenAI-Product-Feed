@@ -10,7 +10,6 @@ declare(strict_types=1);
 namespace OAPFW\Settings;
 
 use OAPFW\Core\Interfaces\SettingsRepositoryInterface;
-use OAPFW\Utils\StringHelper;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

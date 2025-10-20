@@ -156,12 +156,12 @@ final class Plugin {
 			}
 		);
 
-			$this->container->set(
-				'integrations.agentic',
-				function () {
-					return new AgenticIntegration();
-				}
-			);
+		$this->container->set(
+			'integrations.agentic',
+			function () {
+				return new AgenticIntegration();
+			}
+		);
 	}
 
 	/**

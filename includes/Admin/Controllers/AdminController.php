@@ -13,7 +13,6 @@ use OAPFW\Core\Interfaces\SettingsRepositoryInterface;
 use OAPFW\Core\Interfaces\FeedGeneratorInterface;
 use OAPFW\Core\Interfaces\ValidatorInterface;
 use OAPFW\Admin\Helpers\CredentialValidator;
-// No additional admin helper/view dependencies needed.
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -153,17 +152,6 @@ class AdminController {
 		if ( $product instanceof \WC_Product ) {
 			$this->queue_delta_push( $product );
 		}
-	}
-
-
-
-	/**
-	 * Check if feed can be pushed.
-	 *
-	 * @return bool True if feed can be pushed.
-	 */
-	private function can_push_feed(): bool {
-		return $this->credential_validator->can_push_feed();
 	}
 
 	/**
