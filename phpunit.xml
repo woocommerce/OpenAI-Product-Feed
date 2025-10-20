@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<!-- Configuration for coverage checks for `includes` -->
+<phpunit
+	bootstrap="tests/unit/bootstrap.php"
+	backupGlobals="false"
+	colors="true"
+	convertErrorsToExceptions="true"
+	convertNoticesToExceptions="true"
+	convertWarningsToExceptions="true"
+	cacheResult="false"
+	>
+	<testsuites>
+		<testsuite name="ProductFeed">
+			<directory suffix="Test.php">./tests/unit</directory>
+		</testsuite>
+	</testsuites>
+
+	<php>
+        <!-- Provided by wp-phpunit -->
+        <env name="WP_PHPUNIT__DIR" value="vendor/wp-phpunit/wp-phpunit" />
+    </php>
+
+	<!-- Set a whitelist for code coverage analysis -->
+	<filter>
+		<whitelist>
+			<directory suffix=".php">includes</directory>
+		</whitelist>
+	</filter>
+</phpunit>
