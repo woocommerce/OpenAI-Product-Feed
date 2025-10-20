@@ -9,8 +9,6 @@ declare(strict_types=1);
 
 namespace OAPFW\Settings;
 
-use OAPFW\Core\Interfaces\SettingsRepositoryInterface;
-
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -18,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Settings repository implementation - stateless adapter to Woo core registry
  */
-class SettingsRepository implements SettingsRepositoryInterface {
+final class SettingsRepository {
 
 	/**
 	 * Get setting value.

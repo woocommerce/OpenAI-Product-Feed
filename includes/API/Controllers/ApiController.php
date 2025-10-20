@@ -9,8 +9,8 @@ declare(strict_types=1);
 
 namespace OAPFW\API\Controllers;
 
-use OAPFW\Core\Interfaces\SettingsRepositoryInterface;
-use OAPFW\Core\Interfaces\FeedGeneratorInterface;
+use OAPFW\Settings\SettingsRepository;
+use OAPFW\Feed\FeedGenerator;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -24,26 +24,26 @@ class ApiController {
 	/**
 	 * Settings repository instance.
 	 *
-	 * @var SettingsRepositoryInterface
+	 * @var SettingsRepository
 	 */
-	private SettingsRepositoryInterface $settings;
+	private SettingsRepository $settings;
 
 	/**
 	 * Feed generator instance.
 	 *
-	 * @var FeedGeneratorInterface
+	 * @var FeedGenerator
 	 */
-	private FeedGeneratorInterface $feed_generator;
+	private FeedGenerator $feed_generator;
 
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsRepositoryInterface $settings The settings repository.
-	 * @param FeedGeneratorInterface      $feed_generator The feed generator.
+	 * @param SettingsRepository $settings The settings repository.
+	 * @param FeedGenerator      $feed_generator The feed generator.
 	 */
 	public function __construct(
-		SettingsRepositoryInterface $settings,
-		FeedGeneratorInterface $feed_generator
+		SettingsRepository $settings,
+		FeedGenerator $feed_generator
 	) {
 		$this->settings       = $settings;
 		$this->feed_generator = $feed_generator;

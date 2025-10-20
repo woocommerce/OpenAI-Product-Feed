@@ -9,7 +9,6 @@ declare(strict_types=1);
 
 namespace OAPFW\Platforms\OpenAI\Validators;
 
-use OAPFW\Core\Interfaces\ValidatorInterface;
 use OAPFW\Platforms\OpenAI\Schema\OpenAIFeedSchema;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -22,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Validates product feed data against OpenAI Product Feed specification.
  * Handles field-level validation, data type checking, and business rule validation.
  */
-class FeedValidator implements ValidatorInterface {
+final class FeedValidator {
 
 	/**
 	 * OpenAI feed schema configuration array.
