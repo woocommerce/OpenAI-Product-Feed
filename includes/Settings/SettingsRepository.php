@@ -63,26 +63,6 @@ class SettingsRepository implements SettingsRepositoryInterface {
 	}
 
 	/**
-	 * Set setting value.
-	 *
-	 * @param string $key The setting key.
-	 * @param mixed  $value The setting value.
-	 */
-	public function set( string $key, $value ): void { // phpcs:ignore
-		/* no-op */
-	}
-
-	/**
-	 * Save settings to database.
-	 *
-	 * @param array $settings The settings to save.
-	 * @return bool True on success.
-	 */
-	public function save( array $settings ): bool { // phpcs:ignore
-		return false;
-	}
-
-	/**
 	 * Get the full Woo agentic registry option value.
 	 *
 	 * @return array

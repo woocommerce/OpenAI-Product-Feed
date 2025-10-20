@@ -25,20 +25,4 @@ interface SettingsRepositoryInterface {
 	 * @return mixed The setting value.
 	 */
 	public function get( string $key, $default_value = '' );
-
-	/**
-	 * Set a setting value.
-	 *
-	 * @param string $key The setting key.
-	 * @param mixed  $value The setting value.
-	 */
-	public function set( string $key, $value ): void;
-
-	/**
-	 * Save settings.
-	 *
-	 * @param array $settings The settings to save.
-	 * @return bool True on success.
-	 */
-	public function save( array $settings ): bool;
 }
