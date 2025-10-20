@@ -9,9 +9,9 @@ declare(strict_types=1);
 
 namespace OAPFW\Admin\Controllers;
 
-use OAPFW\Core\Interfaces\SettingsRepositoryInterface;
-use OAPFW\Core\Interfaces\FeedGeneratorInterface;
-use OAPFW\Core\Interfaces\ValidatorInterface;
+use OAPFW\Settings\SettingsRepository;
+use OAPFW\Feed\FeedGenerator;
+use OAPFW\Platforms\OpenAI\Validators\FeedValidator;
 use OAPFW\Admin\Helpers\CredentialValidator;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -26,23 +26,23 @@ class AdminController {
 	/**
 	 * Settings repository instance.
 	 *
-	 * @var SettingsRepositoryInterface
+	 * @var SettingsRepository
 	 */
-	private SettingsRepositoryInterface $settings;
+	private SettingsRepository $settings;
 
 	/**
 	 * Feed generator instance.
 	 *
-	 * @var FeedGeneratorInterface
+	 * @var FeedGenerator
 	 */
-	private FeedGeneratorInterface $feed_generator;
+	private FeedGenerator $feed_generator;
 
 	/**
 	 * Validator instance.
 	 *
-	 * @var ValidatorInterface
+	 * @var FeedValidator
 	 */
-	private ValidatorInterface $validator;
+	private FeedValidator $validator;
 
 	/**
 	 * Credential validator instance.
@@ -65,14 +65,14 @@ class AdminController {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsRepositoryInterface $settings The settings repository.
-	 * @param FeedGeneratorInterface      $feed_generator The feed generator.
-	 * @param ValidatorInterface          $validator The validator.
+	 * @param SettingsRepository $settings The settings repository.
+	 * @param FeedGenerator      $feed_generator The feed generator.
+	 * @param FeedValidator      $validator The validator.
 	 */
 	public function __construct(
-		SettingsRepositoryInterface $settings,
-		FeedGeneratorInterface $feed_generator,
-		ValidatorInterface $validator
+		SettingsRepository $settings,
+		FeedGenerator $feed_generator,
+		FeedValidator $validator
 	) {
 		$this->settings       = $settings;
 		$this->feed_generator = $feed_generator;
@@ -182,12 +182,8 @@ class AdminController {
 			return;
 		}
 
-		// @see https://github.com/woocommerce/OpenAI-Product-Feed/issues/4
-		$content_type = null;
-
-		$payload = $this->feed_generator->serialize( $rows, $format, $content_type );
-
-		$headers = [ 'Content-Type' => $content_type ];
+		$payload = $this->feed_generator->serialize( $rows );
+		$headers = [ 'Content-Type' => 'application/json' ];
 		if ( $is_delta ) {
 			$headers['X-Feed-Delta'] = 'true';
 		}

@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace OAPFW\Admin\Helpers;
 
-use OAPFW\Core\Interfaces\SettingsRepositoryInterface;
+use OAPFW\Settings\SettingsRepository;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -23,16 +23,16 @@ class CredentialValidator {
 	/**
 	 * Settings repository instance.
 	 *
-	 * @var SettingsRepositoryInterface
+	 * @var SettingsRepository
 	 */
-	private SettingsRepositoryInterface $settings;
+	private SettingsRepository $settings;
 
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsRepositoryInterface $settings The settings repository.
+	 * @param SettingsRepository $settings The settings repository.
 	 */
-	public function __construct( SettingsRepositoryInterface $settings ) {
+	public function __construct( SettingsRepository $settings ) {
 		$this->settings = $settings;
 	}
 

@@ -9,8 +9,7 @@ declare(strict_types=1);
 
 namespace OAPFW\Platforms\OpenAI\Mappers;
 
-use OAPFW\Core\Interfaces\ProductMapperInterface;
-use OAPFW\Core\Interfaces\SettingsRepositoryInterface;
+use OAPFW\Settings\SettingsRepository;
 use OAPFW\Platforms\OpenAI\Schema\OpenAIFeedSchema;
 use OAPFW\Utils\StringHelper;
 
@@ -24,14 +23,14 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Converts WooCommerce product data into OpenAI Product Feed specification format.
  * Uses a schema-driven approach to ensure all required fields are mapped correctly.
  */
-class ProductMapper implements ProductMapperInterface {
+final class ProductMapper {
 
 	/**
 	 * Settings repository instance.
 	 *
-	 * @var SettingsRepositoryInterface
+	 * @var SettingsRepository
 	 */
-	protected SettingsRepositoryInterface $settings;
+	protected SettingsRepository $settings;
 
 	/**
 	 * OpenAI feed schema definition.
@@ -71,9 +70,9 @@ class ProductMapper implements ProductMapperInterface {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsRepositoryInterface $settings Settings repository.
+	 * @param SettingsRepository $settings Settings repository.
 	 */
-	public function __construct( SettingsRepositoryInterface $settings ) {
+	public function __construct( SettingsRepository $settings ) {
 		$this->settings = $settings;
 		$this->schema   = OpenAIFeedSchema::get_schema();
 	}

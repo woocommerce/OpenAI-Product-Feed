@@ -9,9 +9,8 @@ declare(strict_types=1);
 
 namespace OAPFW\Feed;
 
-use OAPFW\Core\Interfaces\FeedGeneratorInterface;
-use OAPFW\Core\Interfaces\ProductMapperInterface;
 use OAPFW\Feed\Serializers\SerializerFactory;
+use OAPFW\Platforms\OpenAI\Mappers\ProductMapper;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -20,21 +19,21 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Refactored feed generator
  */
-class FeedGenerator implements FeedGeneratorInterface {
+final class FeedGenerator {
 
 	/**
 	 * Product mapper instance.
 	 *
-	 * @var ProductMapperInterface
+	 * @var ProductMapper
 	 */
-	private ProductMapperInterface $product_mapper;
+	private ProductMapper $product_mapper;
 
 	/**
 	 * Constructor.
 	 *
-	 * @param ProductMapperInterface $product_mapper The product mapper.
+	 * @param ProductMapper $product_mapper The product mapper.
 	 */
-	public function __construct( ProductMapperInterface $product_mapper ) {
+	public function __construct( ProductMapper $product_mapper ) {
 		$this->product_mapper = $product_mapper;
 	}
 
@@ -44,11 +43,7 @@ class FeedGenerator implements FeedGeneratorInterface {
 	 * @return array Feed rows.
 	 */
 	public function build_feed(): array {
-		if ( ! class_exists( 'WC_Product' ) ) {
-			return [];
-		}
-
-		$products = $this->getProducts();
+		$products = $this->get_products();
 		$rows     = [];
 
 		foreach ( $products as $product ) {
@@ -95,22 +90,17 @@ class FeedGenerator implements FeedGeneratorInterface {
 	/**
 	 * Serialize feed data to specified format.
 	 *
-	 * @param array       $rows The feed rows.
-	 * @param string      $format The output format.
-	 * @param string|null $content_type The content type (passed by reference).
+	 * @param array $rows The feed rows.
 	 * @return string Serialized data.
 	 */
-	public function serialize( array $rows, string $format, ?string &$content_type = null ): string {
-		$serializer   = SerializerFactory::create( $format );
-		$content_type = $serializer->get_content_type();
-
-		return $serializer->serialize( $rows );
+	public function serialize( array $rows ): string {
+		return wp_json_encode( $rows, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
 	}
 
 	/**
 	 * Get products for feed generation
 	 */
-	private function getProducts(): array {
+	private function get_products(): array {
 		$args = [
 			'status' => [ 'publish' ],
 			'limit'  => -1,
