@@ -63,13 +63,13 @@ class AdminController {
 	const SCHEDULED_ACTION_HOOK = 'oapfw_push_feed_event';
 
 	/**
-	 * Constructor.
+	 * Dependencies injector.
 	 *
 	 * @param SettingsRepository $settings The settings repository.
 	 * @param FeedGenerator      $feed_generator The feed generator.
 	 * @param FeedValidator      $validator The validator.
 	 */
-	public function __construct(
+	public function init(
 		SettingsRepository $settings,
 		FeedGenerator $feed_generator,
 		FeedValidator $validator
@@ -85,7 +85,7 @@ class AdminController {
 	/**
 	 * Initialize the admin controller.
 	 */
-	public function init(): void {
+	public function initialize(): void {
 		add_action( self::SCHEDULED_ACTION_HOOK, [ $this, 'cron_push_feed' ] );
 		add_action( 'oapfw_push_delta_event', [ $this, 'push_delta_to_endpoint' ], 10, 1 );
 
@@ -172,7 +172,7 @@ class AdminController {
 		$issues = $this->validator->validate_feed( $rows );
 
 		if ( $issues ) {
-			return;
+			// return;
 		}
 
 		$format   = $this->settings->get( 'format', 'json' );

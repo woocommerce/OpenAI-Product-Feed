@@ -31,11 +31,11 @@ final class FeedValidator {
 	private array $schema;
 
 	/**
-	 * Initialize the validator with OpenAI feed schema
+	 * Dependency Injector.
 	 *
 	 * Loads the complete OpenAI Product Feed schema for validation.
 	 */
-	public function __construct() {
+	public function init() {
 		$this->schema = OpenAIFeedSchema::get_schema();
 	}
 
