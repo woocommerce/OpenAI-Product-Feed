@@ -74,15 +74,6 @@ class SettingsRepository implements SettingsRepositoryInterface {
 	}
 
 	/**
-	 * Get all settings.
-	 *
-	 * @return array All settings.
-	 */
-	public function all(): array {
-		return [];
-	}
-
-	/**
 	 * Save settings to database.
 	 *
 	 * @param array $settings The settings to save.
@@ -93,45 +84,7 @@ class SettingsRepository implements SettingsRepositoryInterface {
 	}
 
 	/**
-	 * Get option name.
-	 *
-	 * @return string The option name.
-	 */
-	public function get_option_name(): string {
-		return 'oapfw_settings';
-	}
-
-	/**
-	 * Load settings from database.
-	 */
-	private function load_settings(): void {
-		/* no-op */
-	}
-
-	/**
-	 * Sanitize settings input.
-	 *
-	 * @param array $input The input data to sanitize.
-	 * @return array Sanitized settings.
-	 */
-	public function sanitize( array $input ): array { // phpcs:ignore
-		return [];
-	}
-
-	/**
-	 * Get default values with WordPress integration.
-	 *
-	 * @return array Default settings.
-	 */
-	public function get_defaults(): array {
-		return [];
-	}
-
-	/**
 	 * Get the full Woo agentic registry option value.
-	 *
-	 * The exact option key may evolve in Woo core. Probe a few likely keys and
-	 * return the first that looks correct and contains an 'openai' entry.
 	 *
 	 * @return array
 	 */

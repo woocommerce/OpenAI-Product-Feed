@@ -18,13 +18,6 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 interface SettingsRepositoryInterface {
 	/**
-	 * Get default values with WordPress integration.
-	 *
-	 * @return array Default settings.
-	 */
-	public function get_defaults(): array;
-
-	/**
 	 * Get a setting value.
 	 *
 	 * @param string $key The setting key.
@@ -42,24 +35,10 @@ interface SettingsRepositoryInterface {
 	public function set( string $key, $value ): void;
 
 	/**
-	 * Get all settings.
-	 *
-	 * @return array All settings.
-	 */
-	public function all(): array;
-
-	/**
 	 * Save settings.
 	 *
 	 * @param array $settings The settings to save.
 	 * @return bool True on success.
 	 */
 	public function save( array $settings ): bool;
-
-	/**
-	 * Get the option name.
-	 *
-	 * @return string The option name.
-	 */
-	public function get_option_name(): string;
 }

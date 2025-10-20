@@ -192,11 +192,6 @@ final class Plugin {
 				)
 			);
 		}
-
-		$settings = new SettingsRepository();
-		if ( ! get_option( $settings->get_option_name() ) ) {
-			update_option( $settings->get_option_name(), $settings->get_defaults() );
-		}
 	}
 
 	/**

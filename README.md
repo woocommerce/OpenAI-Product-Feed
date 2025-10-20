@@ -10,7 +10,7 @@ A WooCommerce plugin that automatically generates and delivers product feeds to 
 
 - **Complete OpenAI Specification Coverage** - All required and optional fields supported
 - **Real-time Updates** - Products sync within 30 seconds of changes
-- **Scheduled Delivery** - Automatic full feed updates every 15 minutes  
+- **Scheduled Delivery** - Automatic full feed updates every 15 minutes
 - **Per-Product Control** - Override global settings for individual products
 - **Feed Validation** - Built-in validation against OpenAI specifications
 - **Multiple Formats** - JSON, CSV, XML, TSV export options
@@ -70,8 +70,6 @@ The plugin automatically maps your WooCommerce products to OpenAI's required for
 GET /wp-json/wc/v3/openai-feed
 GET /wp-json/wc/v3/openai-feed?product_id=123
 ```
-
-<!-- Manual download via admin has been removed with simplified settings -->
 
 ## Product Control
 
