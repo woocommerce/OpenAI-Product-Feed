@@ -182,12 +182,8 @@ class AdminController {
 			return;
 		}
 
-		// @see https://github.com/woocommerce/OpenAI-Product-Feed/issues/4
-		$content_type = null;
-
-		$payload = $this->feed_generator->serialize( $rows, $format, $content_type );
-
-		$headers = [ 'Content-Type' => $content_type ];
+		$payload = $this->feed_generator->serialize( $rows );
+		$headers = [ 'Content-Type' => 'application/json' ];
 		if ( $is_delta ) {
 			$headers['X-Feed-Delta'] = 'true';
 		}

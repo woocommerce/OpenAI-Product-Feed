@@ -90,16 +90,11 @@ final class FeedGenerator {
 	/**
 	 * Serialize feed data to specified format.
 	 *
-	 * @param array       $rows The feed rows.
-	 * @param string      $format The output format.
-	 * @param string|null $content_type The content type (passed by reference).
+	 * @param array $rows The feed rows.
 	 * @return string Serialized data.
 	 */
-	public function serialize( array $rows, string $format, ?string &$content_type = null ): string {
-		$serializer   = SerializerFactory::create( $format );
-		$content_type = $serializer->get_content_type();
-
-		return $serializer->serialize( $rows );
+	public function serialize( array $rows ): string {
+		return wp_json_encode( $rows, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
 	}
 
 	/**
