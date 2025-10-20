@@ -87,69 +87,12 @@ class AdminController {
 	 * Initialize the admin controller.
 	 */
 	public function init(): void {
-		add_action( 'admin_post_oapfw_download_feed', [ $this, 'handle_download_feed' ] );
-		add_action( 'admin_post_oapfw_push_now', [ $this, 'handle_push_now' ] );
-
 		add_action( self::SCHEDULED_ACTION_HOOK, [ $this, 'cron_push_feed' ] );
 		add_action( 'oapfw_push_delta_event', [ $this, 'push_delta_to_endpoint' ], 10, 1 );
 
 		add_action( 'woocommerce_update_product', [ $this, 'queue_delta_push' ], 10, 1 );
 		add_action( 'woocommerce_product_set_stock', [ $this, 'queue_delta_push' ], 10, 1 );
 		add_action( 'woocommerce_admin_process_product_object', [ $this, 'maybe_push_delta_on_save' ] );
-	}
-
-
-
-	/**
-	 * Handle feed download.
-	 */
-	public function handle_download_feed(): void {
-		if ( ! current_user_can( 'manage_woocommerce' ) ) {
-			wp_die( esc_html__( 'Permission denied.', 'openai-product-feed-for-woo' ) );
-		}
-
-		check_admin_referer( 'oapfw_download_feed' );
-
-		$format   = $this->settings->get( 'format', 'json' );
-		$filename = 'openai-feed-' . gmdate( 'Ymd-His' ) . '.' . $format;
-
-		// @see https://github.com/woocommerce/OpenAI-Product-Feed/issues/4
-		$content_type = null;
-
-		$rows    = $this->feed_generator->build_feed();
-		$payload = $this->feed_generator->serialize( $rows, $format, $content_type );
-
-		nocache_headers();
-		header( 'Content-Type: ' . $content_type );
-		header( 'Content-Disposition: attachment; filename=' . $filename );
-		echo $payload; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-		exit;
-	}
-
-	/**
-	 * Handle push now action.
-	 */
-	public function handle_push_now(): void {
-		if ( ! current_user_can( 'manage_woocommerce' ) ) {
-			wp_die( esc_html__( 'Permission denied.', 'openai-product-feed-for-woo' ) );
-		}
-
-		check_admin_referer( 'oapfw_push_now' );
-
-		$this->push_to_endpoint();
-
-		wp_safe_redirect(
-			add_query_arg(
-				[
-					'page'          => 'wc-settings',
-					'tab'           => 'oapfw',
-					'oapfw_message' => 'pushed',
-					'oapfw_nonce'   => wp_create_nonce( 'oapfw_push_now' ),
-				],
-				admin_url( 'admin.php' )
-			)
-		);
-		exit;
 	}
 
 	/**
