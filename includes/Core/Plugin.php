@@ -10,13 +10,13 @@ declare(strict_types=1);
 namespace OAPFW\Core;
 
 use OAPFW\Settings\SettingsRepository;
-use OAPFW\Settings\SettingsRenderer;
 use OAPFW\Feed\FeedGenerator;
 use OAPFW\Platforms\OpenAI\Mappers\ProductMapper;
 use OAPFW\Platforms\OpenAI\Validators\FeedValidator;
 use OAPFW\Admin\Controllers\AdminController;
 use OAPFW\Admin\Controllers\ProductFieldsController;
 use OAPFW\API\Controllers\ApiController;
+use OAPFW\Integrations\AgenticIntegration;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -106,12 +106,6 @@ final class Plugin {
 			}
 		);
 
-		$this->container->set(
-			'settings.renderer',
-			function () {
-				return new SettingsRenderer( $this->container->get( 'settings.repository' ) );
-			}
-		);
 
 		$this->container->set(
 			'feed.mapper',
@@ -161,14 +155,23 @@ final class Plugin {
 				);
 			}
 		);
+
+		$this->container->set(
+			'integrations.agentic',
+			function () {
+				return new AgenticIntegration();
+			}
+		);
 	}
 
 	/**
 	 * Initialize components.
 	 */
 	private function initialize_components(): void {
-		$this->container->get( 'settings.renderer' )->register();
+		// Bridge into Woo Integrations (ChatGPT provider) for simplified settings.
+		$this->container->get( 'integrations.agentic' )->register();
 
+		// Initialize admin controller (no separate settings tab; configuration lives under Integrations → ChatGPT).
 		$this->container->get( 'admin.controller' )->init();
 
 		$this->container->get( 'admin.product_fields_controller' )->init();
@@ -188,11 +191,6 @@ final class Plugin {
 					'openai-product-feed-for-woo'
 				)
 			);
-		}
-
-		$settings = new SettingsRepository();
-		if ( ! get_option( $settings->get_option_name() ) ) {
-			update_option( $settings->get_option_name(), $settings->get_defaults() );
 		}
 	}
 
