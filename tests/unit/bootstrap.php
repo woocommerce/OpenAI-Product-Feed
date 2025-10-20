@@ -27,9 +27,17 @@ require $_tests_dir . '/includes/functions.php';
  * Adjust the path to your main plugin file.
  */
 tests_add_filter( 'muplugins_loaded', function () {
+    // Load the WooCommerce plugin so we can use its classes in our plugin and tests.
+	require_once WP_PLUGIN_DIR . '/woocommerce/woocommerce.php';
+
     // If your plugin main file is your-plugin.php at repo root:
     require dirname( __DIR__, 2 ) . '/openai-product-feed-for-woo.php';
 } );
 
 // Boot the WordPress testing environment.
 require $_tests_dir . '/includes/bootstrap.php';
+
+// Load WooCommerce test framework
+require_once __DIR__ . '/../framework/wp-http-testcase.php';
+require_once __DIR__ . '/../framework/class-wc-unit-test-factory.php';
+require_once __DIR__ . '/../framework/class-wc-unit-test-case.php';
