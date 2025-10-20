@@ -20,7 +20,6 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Refactored feed generator
  */
 final class FeedGenerator {
-
 	/**
 	 * Product mapper instance.
 	 *
@@ -29,11 +28,11 @@ final class FeedGenerator {
 	private ProductMapper $product_mapper;
 
 	/**
-	 * Constructor.
+	 * Dependency injector.
 	 *
 	 * @param ProductMapper $product_mapper The product mapper.
 	 */
-	public function __construct( ProductMapper $product_mapper ) {
+	public function init( ProductMapper $product_mapper ) {
 		$this->product_mapper = $product_mapper;
 	}
 

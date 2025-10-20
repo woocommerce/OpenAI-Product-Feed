@@ -68,11 +68,11 @@ final class ProductMapper {
 	private static ?bool $cached_has_local_pickup = null;
 
 	/**
-	 * Constructor.
+	 * Dependency injector.
 	 *
 	 * @param SettingsRepository $settings Settings repository.
 	 */
-	public function __construct( SettingsRepository $settings ) {
+	public function init( SettingsRepository $settings ) {
 		$this->settings = $settings;
 		$this->schema   = OpenAIFeedSchema::get_schema();
 	}

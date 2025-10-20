@@ -26,7 +26,7 @@ class ProductFieldsController {
 	 *
 	 * Hooks into WooCommerce product editing to add OpenAI-specific fields.
 	 */
-	public function init(): void {
+	public function initialize(): void {
 		add_filter( 'woocommerce_product_data_tabs', [ $this, 'add_product_data_tab' ] );
 		add_action( 'woocommerce_product_data_panels', [ $this, 'render_product_data_panel' ] );
 		add_action( 'woocommerce_admin_process_product_object', [ $this, 'save_product_fields' ] );

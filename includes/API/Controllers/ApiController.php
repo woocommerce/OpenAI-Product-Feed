@@ -9,7 +9,6 @@ declare(strict_types=1);
 
 namespace OAPFW\API\Controllers;
 
-use OAPFW\Settings\SettingsRepository;
 use OAPFW\Feed\FeedGenerator;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -20,14 +19,6 @@ if ( ! defined( 'ABSPATH' ) ) {
  * API controller for REST endpoints
  */
 class ApiController {
-
-	/**
-	 * Settings repository instance.
-	 *
-	 * @var SettingsRepository
-	 */
-	private SettingsRepository $settings;
-
 	/**
 	 * Feed generator instance.
 	 *
@@ -36,23 +27,18 @@ class ApiController {
 	private FeedGenerator $feed_generator;
 
 	/**
-	 * Constructor.
+	 * Dependency injector.
 	 *
-	 * @param SettingsRepository $settings The settings repository.
-	 * @param FeedGenerator      $feed_generator The feed generator.
+	 * @param FeedGenerator $feed_generator The feed generator.
 	 */
-	public function __construct(
-		SettingsRepository $settings,
-		FeedGenerator $feed_generator
-	) {
-		$this->settings       = $settings;
+	public function init( FeedGenerator $feed_generator ) {
 		$this->feed_generator = $feed_generator;
 	}
 
 	/**
 	 * Initialize API endpoints
 	 */
-	public function init(): void {
+	public function initialize(): void {
 		add_action( 'rest_api_init', [ $this, 'register_routes' ] );
 	}
 
