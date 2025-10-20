@@ -44,10 +44,6 @@ class FeedGenerator implements FeedGeneratorInterface {
 	 * @return array Feed rows.
 	 */
 	public function build_feed(): array {
-		if ( ! class_exists( 'WC_Product' ) ) {
-			return [];
-		}
-
 		$products = $this->getProducts();
 		$rows     = [];
 
