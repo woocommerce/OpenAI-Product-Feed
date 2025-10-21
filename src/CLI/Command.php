@@ -95,7 +95,11 @@ class Command extends WP_CLI_Command {
 		}
 
 		$walker->walk(
-			function ( $processed, $page, $pages ) {
+			function ( $processed, $page, $pages ) use ( $silent ) {
+				if ( $silent ) {
+					return;
+				}
+
 				WP_CLI::log( "Batch $page/$pages: Processed $processed products" );
 			}
 		);
