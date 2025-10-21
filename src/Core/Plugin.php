@@ -12,7 +12,7 @@ namespace Automattic\WooCommerce\ProductFeedForOpenAI\Core;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Admin\Controllers\AdminController;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Admin\Controllers\ProductFieldsController;
 use Automattic\WooCommerce\ProductFeedForOpenAI\API\Controllers\ApiController;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\AgenticIntegration;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\AgenticIntegration;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Core\DependencyManagement\Container;
 
 if ( ! defined( 'ABSPATH' ) ) {
