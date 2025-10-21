@@ -9,6 +9,13 @@
     <!-- Exclude paths -->
 	<exclude-pattern>./node_modules/*</exclude-pattern>
 	<exclude-pattern>./vendor/*</exclude-pattern>
+	<exclude-pattern>./tests/unit/bootstrap.php</exclude-pattern>
+	<exclude-pattern>./tests/unit/woo/*</exclude-pattern>
+
+	<!-- The core container does not need further sniffing -->
+	<exclude-pattern>./src/Core/DependencyManagement/RuntimeContainer.php</exclude-pattern>
+	<exclude-pattern>./src/Core/DependencyManagement/ContainerException.php</exclude-pattern>
+	<exclude-pattern>./src/Core/DependencyManagement/Container.php</exclude-pattern>
 
 	<!-- Configs -->
 	<config name="minimum_supported_wp_version" value="6.0" />
@@ -32,12 +39,23 @@
 
 	<rule ref="WordPress.WP.I18n">
 		<properties>
-			<property name="text_domain" type="array" value="woocommerce-product-feed-openai" />
+			<property name="text_domain" type="array">
+				<element value="woocommerce-product-feed-openai" />
+			</property>
 		</properties>
 	</rule>
 
 	<rule ref="WordPress.Files.FileName">
 		<exclude-pattern>src/*</exclude-pattern>
+		<exclude-pattern>tests/unit/ProductFeed/*</exclude-pattern>
+	</rule>
+
+	<!-- Relax comments in tests -->
+	<rule ref="Squiz.Commenting.FileComment.Missing">
+		<exclude-pattern>tests/unit/ProductFeed/*</exclude-pattern>
+	</rule>
+	<rule ref="Squiz.Commenting.FunctionComment.Missing">
+		<exclude-pattern>tests/unit/ProductFeed/*</exclude-pattern>
 	</rule>
 
 	<rule ref="WordPress.WP.Capabilities">

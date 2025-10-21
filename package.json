@@ -1,0 +1,22 @@
+{
+	"name": "@woocommerce/OpenAI-Product-Feed",
+	"private": true,
+	"title": "OpenAI-Product-Feed",
+	"version": "0.1.0",
+	"homepage": "https://woocommerce.com/",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/woocommerce/OpenAI-Product-Feed.git"
+	},
+	"license": "GPL-2.0-or-later",
+	"scripts": {
+        "env:start": "wp-env start --update",
+        "env:stop": "wp-env stop",
+        "test:php": "./bin/checkout-woo-tests.sh && wp-env run --env-cwd='wp-content/plugins/woocommerce-product-feed-for-openai' tests-cli vendor/bin/phpunit -c phpunit.xml tests/unit/ProductFeed",
+        "lint:php": "./vendor/bin/phpcs --standard=phpcs.xml.dist .",
+        "lint:php-fix": "./vendor/bin/phpcbf --standard=phpcs.xml.dist ."
+    },
+	"devDependencies": {
+		"@wordpress/env": "^10.33.0"
+	}
+}

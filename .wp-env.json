@@ -1,12 +1,24 @@
 {
-  "phpVersion": "8.1",
-  "plugins": [
-    "https://downloads.wordpress.org/plugin/woocommerce.latest-stable.zip",
-    "."
-  ],
-  "config": {
-    "WP_DEBUG": true,
-    "WP_DEBUG_LOG": true,
-    "SCRIPT_DEBUG": true
-  }
+	"phpVersion": "8.1",
+	"plugins": [
+		"https://downloads.wordpress.org/plugin/woocommerce.latest-stable.zip",
+		"."
+	],
+	"mappings": {
+	  "wp-content/plugins/woocommerce-product-feed-for-openai": "."
+	},
+	"config": {
+		"WP_DEBUG": true,
+		"WP_DEBUG_LOG": true,
+		"SCRIPT_DEBUG": true
+	},
+	"env": {
+		"development": {
+			"port": 58087
+		},
+		"tests": {
+			"port": 58088,
+			"mysqlPort": 58089
+		}
+	}
 }
