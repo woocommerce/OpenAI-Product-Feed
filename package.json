@@ -16,7 +16,7 @@
         "lint:php": "./vendor/bin/phpcs --standard=phpcs.xml.dist .",
         "lint:php-fix": "./vendor/bin/phpcbf --standard=phpcs.xml.dist ."
     },
-	"dependencies": {
+	"devDependencies": {
 		"@wordpress/env": "^10.33.0"
 	}
 }
