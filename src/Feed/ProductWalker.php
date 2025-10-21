@@ -39,6 +39,20 @@ class ProductWalker {
 	private $validator;
 
 	/**
+	 * The number of products to iterate through per batch.
+	 *
+	 * @var int
+	 */
+	private int $per_page = 100;
+
+	/**
+	 * The time limit to extend the execution time limit per batch.
+	 *
+	 * @var int
+	 */
+	private int $time_limit = 0;
+
+	/**
 	 * Class constructor.
 	 *
 	 * This class will not be available through DI. Instead, it needs to be instantiated directly.
@@ -58,15 +72,36 @@ class ProductWalker {
 	}
 
 	/**
+	 * Set the number of products to iterate through per batch.
+	 *
+	 * @param int $batch_size The number of products to iterate through per batch.
+	 * @return self
+	 */
+	public function set_batch_size( int $batch_size ): self {
+		$this->per_page = $batch_size;
+		return $this;
+	}
+
+	/**
+	 * Set the time limit to extend the execution time limit per batch.
+	 *
+	 * @param int $time_limit Time limit in seconds.
+	 * @return self
+	 */
+	public function add_time_limit( int $time_limit ): self {
+		$this->time_limit = $time_limit;
+		return $this;
+	}
+
+	/**
 	 * Walks through all products.
 	 *
-	 * @param int $extend_execution_time_limit The number of seconds to extend the execution time limit per batch.
-	 * @return int The total number of products walked through.
+	 * @param callable $callback The callback to call after each batch of products is processed.
+	 * @return int The total number of products processed.
 	 */
-	public function walk( int $extend_execution_time_limit = 0 ): int {
-		$page     = 1;
-		$per_page = 100;
-		$total    = 0;
+	public function walk( ?callable $callback = null ): int {
+		$page  = 0;
+		$total = 0;
 
 		/**
 		 * Allows the base arguments for querying products for product feeds to be changed.
@@ -87,14 +122,34 @@ class ProductWalker {
 			]
 		);
 
+		// Instruct the feed to start.
+		$this->feed->start();
+
+		// Expectations will be stored here.
+		$all_products_count = null;
+		$total_batch_number = null;
+
 		do {
-			$iterated = $this->iterate( $args, $page, $per_page );
+			$result   = $this->iterate( $args, ++$page, $this->per_page );
+			$iterated = count( $result->products );
 			$total   += $iterated;
 
-			if ( $extend_execution_time_limit > 0 ) {
-				set_time_limit( $extend_execution_time_limit );
+			if ( is_null( $all_products_count ) ) {
+				$all_products_count = $result->total;
+				$total_batch_number = $result->max_num_pages;
 			}
-		} while ( $iterated === $per_page );
+
+			if ( is_callable( $callback ) ) {
+				$callback( $iterated, $page, $total_batch_number, $all_products_count );
+			}
+
+			if ( $this->time_limit > 0 ) {
+				set_time_limit( $this->time_limit );
+			}
+		} while ( $iterated === $this->per_page );
+
+		// Instruct the feed to end.
+		$this->feed->end();
 
 		return $total;
 	}
@@ -105,18 +160,19 @@ class ProductWalker {
 	 * @param array $args The arguments to pass to wc_get_products().
 	 * @param int   $page The page number to iterate through.
 	 * @param int   $limit The maximum number of products to iterate through.
-	 * @return int The number of products iterated through.
+	 * @return object The result of the query.
 	 */
-	public function iterate( array $args = [], int $page = 1, int $limit = 100 ): int {
-		$products = wc_get_products(
+	private function iterate( array $args = [], int $page = 1, int $limit = 100 ): object {
+		$result = wc_get_products(
 			[
 				...$args,
-				'page'  => $page,
-				'limit' => $limit,
+				'page'     => $page,
+				'limit'    => $limit,
+				'paginate' => true,
 			]
 		);
 
-		foreach ( $products as $product ) {
+		foreach ( $result->products as $product ) {
 			$mapped_data = $this->mapper->map_product( $product );
 
 			if ( ! empty( $this->validator->validate_entry( $mapped_data, $product ) ) ) {
@@ -126,6 +182,6 @@ class ProductWalker {
 			$this->feed->add_entry( $mapped_data );
 		}
 
-		return count( $products );
+		return $result;
 	}
 }

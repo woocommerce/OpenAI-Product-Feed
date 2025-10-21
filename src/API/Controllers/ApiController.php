@@ -120,10 +120,8 @@ class ApiController {
 		try {
 			$feed = new JsonFileFeed();
 
-			$feed->start();
 			$product_walker = new ProductWalker( $this->product_mapper, $this->feed_validator, $feed );
 			$product_walker->walk();
-			$feed->end();
 
 			$response = rest_ensure_response( $feed->deliver() );
 			$response->header( 'Content-Type', 'application/json; charset=utf-8' );
