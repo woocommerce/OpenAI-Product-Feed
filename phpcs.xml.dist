@@ -13,9 +13,9 @@
 	<exclude-pattern>./tests/unit/woo/*</exclude-pattern>
 
 	<!-- The core container does not need further sniffing -->
-	<exclude-pattern>./includes/Core/DependencyManagement/RuntimeContainer.php</exclude-pattern>
-	<exclude-pattern>./includes/Core/DependencyManagement/ContainerException.php</exclude-pattern>
-	<exclude-pattern>./includes/Core/DependencyManagement/Container.php</exclude-pattern>
+	<exclude-pattern>./src/Core/DependencyManagement/RuntimeContainer.php</exclude-pattern>
+	<exclude-pattern>./src/Core/DependencyManagement/ContainerException.php</exclude-pattern>
+	<exclude-pattern>./src/Core/DependencyManagement/Container.php</exclude-pattern>
 
 	<!-- Configs -->
 	<config name="minimum_supported_wp_version" value="6.0" />
@@ -46,7 +46,7 @@
 	</rule>
 
 	<rule ref="WordPress.Files.FileName">
-		<exclude-pattern>includes/*</exclude-pattern>
+		<exclude-pattern>src/*</exclude-pattern>
 		<exclude-pattern>tests/unit/ProductFeed/*</exclude-pattern>
 	</rule>
 
