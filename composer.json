@@ -27,12 +27,6 @@
             "OAPFW\\": "includes"
         }
     },
-    "scripts": {
-        "phpcs": "phpcs --standard=phpcs.xml.dist",
-        "phpcbf": "phpcbf --standard=phpcs.xml.dist",
-        "phpcs:check": "phpcs --standard=phpcs.xml.dist --report=summary",
-        "phpcbf:fix": "phpcbf --standard=phpcs.xml.dist"
-    },
     "config": {
         "allow-plugins": {
             "dealerdirect/phpcodesniffer-composer-installer": true

@@ -10,5 +10,5 @@
 
 <!-- Mark completed items with an "x" -->
 
-- [ ] `npm run test:php` is OK.
-- [ ] `composer phpcs .` works.
+- [ ] `npm run test:php` does not return errors.
+- [ ] `npm run lint:php` does not return errors.
