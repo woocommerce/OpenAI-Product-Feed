@@ -33,14 +33,24 @@ class ApiControllerTest extends WC_Unit_Test_Case {
 	}
 
 	public function test_handle_preview_feed() {
+		$row     = [ 'foo' => 'bar' ];
 		$request = new \WP_REST_Request( 'GET', '/wc/v3/openai-feed' );
-		$request->set_param( 'product_id', 1 );
+
+		$product = WC_Helper_Product::create_simple_product();
+		$request->set_param( 'product_id', $product->get_id() );
+
+		$this->mock_feed_generator->expects( $this->once() )
+			->method( 'build_for_product_id' )
+			->with( $product->get_id() )
+			->willReturn( $row );
 
 		$response = $this->sut->handle_preview_feed( $request );
+		$headers  = $response->get_headers();
 
 		$this->assertInstanceOf( \WP_REST_Response::class, $response );
 		$this->assertEquals( 200, $response->get_status() );
-		$this->assertEquals( 'application/json; charset=utf-8', $response->get_header( 'Content-Type' ) );
-		$this->assertEquals( wp_json_encode( $this->mock_feed_generator->build_for_product_id( 1 ) ), $response->get_data() );
+		$this->assertArrayHasKey( 'Content-Type', $headers );
+		$this->assertEquals( 'application/json; charset=utf-8', $headers['Content-Type'] );
+		$this->assertEquals( $row, $response->get_data() );
 	}
 }
