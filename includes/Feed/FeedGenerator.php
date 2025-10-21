@@ -120,6 +120,10 @@ final class FeedGenerator {
 		$rows = [];
 
 		if ( $product->is_type( 'variable' ) ) {
+			// TODO: only include the variable product itself behind an option/parameter.
+			// Variable product itself.
+			$rows[] = $this->product_mapper->map_product( $product );
+
 			// Variable product - process all variations.
 			foreach ( $product->get_children() as $variation_id ) {
 				$variation = wc_get_product( $variation_id );
