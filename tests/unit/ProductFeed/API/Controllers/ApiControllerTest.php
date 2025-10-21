@@ -1,8 +1,8 @@
 <?php
 declare( strict_types = 1 );
 
-use OAPFW\API\Controllers\ApiController;
-use OAPFW\Feed\FeedGenerator;
+use Automattic\WooCommerce\ProductFeedForOpenAI\API\Controllers\ApiController;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\FeedGenerator;
 use PHPUnit\Framework\MockObject\MockObject;
 
 /**

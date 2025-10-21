@@ -16,6 +16,6 @@ class DemoTest extends WC_Unit_Test_Case {
 	 * Test a static method to make sure the autoloader works.
 	 */
 	public function test_plugin_class() {
-		$this->assertEquals( 'true', OAPFW\Utils\StringHelper::bool_string( 'yes' ) );
+		$this->assertEquals( 'true', Automattic\WooCommerce\ProductFeedForOpenAI\Utils\StringHelper::bool_string( 'yes' ) );
 	}
 }
