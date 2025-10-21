@@ -1,12 +1,10 @@
 # Node
 node_modules/
 npm-debug.log*
-package-lock.json
 yarn.lock
 
 # Composer
 vendor/
-composer.lock
 
 # WordPress env
 .wp-env/
