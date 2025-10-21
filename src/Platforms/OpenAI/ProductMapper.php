@@ -7,11 +7,11 @@
 
 declare(strict_types=1);
 
-namespace Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\Mappers;
+namespace Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI;
 
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductMapperInterface;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Settings\SettingsRepository;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\Schema\OpenAIFeedSchema;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\FeedSchema;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Utils\StringHelper;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -75,7 +75,7 @@ final class ProductMapper implements ProductMapperInterface {
 	 */
 	public function init( SettingsRepository $settings ) {
 		$this->settings = $settings;
-		$this->schema   = OpenAIFeedSchema::get_schema();
+		$this->schema   = FeedSchema::get_schema();
 	}
 
 	/**

@@ -12,8 +12,8 @@ namespace Automattic\WooCommerce\ProductFeedForOpenAI\API\Controllers;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\FeedValidatorInterface;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductMapperInterface;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductWalker;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\Mappers\ProductMapper;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\Validators\FeedValidator;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\ProductMapper;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\FeedValidator;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Storage\JsonFileFeed;
 
 if ( ! defined( 'ABSPATH' ) ) {

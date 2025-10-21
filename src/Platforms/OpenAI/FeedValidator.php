@@ -7,10 +7,10 @@
 
 declare(strict_types=1);
 
-namespace Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\Validators;
+namespace Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI;
 
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\FeedValidatorInterface;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\Schema\OpenAIFeedSchema;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\FeedSchema;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -37,7 +37,7 @@ final class FeedValidator implements FeedValidatorInterface {
 	 * Loads the complete OpenAI Product Feed schema for validation.
 	 */
 	public function init() {
-		$this->schema = OpenAIFeedSchema::get_schema();
+		$this->schema = FeedSchema::get_schema();
 	}
 
 	/**
@@ -73,7 +73,7 @@ final class FeedValidator implements FeedValidatorInterface {
 	private function validate_field( array $row, string $field, array $config, array &$issues ): void {
 		$value = $row[ $field ] ?? null;
 
-		if ( OpenAIFeedSchema::is_field_required( $field, $row ) ) {
+		if ( FeedSchema::is_field_required( $field, $row ) ) {
 			if ( empty( $value ) && '0' !== $value ) {
 				$message  = $config['error_message'] ?? "Missing {$field}";
 				$issues[] = $message;
