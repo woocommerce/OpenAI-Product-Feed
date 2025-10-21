@@ -100,8 +100,7 @@ class ProductWalker {
 	 * @return int The total number of products processed.
 	 */
 	public function walk( ?callable $callback = null ): int {
-		$page  = 0;
-		$total = 0;
+		$progress = null;
 
 		/**
 		 * Allows the base arguments for querying products for product feeds to be changed.
@@ -125,22 +124,21 @@ class ProductWalker {
 		// Instruct the feed to start.
 		$this->feed->start();
 
-		// Expectations will be stored here.
-		$all_products_count = null;
-		$total_batch_number = null;
-
 		do {
-			$result   = $this->iterate( $args, ++$page, $this->per_page );
+			$result   = $this->iterate( $args, $progress ? $progress->processed_batches + 1 : 1, $this->per_page );
 			$iterated = count( $result->products );
-			$total   += $iterated;
 
-			if ( is_null( $all_products_count ) ) {
-				$all_products_count = $result->total;
-				$total_batch_number = $result->max_num_pages;
+			// Indicate progress.
+			if ( is_null( $progress ) ) {
+				$progress = WalkerProgress::from_wc_get_products_result( $result );
+			} else {
+				$progress = clone $progress;
 			}
+			$progress->processed_items += $iterated;
+			++$progress->processed_batches;
 
 			if ( is_callable( $callback ) ) {
-				$callback( $iterated, $page, $total_batch_number, $all_products_count );
+				$callback( $progress );
 			}
 
 			if ( $this->time_limit > 0 ) {
@@ -151,7 +149,7 @@ class ProductWalker {
 		// Instruct the feed to end.
 		$this->feed->end();
 
-		return $total;
+		return $progress->processed_items;
 	}
 
 	/**
