@@ -105,7 +105,8 @@ final class FeedGenerator {
 			// TODO: revert it back to `-1` when large catalog is supported.
 			// 'limit'  => -1,
 			'limit'  => 100,
-			'type'   => [ 'simple', 'variable', 'variation' ],
+			// TODO: check if `variation` is needed.
+			'type'   => [ 'simple', 'variable' ],
 			'return' => 'objects',
 		];
 
