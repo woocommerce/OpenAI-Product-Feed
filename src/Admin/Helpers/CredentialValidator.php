@@ -19,7 +19,6 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Validates credentials and configuration for feed delivery.
  */
 class CredentialValidator {
-
 	/**
 	 * Settings repository instance.
 	 *
@@ -28,11 +27,11 @@ class CredentialValidator {
 	private SettingsRepository $settings;
 
 	/**
-	 * Constructor.
+	 * Dependency injector.
 	 *
 	 * @param SettingsRepository $settings The settings repository.
 	 */
-	public function __construct( SettingsRepository $settings ) {
+	public function init( SettingsRepository $settings ) {
 		$this->settings = $settings;
 	}
 

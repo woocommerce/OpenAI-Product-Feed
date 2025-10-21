@@ -9,7 +9,6 @@ declare(strict_types=1);
 
 namespace Automattic\WooCommerce\ProductFeedForOpenAI\Admin\Controllers;
 
-use Automattic\WooCommerce\ProductFeedForOpenAI\Settings\SettingsRepository;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\FeedValidator;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Admin\Helpers\CredentialValidator;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductMapperInterface;
@@ -58,20 +57,19 @@ class AdminController {
 	/**
 	 * Dependencies injector.
 	 *
-	 * @param SettingsRepository $settings The settings repository.
-	 * @param FeedValidator      $validator The validator.
-	 * @param ProductMapper      $product_mapper The product mapper.
+	 * @param FeedValidator       $validator The validator.
+	 * @param ProductMapper       $product_mapper The product mapper.
+	 * @param CredentialValidator $credential_validator The credential validator.
 	 */
 	public function init(
-		SettingsRepository $settings,
 		FeedValidator $validator,
-		ProductMapper $product_mapper
+		ProductMapper $product_mapper,
+		CredentialValidator $credential_validator
 	) {
-		$this->validator      = $validator;
-		$this->product_mapper = $product_mapper;
-		$this->logger         = function_exists( 'wc_get_logger' ) ? wc_get_logger() : null;
-
-		$this->credential_validator = new CredentialValidator( $settings );
+		$this->validator            = $validator;
+		$this->product_mapper       = $product_mapper;
+		$this->logger               = function_exists( 'wc_get_logger' ) ? wc_get_logger() : null;
+		$this->credential_validator = $credential_validator;
 	}
 
 	/**

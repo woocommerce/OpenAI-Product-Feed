@@ -95,12 +95,23 @@ class JsonFileFeed implements FeedInterface {
 	}
 
 	/**
-	 * Deliver the feed.
+	 * Deliver the feed and delete the temporary file.
 	 *
 	 * @return array An array that will be provided to WP_REST_Response.
 	 */
 	public function deliver(): array {
 		// Temporary. Will be changed once we support multiple formats.
-		return json_decode( file_get_contents( $this->file_path ), true );
+		$data = json_decode( file_get_contents( $this->file_path ), true );
+		unlink( $this->file_path );
+		return $data;
+	}
+
+	/**
+	 * Get the path to the feed file.
+	 *
+	 * @return string The path to the feed file.
+	 */
+	public function get_file_path(): string {
+		return $this->file_path;
 	}
 }
