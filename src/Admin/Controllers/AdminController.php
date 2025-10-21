@@ -12,6 +12,10 @@ namespace Automattic\WooCommerce\ProductFeedForOpenAI\Admin\Controllers;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Settings\SettingsRepository;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\Validators\FeedValidator;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Admin\Helpers\CredentialValidator;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductMapperInterface;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductWalker;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\Mappers\ProductMapper;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Storage\JsonInMemoryFeed;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -21,13 +25,12 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Admin controller for handling admin interface functionality.
  */
 class AdminController {
-
 	/**
-	 * Settings repository instance.
+	 * Product mapper instance.
 	 *
-	 * @var SettingsRepository
+	 * @var ProductMapperInterface
 	 */
-	private SettingsRepository $settings;
+	private ProductMapperInterface $product_mapper;
 
 	/**
 	 * Validator instance.
@@ -43,8 +46,6 @@ class AdminController {
 	 */
 	private CredentialValidator $credential_validator;
 
-
-
 	/**
 	 * Logger instance.
 	 *
@@ -59,14 +60,16 @@ class AdminController {
 	 *
 	 * @param SettingsRepository $settings The settings repository.
 	 * @param FeedValidator      $validator The validator.
+	 * @param ProductMapper      $product_mapper The product mapper.
 	 */
 	public function init(
 		SettingsRepository $settings,
-		FeedValidator $validator
+		FeedValidator $validator,
+		ProductMapper $product_mapper
 	) {
-		$this->settings  = $settings;
-		$this->validator = $validator;
-		$this->logger    = function_exists( 'wc_get_logger' ) ? wc_get_logger() : null;
+		$this->validator      = $validator;
+		$this->product_mapper = $product_mapper;
+		$this->logger         = function_exists( 'wc_get_logger' ) ? wc_get_logger() : null;
 
 		$this->credential_validator = new CredentialValidator( $settings );
 	}
@@ -75,56 +78,35 @@ class AdminController {
 	 * Initialize the admin controller.
 	 */
 	public function initialize(): void {
-		add_action( self::SCHEDULED_ACTION_HOOK, [ $this, 'cron_push_feed' ] );
+		add_action( self::SCHEDULED_ACTION_HOOK, [ $this, 'scheduled_push' ] );
 	}
 
 	/**
 	 * Cron job to push feed.
 	 */
-	public function cron_push_feed(): void {
-		$this->push_to_endpoint();
-	}
-
-	/**
-	 * Push feed to endpoint.
-	 */
-	private function push_to_endpoint(): void {
-		$rows = $this->feed_generator->build_feed();
-		$this->push_feed_data( $rows, false );
-	}
-
-	/**
-	 * Push feed data to endpoint.
-	 *
-	 * @param array $rows The feed rows.
-	 */
-	private function push_feed_data( array $rows ): void {
-		$issues = $this->validator->validate_feed( $rows );
-
-		if ( $issues ) {
-			return;
-		}
+	public function scheduled_push(): void {
+		$headers = [ 'Content-Type' => 'application/json' ];
 
 		$endpoint = $this->credential_validator->get_endpoint_url();
-
 		if ( empty( $endpoint ) ) {
 			return;
 		}
-
-		$payload = $this->feed_generator->serialize( $rows );
-		$headers = [ 'Content-Type' => 'application/json' ];
 
 		$token = $this->credential_validator->get_auth_token();
 		if ( ! empty( $token ) ) {
 			$headers['Authorization'] = 'Bearer ' . $token;
 		}
 
+		$feed   = new JsonInMemoryFeed();
+		$walker = new ProductWalker( $this->product_mapper, $this->validator, $feed );
+		$walker->walk();
+
 		$response = wp_remote_post(
 			$endpoint,
 			[
 				'headers' => $headers,
 				'timeout' => 30,
-				'body'    => $payload,
+				'body'    => wp_json_encode( $feed->deliver() ),
 			]
 		);
 

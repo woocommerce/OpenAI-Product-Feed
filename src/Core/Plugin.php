@@ -112,6 +112,10 @@ final class Plugin {
 				)
 			);
 		}
+
+		if ( ! as_has_scheduled_action( AdminController::SCHEDULED_ACTION_HOOK ) ) {
+			as_schedule_recurring_action( time(), 60 * 15, AdminController::SCHEDULED_ACTION_HOOK );
+		}
 	}
 
 	/**
