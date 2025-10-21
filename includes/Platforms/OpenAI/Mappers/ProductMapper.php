@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace OAPFW\Platforms\OpenAI\Mappers;
 
+use OAPFW\Core\Interfaces\ProductMapperInterface;
 use OAPFW\Settings\SettingsRepository;
 use OAPFW\Platforms\OpenAI\Schema\OpenAIFeedSchema;
 use OAPFW\Utils\StringHelper;
@@ -23,7 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Converts WooCommerce product data into OpenAI Product Feed specification format.
  * Uses a schema-driven approach to ensure all required fields are mapped correctly.
  */
-final class ProductMapper {
+final class ProductMapper implements ProductMapperInterface {
 
 	/**
 	 * Settings repository instance.

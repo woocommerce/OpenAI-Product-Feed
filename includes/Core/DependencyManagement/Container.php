@@ -7,6 +7,9 @@ declare( strict_types=1 );
 
 namespace OAPFW\Core\DependencyManagement;
 
+use OAPFW\Core\Interfaces\ProductMapperInterface;
+use OAPFW\Platforms\OpenAI\Mappers\ProductMapper;
+
 /**
  * PSR11 compliant dependency injection container for the plugin.
  *
@@ -27,10 +30,22 @@ final class Container {
 		// When the League container was in use we allowed to retrieve the container itself
 		// by using 'Psr\Container\ContainerInterface' as the class identifier,
 		// we continue allowing that for compatibility.
+
+		// First, create a ProductMapper instance to bind to the interface.
+		$temp_container = new RuntimeContainer(
+			array(
+				__CLASS__                          => $this,
+				'Psr\Container\ContainerInterface' => $this,
+			)
+		);
+		$product_mapper = $temp_container->get( ProductMapper::class );
+
+		// Now create the real container with interface binding.
 		$this->container = new RuntimeContainer(
 			array(
 				__CLASS__                          => $this,
 				'Psr\Container\ContainerInterface' => $this,
+				ProductMapperInterface::class      => $product_mapper,
 			)
 		);
 	}

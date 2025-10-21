@@ -9,8 +9,8 @@ declare(strict_types=1);
 
 namespace OAPFW\Feed;
 
+use OAPFW\Core\Interfaces\ProductMapperInterface;
 use OAPFW\Feed\Serializers\SerializerFactory;
-use OAPFW\Platforms\OpenAI\Mappers\ProductMapper;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -23,16 +23,16 @@ final class FeedGenerator {
 	/**
 	 * Product mapper instance.
 	 *
-	 * @var ProductMapper
+	 * @var ProductMapperInterface
 	 */
-	private ProductMapper $product_mapper;
+	private ProductMapperInterface $product_mapper;
 
 	/**
 	 * Dependency injector.
 	 *
-	 * @param ProductMapper $product_mapper The product mapper.
+	 * @param ProductMapperInterface $product_mapper The product mapper.
 	 */
-	public function init( ProductMapper $product_mapper ) {
+	public function init( ProductMapperInterface $product_mapper ) {
 		$this->product_mapper = $product_mapper;
 	}
 
