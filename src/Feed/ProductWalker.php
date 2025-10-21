@@ -115,7 +115,7 @@ class ProductWalker {
 			$mapped_data = $this->mapper->map_product( $product );
 
 			if ( ! empty( $this->validator->validate_entry( $mapped_data, $product ) ) ) {
-				// continue;
+				continue;
 			}
 
 			$this->feed->add_entry( $mapped_data );
