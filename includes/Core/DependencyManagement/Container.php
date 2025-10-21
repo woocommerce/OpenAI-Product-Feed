@@ -9,6 +9,7 @@ namespace OAPFW\Core\DependencyManagement;
 
 use OAPFW\Core\Interfaces\ProductMapperInterface;
 use OAPFW\Platforms\OpenAI\Mappers\ProductMapper;
+use OAPFW\Platforms\OpenAI\Mappers\CatalogProductMapper;
 
 /**
  * PSR11 compliant dependency injection container for the plugin.
@@ -38,7 +39,8 @@ final class Container {
 				'Psr\Container\ContainerInterface' => $this,
 			)
 		);
-		$product_mapper = $temp_container->get( ProductMapper::class );
+		// TODO: revert it back to `ProductMapper` for OpenAI implementation.
+		$product_mapper = $temp_container->get( CatalogProductMapper::class );
 
 		// Now create the real container with interface binding.
 		$this->container = new RuntimeContainer(

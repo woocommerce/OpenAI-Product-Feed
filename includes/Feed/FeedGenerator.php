@@ -102,7 +102,9 @@ final class FeedGenerator {
 	private function get_products(): array {
 		$args = [
 			'status' => [ 'publish' ],
-			'limit'  => -1,
+			// TODO: revert it back to `-1` when large catalog is supported.
+			// 'limit'  => -1,
+			'limit'  => 100,
 			'type'   => [ 'simple', 'variable', 'variation' ],
 			'return' => 'objects',
 		];
