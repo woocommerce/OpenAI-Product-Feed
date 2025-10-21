@@ -9,6 +9,13 @@
     <!-- Exclude paths -->
 	<exclude-pattern>./node_modules/*</exclude-pattern>
 	<exclude-pattern>./vendor/*</exclude-pattern>
+	<exclude-pattern>./tests/unit/bootstrap.php</exclude-pattern>
+	<exclude-pattern>./tests/unit/woo/*</exclude-pattern>
+
+	<!-- The core container does not need further sniffing -->
+	<exclude-pattern>./includes/Core/DependencyManagement/RuntimeContainer.php</exclude-pattern>
+	<exclude-pattern>./includes/Core/DependencyManagement/ContainerException.php</exclude-pattern>
+	<exclude-pattern>./includes/Core/DependencyManagement/Container.php</exclude-pattern>
 
 	<!-- Configs -->
 	<config name="minimum_supported_wp_version" value="6.0" />
@@ -38,6 +45,15 @@
 
 	<rule ref="WordPress.Files.FileName">
 		<exclude-pattern>includes/*</exclude-pattern>
+		<exclude-pattern>tests/unit/ProductFeed/*</exclude-pattern>
+	</rule>
+
+	<!-- Relax comments in tests -->
+	<rule ref="Squiz.Commenting.FileComment.Missing">
+		<exclude-pattern>tests/unit/ProductFeed/*</exclude-pattern>
+	</rule>
+	<rule ref="Squiz.Commenting.FunctionComment.Missing">
+		<exclude-pattern>tests/unit/ProductFeed/*</exclude-pattern>
 	</rule>
 
 	<rule ref="WordPress.WP.Capabilities">

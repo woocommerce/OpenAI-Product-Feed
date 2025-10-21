@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Refactored feed generator
  */
-final class FeedGenerator {
+class FeedGenerator {
 	/**
 	 * Product mapper instance.
 	 *

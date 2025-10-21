@@ -172,10 +172,9 @@ class AdminController {
 		$issues = $this->validator->validate_feed( $rows );
 
 		if ( $issues ) {
-			// return;
+			return;
 		}
 
-		$format   = $this->settings->get( 'format', 'json' );
 		$endpoint = $this->credential_validator->get_endpoint_url();
 
 		if ( empty( $endpoint ) ) {
