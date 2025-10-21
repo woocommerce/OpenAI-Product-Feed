@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\Mappers;
 
+use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductMapperInterface;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Settings\SettingsRepository;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\Schema\OpenAIFeedSchema;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Utils\StringHelper;
@@ -23,7 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Converts WooCommerce product data into OpenAI Product Feed specification format.
  * Uses a schema-driven approach to ensure all required fields are mapped correctly.
  */
-final class ProductMapper {
+final class ProductMapper implements ProductMapperInterface {
 
 	/**
 	 * Settings repository instance.
@@ -90,7 +91,7 @@ final class ProductMapper {
 		$row = [];
 
 		foreach ( $this->schema as $field => $config ) {
-			$row[ $field ] = $this->map_field( $product, $parent_product, $field, $config );
+			$row[ $field ] = $this->map_field( $product, $field, $config, $parent_product );
 		}
 
 		$row = $this->validate_and_clean_row( $row );
@@ -110,12 +111,12 @@ final class ProductMapper {
 	 * Map individual field based on configuration
 	 *
 	 * @param \WC_Product      $product Product object.
-	 * @param \WC_Product|null $parent_product  Parent product for variations.
 	 * @param string           $field   Field name to map.
 	 * @param array            $config  Field configuration from schema.
+	 * @param \WC_Product|null $parent_product  Parent product for variations.
 	 * @return mixed Mapped field value.
 	 */
-	protected function map_field( \WC_Product $product, ?\WC_Product $parent_product = null, string $field, array $config ) {
+	protected function map_field( \WC_Product $product, string $field, array $config, ?\WC_Product $parent_product = null ) {
 		$field_mappings = $this->get_field_mappings();
 		$mapper_method  = $field_mappings[ $field ] ?? null;
 

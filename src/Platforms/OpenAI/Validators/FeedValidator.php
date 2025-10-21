@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\Validators;
 
+use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\FeedValidatorInterface;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\Schema\OpenAIFeedSchema;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -21,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Validates product feed data against OpenAI Product Feed specification.
  * Handles field-level validation, data type checking, and business rule validation.
  */
-final class FeedValidator {
+final class FeedValidator implements FeedValidatorInterface {
 
 	/**
 	 * OpenAI feed schema configuration array.
@@ -42,20 +43,21 @@ final class FeedValidator {
 	/**
 	 * Validate single feed row using schema
 	 *
-	 * @param array $row Product data row to validate.
+	 * @param array       $entry   Product data row to validate.
+	 * @param \WC_Product $product The related product. Will be updated with validation status.
 	 * @return array Array of validation issues.
 	 */
-	public function validate_row( array $row ): array {
+	public function validate_entry( array $entry, \WC_Product $product ): array { // phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable
 		$issues = [];
 
 		foreach ( $this->schema as $field => $config ) {
-			$this->validate_field( $row, $field, $config, $issues );
+			$this->validate_field( $entry, $field, $config, $issues );
 		}
 
 		// Additional custom validations.
-		$this->validate_brand_requirement( $row, $issues );
-		$this->validate_prices( $row, $issues );
-		$this->validate_sale_dates( $row, $issues );
+		$this->validate_brand_requirement( $entry, $issues );
+		$this->validate_prices( $entry, $issues );
+		$this->validate_sale_dates( $entry, $issues );
 
 		return $issues;
 	}
@@ -168,37 +170,6 @@ final class FeedValidator {
 			}
 		}
 	}
-
-	/**
-	 * Validate entire feed
-	 *
-	 * @param array $rows Array of product data rows.
-	 * @return array Array of validation issues.
-	 */
-	public function validate_feed( array $rows ): array {
-		$all_issues = [];
-
-		if ( empty( $rows ) ) {
-			$all_issues[] = [
-				'id'     => 'feed',
-				'issues' => [ 'Feed is empty - no products to export' ],
-			];
-			return $all_issues;
-		}
-
-		foreach ( $rows as $index => $row ) {
-			$row_issues = $this->validate_row( $row );
-			if ( $row_issues ) {
-				$all_issues[] = [
-					'id'     => $row['id'] ?? ( '#' . $index ),
-					'issues' => $row_issues,
-				];
-			}
-		}
-
-		return $all_issues;
-	}
-
 
 	/**
 	 * Validate brand requirement (custom logic for exempt categories)
