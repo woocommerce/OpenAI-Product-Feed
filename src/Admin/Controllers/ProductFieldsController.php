@@ -39,9 +39,9 @@ class ProductFieldsController {
 	 * @return array Modified tabs array.
 	 */
 	public function add_product_data_tab( array $tabs ): array {
-		$tabs['oapfw'] = [
+		$tabs['wpfoai'] = [
 			'label'    => __( 'OpenAI Feed', 'openai-product-feed-for-woo' ),
-			'target'   => 'oapfw_product_data',
+			'target'   => 'wpfoai_product_data',
 			'class'    => [ 'show_if_simple', 'show_if_variable' ],
 			'priority' => 80,
 		];
@@ -54,7 +54,7 @@ class ProductFieldsController {
 	 * Displays custom fields for OpenAI feed attributes in the WooCommerce product editor.
 	 */
 	public function render_product_data_panel(): void {
-		echo '<div id="oapfw_product_data" class="panel woocommerce_options_panel hidden">';
+		echo '<div id="wpfoai_product_data" class="panel woocommerce_options_panel hidden">';
 
 		$product = function_exists( 'wc_get_product' ) ? wc_get_product( get_the_ID() ) : null;
 
@@ -93,8 +93,8 @@ class ProductFieldsController {
 
 		woocommerce_wp_checkbox(
 			[
-				'id'          => '_oapfw_disable_search',
-				'value'       => get_post_meta( get_the_ID(), '_oapfw_disable_search', true ) === 'yes' ? 'yes' : 'no',
+				'id'          => '_wpfoai_disable_search',
+				'value'       => get_post_meta( get_the_ID(), '_wpfoai_disable_search', true ) === 'yes' ? 'yes' : 'no',
 				'label'       => __( 'Disable search (ChatGPT)', 'openai-product-feed-for-woo' ),
 				'description' => __( 'Overrides global default for this product.', 'openai-product-feed-for-woo' ),
 			]
@@ -102,8 +102,8 @@ class ProductFieldsController {
 
 		woocommerce_wp_checkbox(
 			[
-				'id'          => '_oapfw_disable_checkout',
-				'value'       => get_post_meta( get_the_ID(), '_oapfw_disable_checkout', true ) === 'yes' ? 'yes' : 'no',
+				'id'          => '_wpfoai_disable_checkout',
+				'value'       => get_post_meta( get_the_ID(), '_wpfoai_disable_checkout', true ) === 'yes' ? 'yes' : 'no',
 				'label'       => __( 'Disable checkout (ChatGPT)', 'openai-product-feed-for-woo' ),
 				'description' => __( 'Requires search to be enabled.', 'openai-product-feed-for-woo' ),
 			]
@@ -113,7 +113,7 @@ class ProductFieldsController {
 
 		woocommerce_wp_text_input(
 			[
-				'id'          => '_oapfw_material',
+				'id'          => '_wpfoai_material',
 				'label'       => __( 'Material', 'openai-product-feed-for-woo' ),
 				'description' => __( 'Primary material (e.g., cotton, plastic, metal)', 'openai-product-feed-for-woo' ),
 			]
@@ -121,7 +121,7 @@ class ProductFieldsController {
 
 		woocommerce_wp_select(
 			[
-				'id'          => '_oapfw_condition',
+				'id'          => '_wpfoai_condition',
 				'label'       => __( 'Condition', 'openai-product-feed-for-woo' ),
 				'options'     => [
 					''            => __( '— Select —', 'openai-product-feed-for-woo' ),
@@ -135,7 +135,7 @@ class ProductFieldsController {
 
 		woocommerce_wp_select(
 			[
-				'id'          => '_oapfw_age_group',
+				'id'          => '_wpfoai_age_group',
 				'label'       => __( 'Age group', 'openai-product-feed-for-woo' ),
 				'options'     => [
 					''        => __( '— Optional —', 'openai-product-feed-for-woo' ),
@@ -153,7 +153,7 @@ class ProductFieldsController {
 
 		woocommerce_wp_text_input(
 			[
-				'id'                => '_oapfw_age_restriction',
+				'id'                => '_wpfoai_age_restriction',
 				'label'             => __( 'Age restriction', 'openai-product-feed-for-woo' ),
 				'type'              => 'number',
 				'custom_attributes' => [
@@ -165,14 +165,14 @@ class ProductFieldsController {
 
 		woocommerce_wp_text_input(
 			[
-				'id'    => '_oapfw_warning',
+				'id'    => '_wpfoai_warning',
 				'label' => __( 'Warning text', 'openai-product-feed-for-woo' ),
 			]
 		);
 
 		woocommerce_wp_text_input(
 			[
-				'id'          => '_oapfw_warning_url',
+				'id'          => '_wpfoai_warning_url',
 				'label'       => __( 'Warning URL', 'openai-product-feed-for-woo' ),
 				'placeholder' => 'https://',
 			]
@@ -182,7 +182,7 @@ class ProductFieldsController {
 
 		woocommerce_wp_text_input(
 			[
-				'id'          => '_oapfw_color',
+				'id'          => '_wpfoai_color',
 				'label'       => __( 'Color (override)', 'openai-product-feed-for-woo' ),
 				'description' => __( 'Used if attribute pa_color is not set.', 'openai-product-feed-for-woo' ),
 				'placeholder' => $this->get_attribute_placeholder( $product, 'pa_color' ),
@@ -191,7 +191,7 @@ class ProductFieldsController {
 
 		woocommerce_wp_text_input(
 			[
-				'id'          => '_oapfw_size',
+				'id'          => '_wpfoai_size',
 				'label'       => __( 'Size (override)', 'openai-product-feed-for-woo' ),
 				'description' => __( 'Used if attribute pa_size is not set.', 'openai-product-feed-for-woo' ),
 				'placeholder' => $this->get_attribute_placeholder( $product, 'pa_size' ),
@@ -200,7 +200,7 @@ class ProductFieldsController {
 
 		woocommerce_wp_select(
 			[
-				'id'          => '_oapfw_size_system',
+				'id'          => '_wpfoai_size_system',
 				'label'       => __( 'Size system', 'openai-product-feed-for-woo' ),
 				'options'     => [
 					''    => __( '— Select —', 'openai-product-feed-for-woo' ),
@@ -221,7 +221,7 @@ class ProductFieldsController {
 
 		woocommerce_wp_select(
 			[
-				'id'      => '_oapfw_gender',
+				'id'      => '_wpfoai_gender',
 				'label'   => __( 'Target gender', 'openai-product-feed-for-woo' ),
 				'options' => [
 					''       => __( '— Select —', 'openai-product-feed-for-woo' ),
@@ -236,7 +236,7 @@ class ProductFieldsController {
 
 		woocommerce_wp_text_input(
 			[
-				'id'          => '_oapfw_video_link',
+				'id'          => '_wpfoai_video_link',
 				'label'       => __( 'Product video URL', 'openai-product-feed-for-woo' ),
 				'placeholder' => 'https://',
 			]
@@ -244,7 +244,7 @@ class ProductFieldsController {
 
 		woocommerce_wp_text_input(
 			[
-				'id'          => '_oapfw_model_3d_link',
+				'id'          => '_wpfoai_model_3d_link',
 				'label'       => __( '3D model URL', 'openai-product-feed-for-woo' ),
 				'placeholder' => 'https://',
 			]
@@ -254,7 +254,7 @@ class ProductFieldsController {
 
 		woocommerce_wp_textarea_input(
 			[
-				'id'    => '_oapfw_q_and_a',
+				'id'    => '_wpfoai_q_and_a',
 				'label' => __( 'Q&A (plain text)', 'openai-product-feed-for-woo' ),
 				'rows'  => 3,
 			]
@@ -264,28 +264,28 @@ class ProductFieldsController {
 
 		woocommerce_wp_text_input(
 			[
-				'id'    => '_oapfw_applicable_taxes_fees',
+				'id'    => '_wpfoai_applicable_taxes_fees',
 				'label' => __( 'Additional taxes/fees (e.g., 7 USD)', 'openai-product-feed-for-woo' ),
 			]
 		);
 
 		woocommerce_wp_text_input(
 			[
-				'id'    => '_oapfw_unit_pricing_measure',
+				'id'    => '_wpfoai_unit_pricing_measure',
 				'label' => __( 'Unit pricing measure (e.g., 16 oz)', 'openai-product-feed-for-woo' ),
 			]
 		);
 
 		woocommerce_wp_text_input(
 			[
-				'id'    => '_oapfw_base_measure',
+				'id'    => '_wpfoai_base_measure',
 				'label' => __( 'Base measure (e.g., 1 oz)', 'openai-product-feed-for-woo' ),
 			]
 		);
 
 		woocommerce_wp_text_input(
 			[
-				'id'    => '_oapfw_pricing_trend',
+				'id'    => '_wpfoai_pricing_trend',
 				'label' => __( 'Pricing trend (short text)', 'openai-product-feed-for-woo' ),
 			]
 		);
@@ -294,14 +294,14 @@ class ProductFieldsController {
 
 		woocommerce_wp_text_input(
 			[
-				'id'    => '_oapfw_availability_date',
+				'id'    => '_wpfoai_availability_date',
 				'label' => __( 'Availability date (YYYY-MM-DD)', 'openai-product-feed-for-woo' ),
 			]
 		);
 
 		woocommerce_wp_text_input(
 			[
-				'id'    => '_oapfw_expiration_date',
+				'id'    => '_wpfoai_expiration_date',
 				'label' => __( 'Expiration date (YYYY-MM-DD)', 'openai-product-feed-for-woo' ),
 			]
 		);
@@ -310,28 +310,28 @@ class ProductFieldsController {
 
 		woocommerce_wp_text_input(
 			[
-				'id'    => '_oapfw_popularity_score',
+				'id'    => '_wpfoai_popularity_score',
 				'label' => __( 'Popularity score (0–5)', 'openai-product-feed-for-woo' ),
 			]
 		);
 
 		woocommerce_wp_text_input(
 			[
-				'id'    => '_oapfw_return_rate',
+				'id'    => '_wpfoai_return_rate',
 				'label' => __( 'Return rate (%)', 'openai-product-feed-for-woo' ),
 			]
 		);
 
 		woocommerce_wp_text_input(
 			[
-				'id'    => '_oapfw_geo_price',
+				'id'    => '_wpfoai_geo_price',
 				'label' => __( 'Geo price (e.g., 79.99 USD (CA))', 'openai-product-feed-for-woo' ),
 			]
 		);
 
 		woocommerce_wp_text_input(
 			[
-				'id'    => '_oapfw_geo_availability',
+				'id'    => '_wpfoai_geo_availability',
 				'label' => __( 'Geo availability (e.g., in_stock (TX), out_of_stock (NY))', 'openai-product-feed-for-woo' ),
 			]
 		);
@@ -340,14 +340,14 @@ class ProductFieldsController {
 
 		woocommerce_wp_text_input(
 			[
-				'id'    => '_oapfw_related_product_id',
+				'id'    => '_wpfoai_related_product_id',
 				'label' => __( 'Related product IDs (CSV)', 'openai-product-feed-for-woo' ),
 			]
 		);
 
 		woocommerce_wp_select(
 			[
-				'id'      => '_oapfw_relationship_type',
+				'id'      => '_wpfoai_relationship_type',
 				'label'   => __( 'Relationship type', 'openai-product-feed-for-woo' ),
 				'options' => [
 					''                  => __( '— Optional —', 'openai-product-feed-for-woo' ),
@@ -409,27 +409,27 @@ class ProductFieldsController {
 			'_gtin',
 			'_mpn',
 			'_brand',
-			'_oapfw_material',
-			'_oapfw_color',
-			'_oapfw_size',
-			'_oapfw_size_system',
-			'_oapfw_gender',
-			'_oapfw_warning',
-			'_oapfw_q_and_a',
-			'_oapfw_condition',
-			'_oapfw_age_group',
-			'_oapfw_applicable_taxes_fees',
-			'_oapfw_unit_pricing_measure',
-			'_oapfw_base_measure',
-			'_oapfw_pricing_trend',
-			'_oapfw_availability_date',
-			'_oapfw_expiration_date',
-			'_oapfw_geo_price',
-			'_oapfw_geo_availability',
-			'_oapfw_related_product_id',
-			'_oapfw_relationship_type',
-			'_oapfw_popularity_score',
-			'_oapfw_return_rate',
+			'_wpfoai_material',
+			'_wpfoai_color',
+			'_wpfoai_size',
+			'_wpfoai_size_system',
+			'_wpfoai_gender',
+			'_wpfoai_warning',
+			'_wpfoai_q_and_a',
+			'_wpfoai_condition',
+			'_wpfoai_age_group',
+			'_wpfoai_applicable_taxes_fees',
+			'_wpfoai_unit_pricing_measure',
+			'_wpfoai_base_measure',
+			'_wpfoai_pricing_trend',
+			'_wpfoai_availability_date',
+			'_wpfoai_expiration_date',
+			'_wpfoai_geo_price',
+			'_wpfoai_geo_availability',
+			'_wpfoai_related_product_id',
+			'_wpfoai_relationship_type',
+			'_wpfoai_popularity_score',
+			'_wpfoai_return_rate',
 		];
 
 		foreach ( $text_keys as $key ) {
@@ -440,9 +440,9 @@ class ProductFieldsController {
 		}
 
 		$url_keys = [
-			'_oapfw_warning_url',
-			'_oapfw_video_link',
-			'_oapfw_model_3d_link',
+			'_wpfoai_warning_url',
+			'_wpfoai_video_link',
+			'_wpfoai_model_3d_link',
 		];
 
 		foreach ( $url_keys as $key ) {
@@ -452,11 +452,11 @@ class ProductFieldsController {
 			}
 		}
 
-		if ( isset( $_POST['_oapfw_age_restriction'] ) ) {
-			$product->update_meta_data( '_oapfw_age_restriction', max( 0, absint( wp_unslash( $_POST['_oapfw_age_restriction'] ) ) ) );
+		if ( isset( $_POST['_wpfoai_age_restriction'] ) ) {
+			$product->update_meta_data( '_wpfoai_age_restriction', max( 0, absint( wp_unslash( $_POST['_wpfoai_age_restriction'] ) ) ) );
 		}
 
-		$product->update_meta_data( '_oapfw_disable_search', isset( $_POST['_oapfw_disable_search'] ) ? 'yes' : 'no' );
-		$product->update_meta_data( '_oapfw_disable_checkout', isset( $_POST['_oapfw_disable_checkout'] ) ? 'yes' : 'no' );
+		$product->update_meta_data( '_wpfoai_disable_search', isset( $_POST['_wpfoai_disable_search'] ) ? 'yes' : 'no' );
+		$product->update_meta_data( '_wpfoai_disable_checkout', isset( $_POST['_wpfoai_disable_checkout'] ) ? 'yes' : 'no' );
 	}
 }

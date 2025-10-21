@@ -104,10 +104,10 @@ final class Plugin {
 	 */
 	public function activate(): void {
 		if ( ! class_exists( 'WooCommerce' ) ) {
-			deactivate_plugins( plugin_basename( OAPFW_PLUGIN_FILE ) );
+			deactivate_plugins( plugin_basename( WPFOAI_PLUGIN_FILE ) );
 			wp_die(
 				esc_html__(
-					'OpenAI Product Feed for Woo requires WooCommerce to be installed and active.',
+					'WooCommerce Product Feed for OpenAI requires WooCommerce to be installed and active.',
 					'openai-product-feed-for-woo'
 				)
 			);
@@ -120,8 +120,8 @@ final class Plugin {
 	public function deactivate(): void {
 		// Clean up scheduled events using Action Scheduler.
 		if ( function_exists( 'as_cancel_all_actions' ) ) {
-			as_cancel_all_actions( 'oapfw_push_feed_event' );
-			as_cancel_all_actions( 'oapfw_push_delta_event' );
+			as_cancel_all_actions( 'wpfoai_push_feed_event' );
+			as_cancel_all_actions( 'wpfoai_push_delta_event' );
 		}
 	}
 
@@ -131,7 +131,7 @@ final class Plugin {
 	public function show_woo_commerce_missing_notice(): void {
 		echo '<div class="notice notice-error"><p>' .
 			esc_html__(
-				'OpenAI Product Feed for Woo requires WooCommerce to be installed and active.',
+				'WooCommerce Product Feed for OpenAI requires WooCommerce to be installed and active.',
 				'openai-product-feed-for-woo'
 			) .
 			'</p></div>';
@@ -153,7 +153,7 @@ final class Plugin {
 	 * @return string The plugin version.
 	 */
 	public function get_version(): string {
-		return OAPFW_VERSION;
+		return WPFOAI_VERSION;
 	}
 
 	/**
@@ -162,7 +162,7 @@ final class Plugin {
 	 * @return string The plugin directory.
 	 */
 	public function get_plugin_dir(): string {
-		return OAPFW_PLUGIN_DIR;
+		return WPFOAI_PLUGIN_DIR;
 	}
 
 	/**
@@ -171,6 +171,6 @@ final class Plugin {
 	 * @return string The plugin URL.
 	 */
 	public function get_plugin_url(): string {
-		return OAPFW_PLUGIN_URL;
+		return WPFOAI_PLUGIN_URL;
 	}
 }

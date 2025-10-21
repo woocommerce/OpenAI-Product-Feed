@@ -103,7 +103,7 @@ final class ProductMapper {
 		 * @param \WC_Product      $product Product object.
 		 * @param \WC_Product|null $parent_product  Parent product for variations.
 		 */
-		return apply_filters( 'oapfw_map_product', $row, $product, $parent_product );
+		return apply_filters( 'wpfoai_map_product', $row, $product, $parent_product );
 	}
 
 	/**
@@ -122,7 +122,7 @@ final class ProductMapper {
 		if ( $mapper_method && method_exists( $this, $mapper_method ) ) {
 			$value = $this->$mapper_method( $product, $parent_product );
 		} else {
-			$value = $this->get_meta_value( $product, "_oapfw_{$field}" );
+			$value = $this->get_meta_value( $product, "_wpfoai_{$field}" );
 		}
 
 		if ( empty( $value ) && isset( $config['default'] ) ) {
@@ -322,7 +322,7 @@ final class ProductMapper {
 	protected function get_enable_search( \WC_Product $product, ?\WC_Product $parent_product ): string {
 		// For variations, check parent product meta; for simple products, check product meta.
 		$check_product = $parent_product ? $parent_product : $product;
-		return $this->get_enable_with_override( $check_product, '_oapfw_disable_search', 'enable_products_default', 'true' );
+		return $this->get_enable_with_override( $check_product, '_wpfoai_disable_search', 'enable_products_default', 'true' );
 	}
 
 	/**
@@ -335,7 +335,7 @@ final class ProductMapper {
 	protected function get_enable_checkout( \WC_Product $product, ?\WC_Product $parent_product ): string {
 		// For variations, check parent product meta; for simple products, check product meta.
 		$check_product = $parent_product ? $parent_product : $product;
-		return $this->get_enable_with_override( $check_product, '_oapfw_disable_checkout', 'enable_products_default', 'false' );
+		return $this->get_enable_with_override( $check_product, '_wpfoai_disable_checkout', 'enable_products_default', 'false' );
 	}
 
 	/**
@@ -470,7 +470,7 @@ final class ProductMapper {
 	 * @return string|null Product condition or null.
 	 */
 	protected function get_condition( \WC_Product $product ): ?string {
-		return $this->get_meta_value( $product, '_oapfw_condition' );
+		return $this->get_meta_value( $product, '_wpfoai_condition' );
 	}
 
 	/**
@@ -480,7 +480,7 @@ final class ProductMapper {
 	 * @return string|null Product age group or null.
 	 */
 	protected function get_age_group( \WC_Product $product ): ?string {
-		return $this->get_meta_value( $product, '_oapfw_age_group' );
+		return $this->get_meta_value( $product, '_wpfoai_age_group' );
 	}
 
 	/**
@@ -562,7 +562,7 @@ final class ProductMapper {
 	 * @return string|null Product video URL or null.
 	 */
 	protected function get_video_link( \WC_Product $product ): ?string {
-		return $this->get_meta_value( $product, '_oapfw_video_link' );
+		return $this->get_meta_value( $product, '_wpfoai_video_link' );
 	}
 
 	/**
@@ -572,7 +572,7 @@ final class ProductMapper {
 	 * @return string|null Product 3D model URL or null.
 	 */
 	protected function get_model_3d_link( \WC_Product $product ): ?string {
-		return $this->get_meta_value( $product, '_oapfw_model_3d_link' );
+		return $this->get_meta_value( $product, '_wpfoai_model_3d_link' );
 	}
 
 	/**
@@ -645,7 +645,7 @@ final class ProductMapper {
 	 * @return string|null Product availability date or null.
 	 */
 	protected function get_availability_date( \WC_Product $product ): ?string {
-		return $this->get_meta_value( $product, '_oapfw_availability_date' );
+		return $this->get_meta_value( $product, '_wpfoai_availability_date' );
 	}
 
 	/**
@@ -655,7 +655,7 @@ final class ProductMapper {
 	 * @return string|null Product expiration date or null.
 	 */
 	protected function get_expiration_date( \WC_Product $product ): ?string {
-		return $this->get_meta_value( $product, '_oapfw_expiration_date' );
+		return $this->get_meta_value( $product, '_wpfoai_expiration_date' );
 	}
 
 	/**
@@ -821,7 +821,7 @@ final class ProductMapper {
 	 * @return string|null Product warning or null.
 	 */
 	protected function get_warning( \WC_Product $product ): ?string {
-		return $this->get_meta_value( $product, '_oapfw_warning' );
+		return $this->get_meta_value( $product, '_wpfoai_warning' );
 	}
 
 	/**
@@ -831,7 +831,7 @@ final class ProductMapper {
 	 * @return string|null Product warning or null.
 	 */
 	protected function get_warning_url( \WC_Product $product ): ?string {
-		return $this->get_meta_value( $product, '_oapfw_warning_url' );
+		return $this->get_meta_value( $product, '_wpfoai_warning_url' );
 	}
 
 	/**
@@ -841,7 +841,7 @@ final class ProductMapper {
 	 * @return string|null Product age restriction or null.
 	 */
 	protected function get_age_restriction( \WC_Product $product ): ?string {
-		return $this->get_meta_value( $product, '_oapfw_age_restriction' );
+		return $this->get_meta_value( $product, '_wpfoai_age_restriction' );
 	}
 
 	/**
@@ -851,7 +851,7 @@ final class ProductMapper {
 	 * @return string|null Product Q and A or null.
 	 */
 	protected function get_q_and_a( \WC_Product $product ): ?string {
-		return $this->get_meta_value( $product, '_oapfw_q_and_a' );
+		return $this->get_meta_value( $product, '_wpfoai_q_and_a' );
 	}
 
 	/**
