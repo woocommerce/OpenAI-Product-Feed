@@ -114,13 +114,6 @@ final class Plugin {
 	}
 
 	/**
-	 * WP-CLI command to generate product feed
-	 */
-	public function cli_generate_feed(): void {
-		echo 'Hello!';
-	}
-
-	/**
 	 * Plugin activation
 	 */
 	public function activate(): void {
