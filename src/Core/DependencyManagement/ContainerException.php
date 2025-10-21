@@ -3,7 +3,7 @@
  * ContainerException class file.
  */
 
-namespace Automattic\WooCommerce\OAPF\Core\DependencyManagement;
+namespace Automattic\WooCommerce\ProductFeedForOpenAI\Core\DependencyManagement;
 
 /**
  * Class ContainerException.

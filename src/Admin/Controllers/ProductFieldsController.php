@@ -2,12 +2,12 @@
 /**
  *  Product Fields Controller class.
  *
- * @package Automattic\WooCommerce\OAPF
+ * @package Automattic\WooCommerce\ProductFeedForOpenAI
  */
 
 declare(strict_types=1);
 
-namespace Automattic\WooCommerce\OAPF\Admin\Controllers;
+namespace Automattic\WooCommerce\ProductFeedForOpenAI\Admin\Controllers;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

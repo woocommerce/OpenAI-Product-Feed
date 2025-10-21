@@ -2,14 +2,14 @@
 /**
  *  Credential Validator class.
  *
- * @package Automattic\WooCommerce\OAPF
+ * @package Automattic\WooCommerce\ProductFeedForOpenAI
  */
 
 declare(strict_types=1);
 
-namespace Automattic\WooCommerce\OAPF\Admin\Helpers;
+namespace Automattic\WooCommerce\ProductFeedForOpenAI\Admin\Helpers;
 
-use Automattic\WooCommerce\OAPF\Settings\SettingsRepository;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Settings\SettingsRepository;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

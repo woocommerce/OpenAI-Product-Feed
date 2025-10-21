@@ -5,7 +5,7 @@
 
 declare( strict_types=1 );
 
-namespace Automattic\WooCommerce\OAPF\Core\DependencyManagement;
+namespace Automattic\WooCommerce\ProductFeedForOpenAI\Core\DependencyManagement;
 
 /**
  * PSR11 compliant dependency injection container for the plugin.

@@ -2,12 +2,12 @@
 /**
  *  Settings Repository class.
  *
- * @package Automattic\WooCommerce\OAPF
+ * @package Automattic\WooCommerce\ProductFeedForOpenAI
  */
 
 declare(strict_types=1);
 
-namespace Automattic\WooCommerce\OAPF\Settings;
+namespace Automattic\WooCommerce\ProductFeedForOpenAI\Settings;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

@@ -2,17 +2,17 @@
 /**
  *  Admin Controller class.
  *
- * @package Automattic\WooCommerce\OAPF
+ * @package Automattic\WooCommerce\ProductFeedForOpenAI
  */
 
 declare(strict_types=1);
 
-namespace Automattic\WooCommerce\OAPF\Admin\Controllers;
+namespace Automattic\WooCommerce\ProductFeedForOpenAI\Admin\Controllers;
 
-use Automattic\WooCommerce\OAPF\Settings\SettingsRepository;
-use Automattic\WooCommerce\OAPF\Feed\FeedGenerator;
-use Automattic\WooCommerce\OAPF\Platforms\OpenAI\Validators\FeedValidator;
-use Automattic\WooCommerce\OAPF\Admin\Helpers\CredentialValidator;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Settings\SettingsRepository;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\FeedGenerator;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\Validators\FeedValidator;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Admin\Helpers\CredentialValidator;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

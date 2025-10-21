@@ -6,12 +6,12 @@
  * and persists them in the shared registry. This lets the plugin simplify its
  * own settings and rely on Woo core’s unified settings surface.
  *
- * @package Automattic\WooCommerce\OAPF
+ * @package Automattic\WooCommerce\ProductFeedForOpenAI
  */
 
 declare(strict_types=1);
 
-namespace Automattic\WooCommerce\OAPF\Integrations;
+namespace Automattic\WooCommerce\ProductFeedForOpenAI\Integrations;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

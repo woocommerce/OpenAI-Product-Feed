@@ -2,14 +2,14 @@
 /**
  *  Feed Validator class.
  *
- * @package Automattic\WooCommerce\OAPF
+ * @package Automattic\WooCommerce\ProductFeedForOpenAI
  */
 
 declare(strict_types=1);
 
-namespace Automattic\WooCommerce\OAPF\Platforms\OpenAI\Validators;
+namespace Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\Validators;
 
-use Automattic\WooCommerce\OAPF\Platforms\OpenAI\Schema\OpenAIFeedSchema;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\Schema\OpenAIFeedSchema;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

@@ -2,16 +2,16 @@
 /**
  * Product Mapper class.
  *
- * @package Automattic\WooCommerce\OAPF
+ * @package Automattic\WooCommerce\ProductFeedForOpenAI
  */
 
 declare(strict_types=1);
 
-namespace Automattic\WooCommerce\OAPF\Platforms\OpenAI\Mappers;
+namespace Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\Mappers;
 
-use Automattic\WooCommerce\OAPF\Settings\SettingsRepository;
-use Automattic\WooCommerce\OAPF\Platforms\OpenAI\Schema\OpenAIFeedSchema;
-use Automattic\WooCommerce\OAPF\Utils\StringHelper;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Settings\SettingsRepository;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\Schema\OpenAIFeedSchema;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Utils\StringHelper;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

@@ -2,12 +2,12 @@
 /**
  *  String Helper class.
  *
- * @package Automattic\WooCommerce\OAPF
+ * @package Automattic\WooCommerce\ProductFeedForOpenAI
  */
 
 declare(strict_types=1);
 
-namespace Automattic\WooCommerce\OAPF\Utils;
+namespace Automattic\WooCommerce\ProductFeedForOpenAI\Utils;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

@@ -2,15 +2,15 @@
 /**
  *  Feed Generator class.
  *
- * @package Automattic\WooCommerce\OAPF
+ * @package Automattic\WooCommerce\ProductFeedForOpenAI
  */
 
 declare(strict_types=1);
 
-namespace Automattic\WooCommerce\OAPF\Feed;
+namespace Automattic\WooCommerce\ProductFeedForOpenAI\Feed;
 
-use Automattic\WooCommerce\OAPF\Feed\Serializers\SerializerFactory;
-use Automattic\WooCommerce\OAPF\Platforms\OpenAI\Mappers\ProductMapper;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\Serializers\SerializerFactory;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\Mappers\ProductMapper;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

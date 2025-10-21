@@ -2,14 +2,14 @@
 /**
  *  Api Controller class.
  *
- * @package Automattic\WooCommerce\OAPF
+ * @package Automattic\WooCommerce\ProductFeedForOpenAI
  */
 
 declare(strict_types=1);
 
-namespace Automattic\WooCommerce\OAPF\API\Controllers;
+namespace Automattic\WooCommerce\ProductFeedForOpenAI\API\Controllers;
 
-use Automattic\WooCommerce\OAPF\Feed\FeedGenerator;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\FeedGenerator;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

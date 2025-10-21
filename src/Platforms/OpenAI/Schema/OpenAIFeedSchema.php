@@ -2,12 +2,12 @@
 /**
  *  Open A I Feed Schema class.
  *
- * @package Automattic\WooCommerce\OAPF
+ * @package Automattic\WooCommerce\ProductFeedForOpenAI
  */
 
 declare(strict_types=1);
 
-namespace Automattic\WooCommerce\OAPF\Platforms\OpenAI\Schema;
+namespace Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\Schema;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

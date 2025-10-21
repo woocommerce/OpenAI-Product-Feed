@@ -2,13 +2,13 @@
 
 declare( strict_types=1 );
 
-namespace Automattic\WooCommerce\OAPF\Core\DependencyManagement;
+namespace Automattic\WooCommerce\ProductFeedForOpenAI\Core\DependencyManagement;
 
 /**
  * Dependency injection container used at runtime.
  *
  * This is a simple container that doesn't implement explicit class registration.
- * Instead, all the classes in the Automattic\WooCommerce\OAPF namespace can be resolved
+ * Instead, all the classes in the Automattic\WooCommerce\ProductFeedForOpenAI namespace can be resolved
  * and are considered as implicitly registered as single-instance classes
  * (so each class will be instantiated only once and the instance will be cached).
  */
@@ -18,7 +18,7 @@ class RuntimeContainer {
 	 *
 	 * @var string
 	 */
-	const NAMESPACE = 'Automattic\\WooCommerce\\OAPF\\';
+	const NAMESPACE = 'Automattic\\WooCommerce\\ProductFeedForOpenAI\\';
 
 	/**
 	 * Cache of classes already resolved.
@@ -49,7 +49,7 @@ class RuntimeContainer {
 	 *
 	 * ContainerException will be thrown in these cases:
 	 *
-	 * - $class_name is outside the Automattic\WooCommerce\OAPF root namespace (and wasn't included in the initial resolve cache).
+	 * - $class_name is outside the Automattic\WooCommerce\ProductFeedForOpenAI root namespace (and wasn't included in the initial resolve cache).
 	 * - The class referred by $class_name doesn't exist.
 	 * - Recursive resolution condition found.
 	 * - Reflection exception thrown when instantiating or initializing the class.

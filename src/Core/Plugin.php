@@ -2,18 +2,18 @@
 /**
  *  Plugin class.
  *
- * @package Automattic\WooCommerce\OAPF
+ * @package Automattic\WooCommerce\ProductFeedForOpenAI
  */
 
 declare(strict_types=1);
 
-namespace Automattic\WooCommerce\OAPF\Core;
+namespace Automattic\WooCommerce\ProductFeedForOpenAI\Core;
 
-use Automattic\WooCommerce\OAPF\Admin\Controllers\AdminController;
-use Automattic\WooCommerce\OAPF\Admin\Controllers\ProductFieldsController;
-use Automattic\WooCommerce\OAPF\API\Controllers\ApiController;
-use Automattic\WooCommerce\OAPF\Integrations\AgenticIntegration;
-use Automattic\WooCommerce\OAPF\Core\DependencyManagement\Container;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Admin\Controllers\AdminController;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Admin\Controllers\ProductFieldsController;
+use Automattic\WooCommerce\ProductFeedForOpenAI\API\Controllers\ApiController;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\AgenticIntegration;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Core\DependencyManagement\Container;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

@@ -2,7 +2,7 @@
 /**
  * OpenAI Product Feed for WooCommerce main plugin file.
  *
- * @package Automattic\WooCommerce\OAPF
+ * @package Automattic\WooCommerce\ProductFeedForOpenAI
  *
  * Plugin Name:          OpenAI Product Feed for Woo
  * Plugin URI:           https://automattic.ai
@@ -35,7 +35,7 @@ require_once OAPFW_PLUGIN_DIR . 'vendor/autoload.php';
 add_action(
 	'plugins_loaded',
 	function () {
-		$plugin = \Automattic\WooCommerce\OAPF\Core\Plugin::get_instance();
+		$plugin = \Automattic\WooCommerce\ProductFeedForOpenAI\Core\Plugin::get_instance();
 		$plugin->initialize();
 	}
 );
@@ -53,14 +53,14 @@ add_action(
 register_activation_hook(
 	__FILE__,
 	function () {
-		$plugin = \Automattic\WooCommerce\OAPF\Core\Plugin::get_instance();
+		$plugin = \Automattic\WooCommerce\ProductFeedForOpenAI\Core\Plugin::get_instance();
 		$plugin->activate();
 	}
 );
 register_deactivation_hook(
 	__FILE__,
 	function () {
-		$plugin = \Automattic\WooCommerce\OAPF\Core\Plugin::get_instance();
+		$plugin = \Automattic\WooCommerce\ProductFeedForOpenAI\Core\Plugin::get_instance();
 		$plugin->deactivate();
 	}
 );
@@ -68,10 +68,10 @@ register_deactivation_hook(
 /**
  * Helper function to get plugin instance.
  *
- * @return \Automattic\WooCommerce\OAPF\Core\Plugin Plugin instance.
+ * @return \Automattic\WooCommerce\ProductFeedForOpenAI\Core\Plugin Plugin instance.
  */
-function oapfw_plugin(): \Automattic\WooCommerce\OAPF\Core\Plugin {
-	return \Automattic\WooCommerce\OAPF\Core\Plugin::get_instance();
+function oapfw_plugin(): \Automattic\WooCommerce\ProductFeedForOpenAI\Core\Plugin {
+	return \Automattic\WooCommerce\ProductFeedForOpenAI\Core\Plugin::get_instance();
 }
 
 /**
