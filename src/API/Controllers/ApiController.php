@@ -58,7 +58,7 @@ class ApiController {
 				'callback'            => [ $this, 'handle_preview_feed' ],
 				'args'                => [
 					'product_id' => [
-						'description' => __( 'Product ID to preview in feed.', 'openai-product-feed-for-woo' ),
+						'description' => __( 'Product ID to preview in feed.', 'woocommerce-product-feed-openai' ),
 						'type'        => 'integer',
 						'minimum'     => 1,
 					],
@@ -89,7 +89,7 @@ class ApiController {
 		if ( ! current_user_can( 'manage_woocommerce' ) ) {
 			return new \WP_Error(
 				'woocommerce_rest_cannot_view',
-				__( 'Sorry, you cannot view this resource. Please ensure you are logged in as an administrator.', 'openai-product-feed-for-woo' ),
+				__( 'Sorry, you cannot view this resource. Please ensure you are logged in as an administrator.', 'woocommerce-product-feed-openai' ),
 				[ 'status' => rest_authorization_required_code() ]
 			);
 		}
@@ -112,7 +112,7 @@ class ApiController {
 				if ( ! $product ) {
 					return new \WP_Error(
 						'woocommerce_rest_product_invalid_id',
-						__( 'Invalid product ID.', 'openai-product-feed-for-woo' ),
+						__( 'Invalid product ID.', 'woocommerce-product-feed-openai' ),
 						[ 'status' => 404 ]
 					);
 				}

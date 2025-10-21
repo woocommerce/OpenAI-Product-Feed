@@ -1,4 +1,4 @@
-# OpenAI Product Feed for WooCommerce
+# WooCommerce Product Feed for OpenAI
 
 A WooCommerce plugin that automatically generates and delivers product feeds to AI platforms like OpenAI's ChatGPT commerce integration.
 
@@ -142,7 +142,7 @@ Content-Type: application/json
 - Brand → Add `pa_brand` attribute or uses fallback `'Generic'`
 
 **Validation Errors**
-- Check WooCommerce > Status > Logs (source: oapfw)
+- Check WooCommerce > Status > Logs (source: wpfoai)
 - Verify product data completeness
 - Test with single product preview
 
@@ -153,9 +153,9 @@ Content-Type: application/json
 
 
 ### Getting Help
-- Check WooCommerce > Status > Logs (source: oapfw)
+- Check WooCommerce > Status > Logs (source: wpfoai)
 - Use "Preview Feed" for testing individual products
 - Verify all required WooCommerce data is present
 
 ### Logs Location
-WooCommerce > Status > Logs > Filter by source: `oapfw`
+WooCommerce > Status > Logs > Filter by source: `wpfoai`

@@ -1,17 +1,17 @@
 <?php
 /**
- * OpenAI Product Feed for WooCommerce main plugin file.
+ * WooCommerce Product Feed for OpenAI main plugin file.
  *
  * @package Automattic\WooCommerce\ProductFeedForOpenAI
  *
- * Plugin Name:          OpenAI Product Feed for Woo
+ * Plugin Name:          WooCommerce Product Feed for OpenAI
  * Plugin URI:           https://automattic.ai
  * Description:          Generate and manage AI-optimized product feeds for WooCommerce.
  * Version:              0.1.0
  * Author:               WooCommerce
  * Author URI:           https://woocommerce.org
  * License:              GPL-2.0+
- * Text Domain:          openai-product-feed-for-woo
+ * Text Domain:          woocommerce-product-feed-openai
  * Requires at least:    6.0
  * Requires PHP:         7.4
  * WC requires at least: 7.0
@@ -24,12 +24,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit();
 }
 
-define( 'OAPFW_VERSION', '0.1.0' );
-define( 'OAPFW_PLUGIN_FILE', __FILE__ );
-define( 'OAPFW_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
-define( 'OAPFW_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
+define( 'WPFOAI_VERSION', '0.1.0' );
+define( 'WPFOAI_PLUGIN_FILE', __FILE__ );
+define( 'WPFOAI_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
+define( 'WPFOAI_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
-require_once OAPFW_PLUGIN_DIR . 'vendor/autoload.php';
+require_once WPFOAI_PLUGIN_DIR . 'vendor/autoload.php';
 
 // Initialize plugin after all plugins are loaded to ensure WooCommerce is available.
 add_action(
@@ -70,7 +70,7 @@ register_deactivation_hook(
  *
  * @return \Automattic\WooCommerce\ProductFeedForOpenAI\Core\Plugin Plugin instance.
  */
-function oapfw_plugin(): \Automattic\WooCommerce\ProductFeedForOpenAI\Core\Plugin {
+function wpfoai_plugin(): \Automattic\WooCommerce\ProductFeedForOpenAI\Core\Plugin {
 	return \Automattic\WooCommerce\ProductFeedForOpenAI\Core\Plugin::get_instance();
 }
 
@@ -80,6 +80,6 @@ function oapfw_plugin(): \Automattic\WooCommerce\ProductFeedForOpenAI\Core\Plugi
  * @param string $service_id Service identifier.
  * @return mixed Service instance.
  */
-function oapfw_get_service( string $service_id ) {
-	return oapfw_plugin()->get( $service_id );
+function wpfoai_get_service( string $service_id ) {
+	return wpfoai_plugin()->get( $service_id );
 }
