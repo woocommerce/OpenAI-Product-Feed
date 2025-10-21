@@ -11,6 +11,11 @@ namespace Automattic\WooCommerce\ProductFeedForOpenAI\Storage;
 
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\FeedInterface;
 
+/**
+ * In-memory feed storage.
+ *
+ * This class simply stores all data in memory and generates JSON at once.
+ */
 class JsonInMemoryFeed implements FeedInterface {
 	/**
 	 * The feed data.

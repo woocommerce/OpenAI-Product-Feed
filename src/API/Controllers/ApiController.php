@@ -14,7 +14,7 @@ use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductMapperInterface;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductWalker;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\Mappers\ProductMapper;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\Validators\FeedValidator;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Storage\JsonInMemoryFeed;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Storage\JsonFileFeed;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -118,7 +118,7 @@ class ApiController {
 	 */
 	public function handle_preview_feed() {
 		try {
-			$feed = new JsonInMemoryFeed();
+			$feed = new JsonFileFeed();
 
 			$feed->start();
 			$product_walker = new ProductWalker( $this->product_mapper, $this->feed_validator, $feed );
