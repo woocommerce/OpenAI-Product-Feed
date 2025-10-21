@@ -108,7 +108,7 @@ final class Plugin {
 			wp_die(
 				esc_html__(
 					'WooCommerce Product Feed for OpenAI requires WooCommerce to be installed and active.',
-					'openai-product-feed-for-woo'
+					'woocommerce-product-feed-openai'
 				)
 			);
 		}
@@ -132,7 +132,7 @@ final class Plugin {
 		echo '<div class="notice notice-error"><p>' .
 			esc_html__(
 				'WooCommerce Product Feed for OpenAI requires WooCommerce to be installed and active.',
-				'openai-product-feed-for-woo'
+				'woocommerce-product-feed-openai'
 			) .
 			'</p></div>';
 	}

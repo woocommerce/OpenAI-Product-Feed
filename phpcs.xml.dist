@@ -32,7 +32,7 @@
 
 	<rule ref="WordPress.WP.I18n">
 		<properties>
-			<property name="text_domain" type="array" value="openai-product-feed-for-woo" />
+			<property name="text_domain" type="array" value="woocommerce-product-feed-openai" />
 		</properties>
 	</rule>
 

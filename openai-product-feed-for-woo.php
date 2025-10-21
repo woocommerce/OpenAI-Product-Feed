@@ -11,7 +11,7 @@
  * Author:               WooCommerce
  * Author URI:           https://woocommerce.org
  * License:              GPL-2.0+
- * Text Domain:          openai-product-feed-for-woo
+ * Text Domain:          woocommerce-product-feed-openai
  * Requires at least:    6.0
  * Requires PHP:         7.4
  * WC requires at least: 7.0

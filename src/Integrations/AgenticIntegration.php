@@ -48,11 +48,11 @@ class AgenticIntegration {
 
 				// Feed delivery URL (push endpoint) used by this plugin when pushing full/delta feeds.
 				$provider['fields'][] = [
-					'title'       => __( 'Feed Delivery URL', 'openai-product-feed-for-woo' ),
+					'title'       => __( 'Feed Delivery URL', 'woocommerce-product-feed-openai' ),
 					/* translators: admin help text for feed destination URL */
-					'desc'        => __( 'The URL where your product feed is delivered to ChatGPT. ', 'openai-product-feed-for-woo' ) .
+					'desc'        => __( 'The URL where your product feed is delivered to ChatGPT. ', 'woocommerce-product-feed-openai' ) .
 						// Keep anchor simple to avoid translation coupling; core may render validation separately.
-						__( 'Example: https://api.openai.com/v1/feeds/products', 'openai-product-feed-for-woo' ),
+						__( 'Example: https://api.openai.com/v1/feeds/products', 'woocommerce-product-feed-openai' ),
 					'id'          => 'woocommerce_agentic_openai_feed_url',
 					'type'        => 'text',
 					'css'         => 'min-width:400px;',
@@ -62,8 +62,8 @@ class AgenticIntegration {
 
 				// Return window in days. Used by feed mapper when rendering merchant policy.
 				$provider['fields'][] = [
-					'title'             => __( 'Return Window (Days)', 'openai-product-feed-for-woo' ),
-					'desc'              => __( 'Number of days customers have to return products.', 'openai-product-feed-for-woo' ),
+					'title'             => __( 'Return Window (Days)', 'woocommerce-product-feed-openai' ),
+					'desc'              => __( 'Number of days customers have to return products.', 'woocommerce-product-feed-openai' ),
 					'id'                => 'woocommerce_agentic_openai_return_window',
 					'type'              => 'number',
 					'css'               => 'width:80px;',
