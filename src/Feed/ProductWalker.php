@@ -162,12 +162,14 @@ class ProductWalker {
 	 */
 	private function iterate( array $args = [], int $page = 1, int $limit = 100 ): object {
 		$result = wc_get_products(
-			[
-				...$args,
-				'page'     => $page,
-				'limit'    => $limit,
-				'paginate' => true,
-			]
+			array_merge(
+				$args,
+				[
+					'page'     => $page,
+					'limit'    => $limit,
+					'paginate' => true,
+				]
+			)
 		);
 
 		foreach ( $result->products as $product ) {
