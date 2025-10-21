@@ -27,4 +27,6 @@ composer.lock
 
 .specstory/
 
+# Core test files
+tests/unit/woo
 
