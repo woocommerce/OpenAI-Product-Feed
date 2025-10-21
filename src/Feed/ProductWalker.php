@@ -67,8 +67,27 @@ class ProductWalker {
 		$per_page = 100;
 		$total    = 0;
 
+		/**
+		 * Allows the base arguments for querying products for product feeds to be changed.
+		 *
+		 * Variable products are not included by default, as their variations will be included.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param array $args The arguments to pass to wc_get_products().
+		 * @return array
+		 */
+		$args = apply_filters(
+			'wpfoai_product_feed_args',
+			[
+				'status' => [ 'publish' ],
+				'type'   => [ 'simple','variation' ],
+				'return' => 'objects',
+			]
+		);
+
 		do {
-			$iterated = $this->iterate( $page, $per_page );
+			$iterated = $this->iterate( $args, $page, $per_page );
 			$total   += $iterated;
 		} while ( $iterated === $per_page );
 
@@ -78,13 +97,15 @@ class ProductWalker {
 	/**
 	 * Iterates through a batch of products.
 	 *
-	 * @param int $page The page number to iterate through.
-	 * @param int $limit The maximum number of products to iterate through.
+	 * @param array $args The arguments to pass to wc_get_products().
+	 * @param int   $page The page number to iterate through.
+	 * @param int   $limit The maximum number of products to iterate through.
 	 * @return int The number of products iterated through.
 	 */
-	public function iterate( int $page, int $limit = 100 ): int {
+	public function iterate( array $args = [], int $page = 1, int $limit = 100 ): int {
 		$products = wc_get_products(
 			[
+				...$args,
 				'page'  => $page,
 				'limit' => $limit,
 			]

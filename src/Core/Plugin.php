@@ -121,7 +121,6 @@ final class Plugin {
 		// Clean up scheduled events using Action Scheduler.
 		if ( function_exists( 'as_cancel_all_actions' ) ) {
 			as_cancel_all_actions( 'wpfoai_push_feed_event' );
-			as_cancel_all_actions( 'wpfoai_push_delta_event' );
 		}
 	}
 
