@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace Automattic\WooCommerce\ProductFeedForOpenAI\CLI;
 
+use Automattic\WooCommerce\ProductFeedForOpenAI\Admin\Helpers\CredentialValidator;
 use WP_CLI;
 use WP_CLI_Command;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\FeedValidatorInterface;
@@ -38,17 +39,27 @@ class Command extends WP_CLI_Command {
 	private FeedValidatorInterface $validator;
 
 	/**
+	 * Credential validator instance.
+	 *
+	 * @var CredentialValidator
+	 */
+	private CredentialValidator $credential_validator;
+
+	/**
 	 * Dependency injector.
 	 *
-	 * @param ProductMapper $product_mapper The product mapper.
-	 * @param FeedValidator $validator The feed validator.
+	 * @param ProductMapper       $product_mapper The product mapper.
+	 * @param FeedValidator       $validator The feed validator.
+	 * @param CredentialValidator $credential_validator The credential validator.
 	 */
 	public function init(
 		ProductMapper $product_mapper,
-		FeedValidator $validator
+		FeedValidator $validator,
+		CredentialValidator $credential_validator
 	) {
-		$this->product_mapper = $product_mapper;
-		$this->validator      = $validator;
+		$this->product_mapper       = $product_mapper;
+		$this->validator            = $validator;
+		$this->credential_validator = $credential_validator;
 	}
 
 	/**
@@ -74,6 +85,12 @@ class Command extends WP_CLI_Command {
 	 * default: false
 	 * ---
 	 *
+	 * [--send]
+	 * : Whether to send the feed to an API.
+	 * ---
+	 * default: false
+	 * ---
+	 *
 	 * ## EXAMPLES
 	 *    wp product-feed generate
 	 *    wp product-feed generate --timeout=200
@@ -86,6 +103,22 @@ class Command extends WP_CLI_Command {
 		$timeout    = (int) $assoc_args['timeout'];
 		$batch_size = (int) $assoc_args['batch-size'];
 		$silent     = (bool) \WP_CLI\Utils\get_flag_value( $assoc_args, 'silent', false );
+		$send       = (bool) \WP_CLI\Utils\get_flag_value( $assoc_args, 'send', false );
+
+		// Verify settings in advance if there is a requirement to send the feed.
+		if ( $send ) {
+			$endpoint = $this->credential_validator->get_endpoint_url();
+			if ( empty( $endpoint ) ) {
+				return WP_CLI::error( 'Endpoint URL is not configured. Aborting.' );
+			}
+
+			$token = $this->credential_validator->get_auth_token();
+			if ( ! empty( $token ) ) {
+				$headers = [
+					'Authorization' => 'Bearer ' . $token,
+				];
+			}
+		}
 
 		// Initialize the feed and walker, set them up.
 		$feed   = new JsonFileFeed();
@@ -108,12 +141,36 @@ class Command extends WP_CLI_Command {
 		);
 
 		$path = $feed->get_file_path();
-		if ( $silent ) {
+		if ( $silent && ! $send ) {
 			WP_CLI::out( $path );
 			return;
 		}
 
-		WP_CLI::success( 'Feed generated successfully' );
-		WP_CLI::log( "Path: $path" );
+		if ( ! $silent ) {
+			WP_CLI::success( 'Feed generated successfully' );
+			WP_CLI::log( "Path: $path" );
+
+			if ( ! $send ) {
+				WP_CLI::log( 'The --send option was not provided, the feed has not been sent.' );
+				return;
+			}
+
+			WP_CLI::log( 'Sending feed to API...' );
+		}
+
+		// Add the needed additional headers.
+		$headers['Content-Type'] = 'application/json';
+
+		$response = wp_remote_post(
+			$endpoint,
+			[
+				'headers' => $headers,
+				'timeout' => 30,
+				'body'    => wp_json_encode( $feed->deliver() ),
+			]
+		);
+
+		// No need to do wonders with the response, just print it.
+		WP_CLI::print_value( $response );
 	}
 }
