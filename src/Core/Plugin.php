@@ -12,6 +12,7 @@ namespace Automattic\WooCommerce\ProductFeedForOpenAI\Core;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Admin\Controllers\AdminController;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Admin\Controllers\ProductFieldsController;
 use Automattic\WooCommerce\ProductFeedForOpenAI\API\Controllers\ApiController;
+use Automattic\WooCommerce\ProductFeedForOpenAI\CLI\Command;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\AgenticIntegration;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Core\DependencyManagement\Container;
 
@@ -81,6 +82,11 @@ final class Plugin {
 		// Initialize components on WordPress init hook.
 		add_action( 'init', [ $this, 'init' ], 0 );
 
+		// Register the CLI command as well.
+		if ( defined( 'WP_CLI' ) && WP_CLI ) {
+			add_action( 'cli_init', [ $this, 'register_cli_commands' ] );
+		}
+
 		$this->initialized = true;
 	}
 
@@ -97,6 +103,21 @@ final class Plugin {
 		$this->container->get( ProductFieldsController::class )->initialize();
 
 		$this->container->get( ApiController::class )->initialize();
+	}
+
+	/**
+	 * Register WP-CLI commands.
+	 */
+	public function register_cli_commands(): void {
+		$command = $this->container->get( Command::class );
+		\WP_CLI::add_command( 'product-feed', $command );
+	}
+
+	/**
+	 * WP-CLI command to generate product feed
+	 */
+	public function cli_generate_feed(): void {
+		echo 'Hello!';
 	}
 
 	/**

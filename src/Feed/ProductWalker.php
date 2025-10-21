@@ -60,9 +60,10 @@ class ProductWalker {
 	/**
 	 * Walks through all products.
 	 *
+	 * @param int $extend_execution_time_limit The number of seconds to extend the execution time limit per batch.
 	 * @return int The total number of products walked through.
 	 */
-	public function walk(): int {
+	public function walk( int $extend_execution_time_limit = 0 ): int {
 		$page     = 1;
 		$per_page = 100;
 		$total    = 0;
@@ -89,6 +90,10 @@ class ProductWalker {
 		do {
 			$iterated = $this->iterate( $args, $page, $per_page );
 			$total   += $iterated;
+
+			if ( $extend_execution_time_limit > 0 ) {
+				set_time_limit( $extend_execution_time_limit );
+			}
 		} while ( $iterated === $per_page );
 
 		return $total;
