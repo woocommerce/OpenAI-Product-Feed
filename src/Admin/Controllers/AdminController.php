@@ -9,7 +9,6 @@ declare(strict_types=1);
 
 namespace Automattic\WooCommerce\ProductFeedForOpenAI\Admin\Controllers;
 
-use Automattic\WooCommerce\ProductFeedForOpenAI\Settings\SettingsRepository;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\FeedValidator;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Admin\Helpers\CredentialValidator;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductMapperInterface;
