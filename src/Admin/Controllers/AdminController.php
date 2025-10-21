@@ -60,7 +60,7 @@ class AdminController {
 	 */
 	private $logger;
 
-	const SCHEDULED_ACTION_HOOK = 'oapfw_push_feed_event';
+	const SCHEDULED_ACTION_HOOK = 'wpfoai_push_feed_event';
 
 	/**
 	 * Dependencies injector.
@@ -87,7 +87,7 @@ class AdminController {
 	 */
 	public function initialize(): void {
 		add_action( self::SCHEDULED_ACTION_HOOK, [ $this, 'cron_push_feed' ] );
-		add_action( 'oapfw_push_delta_event', [ $this, 'push_delta_to_endpoint' ], 10, 1 );
+		add_action( 'wpfoai_push_delta_event', [ $this, 'push_delta_to_endpoint' ], 10, 1 );
 
 		add_action( 'woocommerce_update_product', [ $this, 'queue_delta_push' ], 10, 1 );
 		add_action( 'woocommerce_product_set_stock', [ $this, 'queue_delta_push' ], 10, 1 );
@@ -132,9 +132,9 @@ class AdminController {
 		if ( function_exists( 'as_schedule_single_action' ) ) {
 			as_schedule_single_action(
 				time() + 30,
-				'oapfw_push_delta_event',
+				'wpfoai_push_delta_event',
 				[ $product_id ],
-				'oapfw'
+				'wpfoai'
 			);
 		}
 	}
@@ -203,15 +203,15 @@ class AdminController {
 
 		if ( is_wp_error( $response ) ) {
 			if ( $this->logger ) {
-				$this->logger->error( 'Feed push failed: ' . $response->get_error_message(), [ 'source' => 'oapfw' ] );
+				$this->logger->error( 'Feed push failed: ' . $response->get_error_message(), [ 'source' => 'wpfoai' ] );
 			}
 		} else {
 			$code = wp_remote_retrieve_response_code( $response );
 			if ( $this->logger ) {
 				if ( $code >= 200 && $code < 300 ) {
-					$this->logger->info( 'Feed push successful: HTTP ' . $code, [ 'source' => 'oapfw' ] );
+					$this->logger->info( 'Feed push successful: HTTP ' . $code, [ 'source' => 'wpfoai' ] );
 				} else {
-					$this->logger->warning( 'Feed push returned HTTP ' . $code, [ 'source' => 'oapfw' ] );
+					$this->logger->warning( 'Feed push returned HTTP ' . $code, [ 'source' => 'wpfoai' ] );
 				}
 			}
 		}

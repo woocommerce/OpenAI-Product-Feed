@@ -56,7 +56,7 @@ class FeedGenerator {
 		 * @param array $rows The feed rows.
 		 * @since 1.0.0
 		 */
-		return apply_filters( 'oapfw_feed_rows', $rows );
+		return apply_filters( 'wpfoai_feed_rows', $rows );
 	}
 
 	/**
@@ -83,7 +83,7 @@ class FeedGenerator {
 		 * @param int   $product_id The product ID.
 		 * @since 1.0.0
 		 */
-		return apply_filters( 'oapfw_feed_rows_single', $rows, $product_id );
+		return apply_filters( 'wpfoai_feed_rows_single', $rows, $product_id );
 	}
 
 	/**

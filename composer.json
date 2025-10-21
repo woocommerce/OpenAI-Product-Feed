@@ -1,7 +1,7 @@
 {
-    "name": "woocommerce/openai-product-feed-for-woo",
-    "description": "OpenAI Product Feed for WooCommerce",
-    "homepage": "https://github.com/woocommerce/OpenAI-Product-Feed",
+    "name": "woocommerce/woocommerce-product-feed-for-openai",
+    "description": "WooCommerce Product Feed for OpenAI",
+    "homepage": "https://github.com/woocommerce/WooCommerce-Product-Feed-for-OpenAI",
     "type": "wordpress-plugin",
     "license": "GPL-3.0-or-later",
     "prefer-stable": true,
