@@ -15,9 +15,9 @@ use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\FeedInterface;
 // phpcs:disable WordPress.WP.AlternativeFunctions
 
 /**
- * In-memory feed storage.
+ * File-backed JSON feed storage.
  *
- * This class simply stores all data in memory and generates JSON at once.
+ * This class writes JSON directly to a file, entry by entry, without keeping everything in memory.
  */
 class JsonFileFeed implements FeedInterface {
 	/**
