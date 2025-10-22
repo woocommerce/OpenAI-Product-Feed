@@ -35,8 +35,7 @@ require_once WPFOAI_PLUGIN_DIR . 'vendor/autoload.php';
 add_action(
 	'plugins_loaded',
 	function () {
-		$plugin = \Automattic\WooCommerce\ProductFeedForOpenAI\Core\Plugin::get_instance();
-		$plugin->initialize();
+		\Automattic\WooCommerce\ProductFeedForOpenAI\Core\Plugin::get_instance();
 	}
 );
 

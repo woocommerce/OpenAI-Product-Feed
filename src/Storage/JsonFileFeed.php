@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace Automattic\WooCommerce\ProductFeedForOpenAI\Storage;
 
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\FeedInterface;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\FileBasedFeedInterface;
 use RuntimeException;
 
 // This file works directly with local files. That's fine.
@@ -20,7 +21,7 @@ use RuntimeException;
  *
  * This class writes JSON directly to a file, entry by entry, without keeping everything in memory.
  */
-class JsonFileFeed implements FeedInterface {
+class JsonFileFeed implements FeedInterface, FileBasedFeedInterface {
 	/**
 	 * Indicates if there are previous entries in the feed.
 	 *
@@ -43,11 +44,27 @@ class JsonFileFeed implements FeedInterface {
 	private $file_handle = null;
 
 	/**
+	 * The base name of the feed file.
+	 *
+	 * @var string
+	 */
+	private $base_name;
+
+	/**
 	 * Indicates if the feed file has been completed.
 	 *
 	 * @var bool
 	 */
 	private $file_completed = false;
+
+	/**
+	 * Constructor.
+	 *
+	 * @param string $base_name The base name of the feed file.
+	 */
+	public function __construct( string $base_name ) {
+		$this->base_name = $base_name;
+	}
 
 	/**
 	 * Start the feed.
@@ -71,7 +88,7 @@ class JsonFileFeed implements FeedInterface {
 			);
 		}
 
-		$this->file_path   = $directory . wp_unique_filename( $directory, 'openai-feed.json' );
+		$this->file_path   = $directory . wp_unique_filename( $directory, $this->base_name . '.json' );
 		$this->file_handle = fopen( $this->file_path, 'w' );
 
 		if ( false === $this->file_handle ) {

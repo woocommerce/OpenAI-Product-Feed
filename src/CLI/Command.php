@@ -11,7 +11,9 @@ namespace Automattic\WooCommerce\ProductFeedForOpenAI\CLI;
 
 use WP_CLI;
 use WP_CLI_Command;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Core\IntegrationRegistry;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\FeedValidatorInterface;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\FileBasedFeedInterface;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductMapperInterface;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductWalker;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\WalkerProgress;
@@ -24,6 +26,13 @@ use Automattic\WooCommerce\ProductFeedForOpenAI\Storage\JsonFileFeed;
  * CLI command for generating a product feed.
  */
 class Command extends WP_CLI_Command {
+	/**
+	 * Integration registry instance.
+	 *
+	 * @var IntegrationRegistry
+	 */
+	private IntegrationRegistry $integration_registry;
+
 	/**
 	 * Product mapper instance.
 	 *
@@ -48,24 +57,30 @@ class Command extends WP_CLI_Command {
 	/**
 	 * Dependency injector.
 	 *
-	 * @param ProductMapper      $product_mapper The product mapper.
-	 * @param FeedValidator      $validator The feed validator.
-	 * @param SettingsRepository $settings The settings repository.
+	 * @param IntegrationRegistry $integration_registry The integration registry.
+	 * @param ProductMapper       $product_mapper The product mapper.
+	 * @param FeedValidator       $validator The feed validator.
+	 * @param SettingsRepository  $settings The settings repository.
 	 */
 	public function init(
+		IntegrationRegistry $integration_registry,
 		ProductMapper $product_mapper,
 		FeedValidator $validator,
 		SettingsRepository $settings
 	) {
-		$this->product_mapper = $product_mapper;
-		$this->validator      = $validator;
-		$this->settings       = $settings;
+		$this->integration_registry = $integration_registry;
+		$this->product_mapper       = $product_mapper;
+		$this->validator            = $validator;
+		$this->settings             = $settings;
 	}
 
 	/**
 	 * Generates a product feed.
 	 *
 	 * ## OPTIONS
+	 *
+	 * [--integration=<integration>]
+	 * : The slug of the integration to use. Required.
 	 *
 	 * [--timeout=<seconds>]
 	 * : The number of seconds to extend the execution time limit per batch.
@@ -100,6 +115,14 @@ class Command extends WP_CLI_Command {
 	 */
 	public function generate( $args, $assoc_args ) {
 		// Read args and prepare defaults.
+		if ( ! isset( $assoc_args['integration'] ) ) {
+			return WP_CLI::error( 'Please provide the required --integration=<integration> parameter' );
+		}
+		$integration = $this->integration_registry->get_integration( $assoc_args['integration'] );
+		if ( null === $integration ) {
+			return WP_CLI::error( 'Integration not found' );
+		}
+
 		$timeout    = (int) $assoc_args['timeout'];
 		$batch_size = (int) $assoc_args['batch-size'];
 		$silent     = (bool) \WP_CLI\Utils\get_flag_value( $assoc_args, 'silent', false );
@@ -115,8 +138,8 @@ class Command extends WP_CLI_Command {
 		}
 
 		// Initialize the feed and walker, set them up.
-		$feed   = new JsonFileFeed();
-		$walker = new ProductWalker( $this->product_mapper, $this->validator, $feed );
+		$feed   = $integration->create_feed();
+		$walker = new ProductWalker( $integration->get_product_mapper(), $integration->get_feed_validator(), $feed );
 		$walker->set_batch_size( $batch_size );
 		$walker->add_time_limit( $timeout );
 
@@ -133,6 +156,11 @@ class Command extends WP_CLI_Command {
 				WP_CLI::log( "Batch $progress->processed_batches/$progress->total_batch_count: Processed $progress->processed_items/$progress->total_count products" );
 			}
 		);
+
+		if ( ! is_a( $feed, FileBasedFeedInterface::class ) ) {
+			// To be figured out next.
+			return;
+		}
 
 		$path = $feed->get_file_path();
 		if ( $silent && ! $send ) {
