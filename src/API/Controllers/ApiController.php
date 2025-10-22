@@ -66,9 +66,7 @@ class ApiController {
 			'/openai-feed',
 			[
 				'methods'             => 'GET',
-				'permission_callback' => function ( \WP_REST_Request $request ) {
-					return $this->check_admin_permission( $request );
-				},
+				'permission_callback' => [ $this, 'check_admin_permission' ],
 				'callback'            => [ $this, 'handle_preview_feed' ],
 				'args'                => [
 					'product_id' => [

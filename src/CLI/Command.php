@@ -15,8 +15,6 @@ use Automattic\WooCommerce\ProductFeedForOpenAI\Core\IntegrationRegistry;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\FileBasedFeedInterface;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductWalker;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\WalkerProgress;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\FeedValidator;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\ProductMapper;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Settings\SettingsRepository;
 
 /**
@@ -41,8 +39,6 @@ class Command extends WP_CLI_Command {
 	 * Dependency injector.
 	 *
 	 * @param IntegrationRegistry $integration_registry The integration registry.
-	 * @param ProductMapper       $product_mapper The product mapper.
-	 * @param FeedValidator       $validator The feed validator.
 	 * @param SettingsRepository  $settings The settings repository.
 	 */
 	public function init(
