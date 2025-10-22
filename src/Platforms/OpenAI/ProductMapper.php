@@ -9,10 +9,12 @@ declare(strict_types=1);
 
 namespace Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI;
 
+use Automattic\WooCommerce\Enums\ProductType;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductMapperInterface;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Settings\SettingsRepository;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\FeedSchema;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Utils\StringHelper;
+use RuntimeException;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -83,12 +85,28 @@ final class ProductMapper implements ProductMapperInterface {
 	 *
 	 * Main entry point for converting a WooCommerce product into OpenAI feed format.
 	 *
-	 * @param \WC_Product      $product Product to map.
-	 * @param \WC_Product|null $parent_product  Parent product for variations.
+	 * @param \WC_Product $product Product to map.
 	 * @return array Mapped product data array.
+	 * @throws RuntimeException If the parent product is not found.
 	 */
-	public function map_product( \WC_Product $product, ?\WC_Product $parent_product = null ): array {
+	public function map_product( \WC_Product $product ): array {
 		$row = [];
+
+		$parent_product = null;
+		if ( ProductType::VARIATION === $product->get_type() ) {
+			$parent_product = wc_get_product( $product->get_parent_id() );
+			if ( ! $parent_product ) {
+				throw new RuntimeException(
+					esc_html(
+						sprintf(
+							/* translators: %s: product ID */
+							__( 'Parent product not found for variation: %s', 'woocommerce-product-feed-openai' ),
+							$product->get_id()
+						)
+					)
+				);
+			}
+		}
 
 		foreach ( $this->schema as $field => $config ) {
 			$row[ $field ] = $this->map_field( $product, $field, $config, $parent_product );
@@ -387,7 +405,11 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @return string|null Product GTIN or null.
 	 */
 	protected function get_gtin( \WC_Product $product ): ?string {
-		return $this->get_meta_value( $product, '_gtin' );
+		$override = $this->get_meta_value( $product, '_gtin' );
+		if ( empty( $override ) ) {
+			return $product->get_global_unique_id();
+		}
+		return $override;
 	}
 
 	/**
