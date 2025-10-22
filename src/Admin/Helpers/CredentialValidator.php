@@ -63,16 +63,6 @@ class CredentialValidator {
 	}
 
 	/**
-	 * Check if feed can be pushed.
-	 *
-	 * @return bool True if feed can be pushed.
-	 */
-	public function can_push_feed(): bool {
-		$delivery_enabled = 'true' === $this->settings->get( 'delivery_enabled', 'false' );
-		return $delivery_enabled && $this->are_credentials_configured();
-	}
-
-	/**
 	 * Get endpoint URL.
 	 *
 	 * @return string The endpoint URL.
