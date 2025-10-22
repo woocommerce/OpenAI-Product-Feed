@@ -90,11 +90,6 @@ class AdminController {
 			return;
 		}
 
-		$token = $this->credential_validator->get_auth_token();
-		if ( ! empty( $token ) ) {
-			$headers['Authorization'] = 'Bearer ' . $token;
-		}
-
 		$feed   = new JsonInMemoryFeed();
 		$walker = new ProductWalker( $this->product_mapper, $this->validator, $feed );
 		$walker->walk();

@@ -155,11 +155,6 @@ class Command extends WP_CLI_Command {
 		// Add the needed additional headers.
 		$headers = [];
 
-		$token = $this->credential_validator->get_auth_token();
-		if ( ! empty( $token ) ) {
-			$headers['Authorization'] = 'Bearer ' . $token;
-		}
-
 		$response = wp_remote_post(
 			$endpoint,
 			[
