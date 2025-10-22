@@ -123,9 +123,7 @@ class ApiController {
 			$product_walker = new ProductWalker( $this->product_mapper, $this->feed_validator, $feed );
 			$product_walker->walk();
 
-			$response = rest_ensure_response( $feed->deliver() );
-			$response->header( 'Content-Type', 'application/json; charset=utf-8' );
-			return $response;
+			return rest_ensure_response( $feed->deliver() );
 		} catch ( \Exception $e ) {
 			return new \WP_Error(
 				'woocommerce_rest_feed_error',

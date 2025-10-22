@@ -153,7 +153,7 @@ class Command extends WP_CLI_Command {
 		}
 
 		// Add the needed additional headers.
-		$headers = [ 'Content-Type' => 'application/json' ];
+		$headers = [];
 
 		$token = $this->credential_validator->get_auth_token();
 		if ( ! empty( $token ) ) {
