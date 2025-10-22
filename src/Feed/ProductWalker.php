@@ -116,7 +116,7 @@ class ProductWalker {
 			'wpfoai_product_feed_args',
 			[
 				'status' => [ 'publish' ],
-				'type'   => [ 'simple','variation' ],
+				'type'   => [ 'simple', 'variation' ],
 				'return' => 'objects',
 			]
 		);
