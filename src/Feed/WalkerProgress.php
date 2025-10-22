@@ -47,7 +47,7 @@ class WalkerProgress {
 	 * @param object $result The result object from wc_get_products().
 	 * @return static
 	 */
-	public static function from_wc_get_products_result( object $result ): static {
+	public static function from_wc_get_products_result( object $result ): self {
 		$progress = new static();
 
 		$progress->total_count       = $result->total;
