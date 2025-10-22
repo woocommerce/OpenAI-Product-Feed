@@ -153,13 +153,11 @@ class Command extends WP_CLI_Command {
 		}
 
 		// Add the needed additional headers.
-		$headers['Content-Type'] = 'application/json';
+		$headers = [ 'Content-Type' => 'application/json' ];
 
 		$token = $this->credential_validator->get_auth_token();
 		if ( ! empty( $token ) ) {
-			$headers = [
-				'Authorization' => 'Bearer ' . $token,
-			];
+			$headers['Authorization'] = 'Bearer ' . $token;
 		}
 
 		$response = wp_remote_post(
