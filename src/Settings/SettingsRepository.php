@@ -51,7 +51,8 @@ final class SettingsRepository {
 				// No break.
 			default:
 				if ( ! empty( $openai[ $key ] ) ) {
-					return $openai[ $key ];
+					$value = $openai[ $key ];
+					return is_string( $value ) ? trim( $value ) : $value;
 				}
 
 				return ! empty( $general[ $key ] )
