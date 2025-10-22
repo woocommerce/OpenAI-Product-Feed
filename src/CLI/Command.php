@@ -95,7 +95,7 @@ class Command extends WP_CLI_Command {
 	 *    wp product-feed generate
 	 *    wp product-feed generate --timeout=200
 	 *
-	 * @param array $args Positional arguments.
+	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 */
 	public function generate( $args, $assoc_args ) {
@@ -106,17 +106,11 @@ class Command extends WP_CLI_Command {
 		$send       = (bool) \WP_CLI\Utils\get_flag_value( $assoc_args, 'send', false );
 
 		// Verify settings in advance if there is a requirement to send the feed.
+		$endpoint = null;
 		if ( $send ) {
 			$endpoint = $this->credential_validator->get_endpoint_url();
 			if ( empty( $endpoint ) ) {
 				return WP_CLI::error( 'Endpoint URL is not configured. Aborting.' );
-			}
-
-			$token = $this->credential_validator->get_auth_token();
-			if ( ! empty( $token ) ) {
-				$headers = [
-					'Authorization' => 'Bearer ' . $token,
-				];
 			}
 		}
 
@@ -160,6 +154,13 @@ class Command extends WP_CLI_Command {
 
 		// Add the needed additional headers.
 		$headers['Content-Type'] = 'application/json';
+
+		$token = $this->credential_validator->get_auth_token();
+		if ( ! empty( $token ) ) {
+			$headers = [
+				'Authorization' => 'Bearer ' . $token,
+			];
+		}
 
 		$response = wp_remote_post(
 			$endpoint,
