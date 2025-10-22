@@ -16,6 +16,13 @@ use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\FileBasedFeedInterface;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductWalker;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\WalkerProgress;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Settings\SettingsRepository;
+use RuntimeException;
+
+// This file uses cURL heavily. It's a requirement for the plugin.
+// phpcs:disable WordPress.WP.AlternativeFunctions
+
+// This is CLI. Non-escaped content should not break it.
+// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 
 /**
  * CLI command for generating a product feed.
@@ -87,6 +94,7 @@ class Command extends WP_CLI_Command {
 	 *
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
+	 * @throws RuntimeException If the cURL request fails.
 	 */
 	public function generate( $args, $assoc_args ) {
 		// Read args and prepare defaults.
@@ -111,6 +119,8 @@ class Command extends WP_CLI_Command {
 				return WP_CLI::error( 'Endpoint URL is not configured. Aborting.' );
 			}
 		}
+
+		$endpoint = 'http://host.docker.internal:9086';
 
 		// Initialize the feed and walker, set them up.
 		$feed   = $integration->create_feed();
@@ -155,19 +165,34 @@ class Command extends WP_CLI_Command {
 			WP_CLI::log( 'Sending feed to API...' );
 		}
 
-		// Add the needed additional headers.
-		$headers = [];
-
-		$response = wp_remote_post(
-			$endpoint,
+		$ch = curl_init( $endpoint );
+		curl_setopt_array(
+			$ch,
 			[
-				'headers' => $headers,
-				'timeout' => 30,
-				'body'    => wp_json_encode( $feed->deliver() ),
+				CURLOPT_POST           => true,
+				CURLOPT_INFILE         => fopen( $path, 'rb' ),
+				CURLOPT_INFILESIZE     => filesize( $path ),
+				CURLOPT_RETURNTRANSFER => true,
+				CURLOPT_HTTPHEADER     => [
+					'Content-Type: application/json',
+				],
 			]
 		);
+		$response = curl_exec( $ch );
+
+		if ( false === $response ) {
+			// phpcs:ignore
+			throw new RuntimeException( 'cURL error: ' . curl_error( $ch ) );
+		}
+
+		$http_code = curl_getinfo( $ch, CURLINFO_HTTP_CODE );
+		if ( $http_code < 200 || $http_code > 299 ) {
+			throw new RuntimeException( 'Received non-200 HTTP code: ' . $http_code );
+		}
+		curl_close( $ch );
 
 		// No need to do wonders with the response, just print it.
-		WP_CLI::print_value( $response );
+		WP_CLI::success( 'Received a successful response from the API:' );
+		WP_CLI::print_value( json_decode( $response, true ) );
 	}
 }

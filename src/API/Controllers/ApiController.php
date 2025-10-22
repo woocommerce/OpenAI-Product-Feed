@@ -116,7 +116,7 @@ class ApiController {
 	 */
 	public function handle_preview_feed() {
 		try {
-			$feed = new JsonFileFeed();
+			$feed = new JsonFileFeed( 'openai-feed.json' );
 
 			$product_walker = new ProductWalker( $this->product_mapper, $this->feed_validator, $feed );
 			$product_walker->walk();
