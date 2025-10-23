@@ -12,7 +12,7 @@ namespace Automattic\WooCommerce\ProductFeedForOpenAI\CLI;
 use WP_CLI;
 use WP_CLI_Command;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Core\IntegrationRegistry;
-use Automattic\WooCommerce\ProductFeedForOpenAI\DeliveryMethods\Push;
+use Automattic\WooCommerce\ProductFeedForOpenAI\DeliveryMethods\PushFile;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\FileBasedFeedInterface;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductWalker;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\WalkerProgress;
@@ -174,7 +174,7 @@ class Command extends WP_CLI_Command {
 			WP_CLI::log( 'Sending feed to API...' );
 		}
 
-		$push   = new Push( $endpoint );
+		$push   = new PushFile( $endpoint );
 		$result = $push->deliver( $feed );
 
 		// No need to do wonders with the response, just print it.

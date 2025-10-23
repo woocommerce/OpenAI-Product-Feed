@@ -15,9 +15,9 @@ use WP_REST_Response;
 // phpcs:disable WordPress.WP.AlternativeFunctions
 
 /**
- * Delivery method for pushing feeds to a remote through cURL.
+ * Delivery method for pushing file feeds to a remote through cURL.
  */
-class Push implements FileDeliveryInterface {
+class PushFile implements FileDeliveryInterface {
 	/**
 	 * The endpoint to push the feed to.
 	 *
@@ -36,6 +36,9 @@ class Push implements FileDeliveryInterface {
 
 	/**
 	 * Deliver the feed.
+	 *
+	 * Yes, further headers and checks for the response are missing.
+	 * That will be one of the next PRs.
 	 *
 	 * @param FileBasedFeedInterface $feed The feed to deliver.
 	 * @return WP_REST_Response The response from the remote endpoint.
