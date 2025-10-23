@@ -38,8 +38,6 @@ class MemoryManager {
 	public static function flush_caches() {
 		global $wpdb, $wp_object_cache;
 
-		// phpcs:ignogre Squiz.PHP.CommentedOutCode.Found
-		// or define( 'WP_IMPORTING', true );.
 		$wpdb->queries = [];
 
 		wp_cache_flush();
