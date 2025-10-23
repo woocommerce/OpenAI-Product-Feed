@@ -120,8 +120,6 @@ class Command extends WP_CLI_Command {
 			}
 		}
 
-		$endpoint = 'http://host.docker.internal:9086';
-
 		// Initialize the feed and walker, set them up.
 		$feed   = $integration->create_feed();
 		$walker = new ProductWalker( $integration->get_product_mapper(), $integration->get_feed_validator(), $feed );
