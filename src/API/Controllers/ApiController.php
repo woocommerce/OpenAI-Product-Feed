@@ -9,11 +9,8 @@ declare(strict_types=1);
 
 namespace Automattic\WooCommerce\ProductFeedForOpenAI\API\Controllers;
 
-use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\FeedValidatorInterface;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductMapperInterface;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductWalker;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\ProductMapper;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\FeedValidator;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\OpenAIIntegration;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Storage\JsonFileFeed;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -25,28 +22,19 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class ApiController {
 	/**
-	 * Product mapper instance.
+	 * OpenAI integration instance.
 	 *
-	 * @var ProductMapperInterface
+	 * @var OpenAIIntegration
 	 */
-	private ProductMapperInterface $product_mapper;
-
-	/**
-	 * Feed validator instance.
-	 *
-	 * @var FeedValidatorInterface
-	 */
-	private FeedValidatorInterface $feed_validator;
+	private OpenAIIntegration $openai_integration;
 
 	/**
 	 * Dependency injector.
 	 *
-	 * @param ProductMapper $product_mapper The product mapper.
-	 * @param FeedValidator $feed_validator The feed validator.
+	 * @param OpenAIIntegration $openai_integration The OpenAI integration.
 	 */
-	public function init( ProductMapper $product_mapper, FeedValidator $feed_validator ) {
-		$this->product_mapper = $product_mapper;
-		$this->feed_validator = $feed_validator;
+	public function init( OpenAIIntegration $openai_integration ) {
+		$this->openai_integration = $openai_integration;
 	}
 
 	/**
@@ -118,7 +106,11 @@ class ApiController {
 		try {
 			$feed = new JsonFileFeed( 'openai-feed.json' );
 
-			$product_walker = new ProductWalker( $this->product_mapper, $this->feed_validator, $feed );
+			$product_walker = new ProductWalker(
+				$this->openai_integration->get_product_mapper(),
+				$this->openai_integration->get_feed_validator(),
+				$feed
+			);
 			$product_walker->walk();
 
 			return rest_ensure_response( $feed->deliver() );
