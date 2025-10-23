@@ -461,7 +461,7 @@ final class ProductMapper implements ProductMapperInterface {
 	 */
 	protected function get_condition( \WC_Product $product ): string {
 		$condition = $product->get_meta( ProductFieldsController::KEY_CONDITION );
-		return $condition ?? 'new';
+		return empty( $condition ) ? 'new' : $condition;
 	}
 
 	/**
