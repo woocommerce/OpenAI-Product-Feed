@@ -284,6 +284,8 @@ final class ProductMapper implements ProductMapperInterface {
 			'warning_url'               => 'get_warning_url',
 			'age_restriction'           => 'get_age_restriction',
 			'q_and_a'                   => 'get_q_and_a',
+			'related_product_id'        => 'get_related_product_id',
+			'relationship_type'         => 'get_relationship_type',
 		];
 	}
 
@@ -331,7 +333,7 @@ final class ProductMapper implements ProductMapperInterface {
 	 */
 	protected function get_enable_checkout( \WC_Product $product, ?\WC_Product $parent_product ): string {
 		// For variations, check parent product meta; for simple products, check product meta.
-		$check_product = $parent_product ? $parent_product : $product;
+		$check_product = $parent_product ?? $product;
 		return $this->get_enable_with_override( $check_product, ProductFieldsController::KEY_DISABLE_CHECKOUT, 'enable_products_default', 'false' );
 	}
 
@@ -851,6 +853,57 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @return string|null Product Q and A or null.
 	 */
 	protected function get_q_and_a( \WC_Product $product ): ?string {
+		return null;
+	}
+
+	/**
+	 * Get related product ID.
+	 *
+	 * Returns IDs from upsell or cross-sell products as a comma-separated list.
+	 * Prioritizes upsell products over cross-sell products.
+	 *
+	 * @param \WC_Product $product Product object.
+	 * @return string|null Comma-separated list of related product IDs or null.
+	 */
+	protected function get_related_product_id( \WC_Product $product ): ?string {
+		$upsell_ids     = $product->get_upsell_ids();
+		$cross_sell_ids = $product->get_cross_sell_ids();
+
+		// Prioritize upsell over cross-sell.
+		if ( ! empty( $upsell_ids ) ) {
+			return implode( ',', $upsell_ids );
+		}
+
+		if ( ! empty( $cross_sell_ids ) ) {
+			return implode( ',', $cross_sell_ids );
+		}
+
+		return null;
+	}
+
+	/**
+	 * Get relationship type.
+	 *
+	 * Returns the type of relationship for related products:
+	 * - 'substitute' for upsell products (takes priority if both exist)
+	 * - 'often_bought_with' for cross-sell products
+	 *
+	 * @param \WC_Product $product Product object.
+	 * @return string|null Relationship type enum value or null.
+	 */
+	protected function get_relationship_type( \WC_Product $product ): ?string {
+		$upsell_ids     = $product->get_upsell_ids();
+		$cross_sell_ids = $product->get_cross_sell_ids();
+
+		// Prioritize upsell (substitute) over cross-sell (often_bought_with).
+		if ( ! empty( $upsell_ids ) ) {
+			return 'substitute';
+		}
+
+		if ( ! empty( $cross_sell_ids ) ) {
+			return 'often_bought_with';
+		}
+
 		return null;
 	}
 
