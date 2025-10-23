@@ -138,27 +138,6 @@ class JsonFileFeed implements FeedInterface, FileBasedFeedInterface {
 	}
 
 	/**
-	 * Deliver the feed and delete the temporary file.
-	 *
-	 * @return array An array that will be provided to WP_REST_Response.
-	 * @throws RuntimeException If the feed has not been completed.
-	 */
-	public function deliver(): array {
-		if ( ! $this->file_completed ) {
-			throw new RuntimeException(
-				esc_html(
-					__( 'Cannot deliver a feed that has not been completed.', 'woocommerce-product-feed-openai' )
-				)
-			);
-		}
-
-		// Temporary. There is no point in writing to the filesystem only to load the whole file into memory.
-		$data = json_decode( file_get_contents( $this->file_path ), true );
-		unlink( $this->file_path );
-		return $data;
-	}
-
-	/**
 	 * Get the path to the feed file.
 	 *
 	 * @return string The path to the feed file.

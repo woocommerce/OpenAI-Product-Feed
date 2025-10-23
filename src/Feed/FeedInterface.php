@@ -32,11 +32,4 @@ interface FeedInterface {
 	 * @return void
 	 */
 	public function end(): void;
-
-	/**
-	 * Deliver the feed.
-	 *
-	 * @return array An array that will be provided to WP_REST_Response.
-	 */
-	public function deliver(): array;
 }

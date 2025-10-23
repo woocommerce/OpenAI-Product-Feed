@@ -11,7 +11,7 @@ namespace Automattic\WooCommerce\ProductFeedForOpenAI\API\Controllers;
 
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductWalker;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\OpenAIIntegration;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Storage\JsonFileFeed;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Storage\StreamFeed;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -104,16 +104,18 @@ class ApiController {
 	 */
 	public function handle_preview_feed() {
 		try {
-			$feed = new JsonFileFeed( 'openai-feed.json' );
+			$feed = new StreamFeed();
 
 			$product_walker = new ProductWalker(
 				$this->openai_integration->get_product_mapper(),
 				$this->openai_integration->get_feed_validator(),
 				$feed
 			);
-			$product_walker->walk();
 
-			return rest_ensure_response( $feed->deliver() );
+			$product_walker->add_time_limit( 30 );
+
+			// The feed will automatically output everything needed.
+			$product_walker->walk();
 		} catch ( \Exception $e ) {
 			return new \WP_Error(
 				'woocommerce_rest_feed_error',
