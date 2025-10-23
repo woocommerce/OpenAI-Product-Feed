@@ -9,7 +9,12 @@ declare(strict_types=1);
 
 namespace Automattic\WooCommerce\ProductFeedForOpenAI\API\Controllers;
 
-use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\FeedGenerator;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\FeedValidatorInterface;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductMapperInterface;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductWalker;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\ProductMapper;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\FeedValidator;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Storage\JsonFileFeed;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -20,19 +25,28 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class ApiController {
 	/**
-	 * Feed generator instance.
+	 * Product mapper instance.
 	 *
-	 * @var FeedGenerator
+	 * @var ProductMapperInterface
 	 */
-	private FeedGenerator $feed_generator;
+	private ProductMapperInterface $product_mapper;
+
+	/**
+	 * Feed validator instance.
+	 *
+	 * @var FeedValidatorInterface
+	 */
+	private FeedValidatorInterface $feed_validator;
 
 	/**
 	 * Dependency injector.
 	 *
-	 * @param FeedGenerator $feed_generator The feed generator.
+	 * @param ProductMapper $product_mapper The product mapper.
+	 * @param FeedValidator $feed_validator The feed validator.
 	 */
-	public function init( FeedGenerator $feed_generator ) {
-		$this->feed_generator = $feed_generator;
+	public function init( ProductMapper $product_mapper, FeedValidator $feed_validator ) {
+		$this->product_mapper = $product_mapper;
+		$this->feed_validator = $feed_validator;
 	}
 
 	/**
@@ -100,32 +114,16 @@ class ApiController {
 	/**
 	 * Handle preview feed request
 	 *
-	 * @param \WP_REST_Request $request Request object.
 	 * @return \WP_REST_Response|\WP_Error Response object or error.
 	 */
-	public function handle_preview_feed( \WP_REST_Request $request ) {
+	public function handle_preview_feed() {
 		try {
-			$product_id = $request->get_param( 'product_id' );
+			$feed = new JsonFileFeed();
 
-			if ( $product_id ) {
-				$product = wc_get_product( $product_id );
-				if ( ! $product ) {
-					return new \WP_Error(
-						'woocommerce_rest_product_invalid_id',
-						__( 'Invalid product ID.', 'woocommerce-product-feed-openai' ),
-						[ 'status' => 404 ]
-					);
-				}
-				$rows = $this->feed_generator->build_for_product_id( $product_id );
-			} else {
-				$rows = $this->feed_generator->build_feed();
-			}
+			$product_walker = new ProductWalker( $this->product_mapper, $this->feed_validator, $feed );
+			$product_walker->walk();
 
-			$response = rest_ensure_response( $rows );
-			$response->header( 'Content-Type', 'application/json; charset=utf-8' );
-
-			return $response;
-
+			return rest_ensure_response( $feed->deliver() );
 		} catch ( \Exception $e ) {
 			return new \WP_Error(
 				'woocommerce_rest_feed_error',

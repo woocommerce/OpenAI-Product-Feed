@@ -4,8 +4,9 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "b49735259bb00d6c7a18da03d92cef7e",
-    "packages": [
+    "content-hash": "5441f6f8e35bde15a4447603309f885f",
+    "packages": [],
+    "packages-dev": [
         {
             "name": "automattic/jetpack-constants",
             "version": "v3.0.1",
@@ -56,9 +57,7 @@
                 "source": "https://github.com/Automattic/jetpack-constants/tree/v3.0.1"
             },
             "time": "2024-11-25T16:33:27+00:00"
-        }
-    ],
-    "packages-dev": [
+        },
         {
             "name": "dealerdirect/phpcodesniffer-composer-installer",
             "version": "v1.1.2",

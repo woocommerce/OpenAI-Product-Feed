@@ -32,6 +32,7 @@
 	</rule>
 
 	<rule ref="Generic.Arrays.DisallowLongArraySyntax"/>
+	<rule ref="PHPCompatibilityWP"/>
 	<rule ref="VariableAnalysis.CodeAnalysis.VariableAnalysis" />
 	<rule ref="VariableAnalysis.CodeAnalysis.VariableAnalysis.UndefinedVariable" />
 	<rule ref="Squiz.Commenting.FunctionCommentThrowTag" />

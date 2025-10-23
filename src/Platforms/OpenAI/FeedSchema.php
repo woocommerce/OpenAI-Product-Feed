@@ -7,7 +7,7 @@
 
 declare(strict_types=1);
 
-namespace Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\Schema;
+namespace Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * OpenAI Product Feed Schema Definition
  * Based on https://developers.openai.com/commerce/specs/feed
  */
-class OpenAIFeedSchema {
+class FeedSchema {
 
 	/**
 	 * Cached schema to avoid rebuilding on every call

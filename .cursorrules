@@ -1,0 +1,2 @@
+Do not perform any changes unless explicitly asked to.
+While suggesting with Tab or writing code, always obey the WordPress Coding Standards. The configuration for this project is located in `phpcs.xml.dist`.

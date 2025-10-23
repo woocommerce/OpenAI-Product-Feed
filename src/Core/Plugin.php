@@ -12,7 +12,8 @@ namespace Automattic\WooCommerce\ProductFeedForOpenAI\Core;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Admin\Controllers\AdminController;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Admin\Controllers\ProductFieldsController;
 use Automattic\WooCommerce\ProductFeedForOpenAI\API\Controllers\ApiController;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\AgenticIntegration;
+use Automattic\WooCommerce\ProductFeedForOpenAI\CLI\Command;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\AgenticIntegration;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Core\DependencyManagement\Container;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -81,6 +82,11 @@ final class Plugin {
 		// Initialize components on WordPress init hook.
 		add_action( 'init', [ $this, 'init' ], 0 );
 
+		// Register the CLI command as well.
+		if ( defined( 'WP_CLI' ) && WP_CLI ) {
+			add_action( 'cli_init', [ $this, 'register_cli_commands' ] );
+		}
+
 		$this->initialized = true;
 	}
 
@@ -100,6 +106,14 @@ final class Plugin {
 	}
 
 	/**
+	 * Register WP-CLI commands.
+	 */
+	public function register_cli_commands(): void {
+		$command = $this->container->get( Command::class );
+		\WP_CLI::add_command( 'product-feed', $command );
+	}
+
+	/**
 	 * Plugin activation
 	 */
 	public function activate(): void {
@@ -112,6 +126,10 @@ final class Plugin {
 				)
 			);
 		}
+
+		if ( ! as_has_scheduled_action( AdminController::SCHEDULED_ACTION_HOOK ) ) {
+			as_schedule_recurring_action( time(), 60 * 15, AdminController::SCHEDULED_ACTION_HOOK );
+		}
 	}
 
 	/**
@@ -121,7 +139,6 @@ final class Plugin {
 		// Clean up scheduled events using Action Scheduler.
 		if ( function_exists( 'as_cancel_all_actions' ) ) {
 			as_cancel_all_actions( 'wpfoai_push_feed_event' );
-			as_cancel_all_actions( 'wpfoai_push_delta_event' );
 		}
 	}
 

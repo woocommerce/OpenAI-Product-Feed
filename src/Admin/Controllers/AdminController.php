@@ -9,10 +9,12 @@ declare(strict_types=1);
 
 namespace Automattic\WooCommerce\ProductFeedForOpenAI\Admin\Controllers;
 
-use Automattic\WooCommerce\ProductFeedForOpenAI\Settings\SettingsRepository;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\FeedGenerator;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\Validators\FeedValidator;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\FeedValidator;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Admin\Helpers\CredentialValidator;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductMapperInterface;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductWalker;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\ProductMapper;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Storage\JsonInMemoryFeed;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -22,20 +24,12 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Admin controller for handling admin interface functionality.
  */
 class AdminController {
-
 	/**
-	 * Settings repository instance.
+	 * Product mapper instance.
 	 *
-	 * @var SettingsRepository
+	 * @var ProductMapperInterface
 	 */
-	private SettingsRepository $settings;
-
-	/**
-	 * Feed generator instance.
-	 *
-	 * @var FeedGenerator
-	 */
-	private FeedGenerator $feed_generator;
+	private ProductMapperInterface $product_mapper;
 
 	/**
 	 * Validator instance.
@@ -51,8 +45,6 @@ class AdminController {
 	 */
 	private CredentialValidator $credential_validator;
 
-
-
 	/**
 	 * Logger instance.
 	 *
@@ -65,126 +57,37 @@ class AdminController {
 	/**
 	 * Dependencies injector.
 	 *
-	 * @param SettingsRepository $settings The settings repository.
-	 * @param FeedGenerator      $feed_generator The feed generator.
-	 * @param FeedValidator      $validator The validator.
+	 * @param FeedValidator       $validator The validator.
+	 * @param ProductMapper       $product_mapper The product mapper.
+	 * @param CredentialValidator $credential_validator The credential validator.
 	 */
 	public function init(
-		SettingsRepository $settings,
-		FeedGenerator $feed_generator,
-		FeedValidator $validator
+		FeedValidator $validator,
+		ProductMapper $product_mapper,
+		CredentialValidator $credential_validator
 	) {
-		$this->settings       = $settings;
-		$this->feed_generator = $feed_generator;
-		$this->validator      = $validator;
-		$this->logger         = function_exists( 'wc_get_logger' ) ? wc_get_logger() : null;
-
-		$this->credential_validator = new CredentialValidator( $settings );
+		$this->validator            = $validator;
+		$this->product_mapper       = $product_mapper;
+		$this->logger               = function_exists( 'wc_get_logger' ) ? wc_get_logger() : null;
+		$this->credential_validator = $credential_validator;
 	}
 
 	/**
 	 * Initialize the admin controller.
 	 */
 	public function initialize(): void {
-		add_action( self::SCHEDULED_ACTION_HOOK, [ $this, 'cron_push_feed' ] );
-		add_action( 'wpfoai_push_delta_event', [ $this, 'push_delta_to_endpoint' ], 10, 1 );
-
-		add_action( 'woocommerce_update_product', [ $this, 'queue_delta_push' ], 10, 1 );
-		add_action( 'woocommerce_product_set_stock', [ $this, 'queue_delta_push' ], 10, 1 );
-		add_action( 'woocommerce_admin_process_product_object', [ $this, 'maybe_push_delta_on_save' ] );
+		add_action( self::SCHEDULED_ACTION_HOOK, [ $this, 'scheduled_push' ] );
 	}
 
 	/**
 	 * Cron job to push feed.
 	 */
-	public function cron_push_feed(): void {
-		$this->push_to_endpoint();
-	}
-
-	/**
-	 * Push delta to endpoint for specific product.
-	 *
-	 * @param int $product_id The product ID.
-	 */
-	public function push_delta_to_endpoint( int $product_id ): void {
-		$rows = $this->feed_generator->build_for_product_id( $product_id );
-		if ( ! $rows ) {
-			return;
-		}
-
-		$this->push_feed_data( $rows, true );
-	}
-
-	/**
-	 * Queue delta push for product.
-	 *
-	 * @param mixed $product_id_or_obj Product ID or object.
-	 */
-	public function queue_delta_push( $product_id_or_obj ): void {
-		if ( 'true' !== $this->settings->get( 'delivery_enabled', 'false' ) ) {
-			return;
-		}
-
-		$product_id = is_numeric( $product_id_or_obj )
-			? (int) $product_id_or_obj
-			: $product_id_or_obj->get_id();
-
-		if ( function_exists( 'as_schedule_single_action' ) ) {
-			as_schedule_single_action(
-				time() + 30,
-				'wpfoai_push_delta_event',
-				[ $product_id ],
-				'wpfoai'
-			);
-		}
-	}
-
-	/**
-	 * Maybe push delta on save.
-	 *
-	 * @param mixed $product Product ID or object.
-	 */
-	public function maybe_push_delta_on_save( $product ): void {
-		if ( is_numeric( $product ) ) {
-			$product = wc_get_product( $product );
-		}
-
-		if ( $product instanceof \WC_Product ) {
-			$this->queue_delta_push( $product );
-		}
-	}
-
-	/**
-	 * Push feed to endpoint.
-	 */
-	private function push_to_endpoint(): void {
-		$rows = $this->feed_generator->build_feed();
-		$this->push_feed_data( $rows, false );
-	}
-
-	/**
-	 * Push feed data to endpoint.
-	 *
-	 * @param array $rows The feed rows.
-	 * @param bool  $is_delta Whether this is a delta push.
-	 */
-	private function push_feed_data( array $rows, bool $is_delta = false ): void {
-		$issues = $this->validator->validate_feed( $rows );
-
-		if ( $issues ) {
-			return;
-		}
+	public function scheduled_push(): void {
+		$headers = [ 'Content-Type' => 'application/json' ];
 
 		$endpoint = $this->credential_validator->get_endpoint_url();
-
 		if ( empty( $endpoint ) ) {
 			return;
-		}
-
-		$payload = $this->feed_generator->serialize( $rows );
-		$headers = [ 'Content-Type' => 'application/json' ];
-		if ( $is_delta ) {
-			$headers['X-Feed-Delta'] = 'true';
 		}
 
 		$token = $this->credential_validator->get_auth_token();
@@ -192,12 +95,16 @@ class AdminController {
 			$headers['Authorization'] = 'Bearer ' . $token;
 		}
 
+		$feed   = new JsonInMemoryFeed();
+		$walker = new ProductWalker( $this->product_mapper, $this->validator, $feed );
+		$walker->walk();
+
 		$response = wp_remote_post(
 			$endpoint,
 			[
 				'headers' => $headers,
 				'timeout' => 30,
-				'body'    => $payload,
+				'body'    => wp_json_encode( $feed->deliver() ),
 			]
 		);
 
