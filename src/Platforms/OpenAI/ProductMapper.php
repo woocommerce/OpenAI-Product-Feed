@@ -140,8 +140,6 @@ final class ProductMapper implements ProductMapperInterface {
 
 		if ( $mapper_method && method_exists( $this, $mapper_method ) ) {
 			$value = $this->$mapper_method( $product, $parent_product );
-		} else {
-			$value = $this->get_meta_value( $product, "_wpfoai_{$field}" );
 		}
 
 		if ( empty( $value ) && isset( $config['default'] ) ) {
@@ -229,26 +227,6 @@ final class ProductMapper implements ProductMapperInterface {
 	}
 
 	/**
-	 * Get meta value with fallback (with caching to prevent N+1 queries)
-	 *
-	 * @param \WC_Product $product Product object.
-	 * @param string      $key     Meta key to retrieve.
-	 * @return string|null Meta value or null if not found.
-	 */
-	protected function get_meta_value( \WC_Product $product, string $key ): ?string {
-		$product_id = $product->get_id();
-
-		if ( ! isset( $this->product_meta_cache[ $product_id ] ) ) {
-			$this->product_meta_cache[ $product_id ] = get_post_meta( $product_id );
-		}
-
-		$value = isset( $this->product_meta_cache[ $product_id ][ $key ][0] )
-			? $this->product_meta_cache[ $product_id ][ $key ][0]
-			: null;
-		return ! empty( $value ) ? wp_strip_all_tags( $value ) : null;
-	}
-
-	/**
 	 * Get field mappings for OpenAI feed format
 	 *
 	 * Maps OpenAI field names to ProductMapper method names.
@@ -321,7 +299,7 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @return string 'true' or 'false'.
 	 */
 	private function get_enable_with_override( \WC_Product $product, string $meta_key, string $setting_key, string $default_value ): string {
-		$disable_override = $this->get_meta_value( $product, $meta_key );
+		$disable_override = $product->get_meta( $meta_key );
 
 		// Only disable if explicitly set to 'yes'.
 		// Empty/null/no all mean "don't disable" (use global default).
@@ -341,7 +319,7 @@ final class ProductMapper implements ProductMapperInterface {
 	protected function get_enable_search( \WC_Product $product, ?\WC_Product $parent_product ): string {
 		// For variations, check parent product meta; for simple products, check product meta.
 		$check_product = $parent_product ? $parent_product : $product;
-		return $this->get_enable_with_override( $check_product, '_wpfoai_disable_search', 'enable_products_default', 'true' );
+		return $this->get_enable_with_override( $check_product, ProductFieldsController::KEY_DISABLE_SEARCH, 'enable_products_default', 'true' );
 	}
 
 	/**
@@ -354,7 +332,7 @@ final class ProductMapper implements ProductMapperInterface {
 	protected function get_enable_checkout( \WC_Product $product, ?\WC_Product $parent_product ): string {
 		// For variations, check parent product meta; for simple products, check product meta.
 		$check_product = $parent_product ? $parent_product : $product;
-		return $this->get_enable_with_override( $check_product, '_wpfoai_disable_checkout', 'enable_products_default', 'false' );
+		return $this->get_enable_with_override( $check_product, ProductFieldsController::KEY_DISABLE_CHECKOUT, 'enable_products_default', 'false' );
 	}
 
 	/**
@@ -395,7 +373,7 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @return string Product permalink URL.
 	 */
 	protected function get_link( \WC_Product $product ): string {
-		return get_permalink( $product->get_id() );
+		return $product->get_permalink();
 	}
 
 	/**
@@ -405,11 +383,7 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @return string|null Product GTIN or null.
 	 */
 	protected function get_gtin( \WC_Product $product ): ?string {
-		$override = $this->get_meta_value( $product, '_gtin' );
-		if ( empty( $override ) ) {
-			return $product->get_global_unique_id();
-		}
-		return $override;
+		return $product->get_global_unique_id();
 	}
 
 	/**
@@ -419,13 +393,12 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @return string|null Product MPN or null.
 	 */
 	protected function get_mpn( \WC_Product $product ): ?string {
-		$mpn = $this->get_meta_value( $product, '_mpn' );
+		$mpn = $product->get_meta( ProductFieldsController::KEY_MPN );
 		if ( $mpn ) {
 			return $mpn;
 		}
 
-		$gtin = $this->get_meta_value( $product, '_gtin' );
-		if ( ! $gtin ) {
+		if ( ! $product->get_global_unique_id() ) {
 			return $this->generate_mpn( $product );
 		}
 
@@ -470,9 +443,6 @@ final class ProductMapper implements ProductMapperInterface {
 		if ( ! $brand && $parent_product ) {
 			$brand = $parent_product->get_attribute( 'pa_brand' );
 		}
-		if ( ! $brand ) {
-			$brand = $this->get_meta_value( $product, '_brand' );
-		}
 		return $brand ? $brand : 'Generic';
 	}
 
@@ -483,6 +453,7 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @return string|null Product material or null.
 	 */
 	protected function get_material( \WC_Product $product ): ?string {
+		// Using pa_material attribute from WooCommerce Product Brands or similar taxonomy
 		return $product->get_attribute( 'pa_material' ) ? $product->get_attribute( 'pa_material' ) : null;
 	}
 
@@ -490,10 +461,11 @@ final class ProductMapper implements ProductMapperInterface {
 	 * Get product condition.
 	 *
 	 * @param \WC_Product $product Product object.
-	 * @return string|null Product condition or null.
+	 * @return string Product condition, defaults to 'new'.
 	 */
-	protected function get_condition( \WC_Product $product ): ?string {
-		return $this->get_meta_value( $product, '_wpfoai_condition' );
+	protected function get_condition( \WC_Product $product ): string {
+		$condition =$product->get_meta( ProductFieldsController::KEY_CONDITION );
+		return $condition ?? 'new';
 	}
 
 	/**
@@ -503,7 +475,8 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @return string|null Product age group or null.
 	 */
 	protected function get_age_group( \WC_Product $product ): ?string {
-		return $this->get_meta_value( $product, '_wpfoai_age_group' );
+		// Using pa_age_group attribute from WooCommerce
+		return $product->get_attribute( 'pa_age_group' ) ? $product->get_attribute( 'pa_age_group' ) : null;
 	}
 
 	/**
@@ -585,7 +558,7 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @return string|null Product video URL or null.
 	 */
 	protected function get_video_link( \WC_Product $product ): ?string {
-		return $this->get_meta_value( $product, '_wpfoai_video_link' );
+		return null;
 	}
 
 	/**
@@ -595,7 +568,7 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @return string|null Product 3D model URL or null.
 	 */
 	protected function get_model_3d_link( \WC_Product $product ): ?string {
-		return $this->get_meta_value( $product, '_wpfoai_model_3d_link' );
+		return null;
 	}
 
 	/**
@@ -668,7 +641,7 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @return string|null Product availability date or null.
 	 */
 	protected function get_availability_date( \WC_Product $product ): ?string {
-		return $this->get_meta_value( $product, '_wpfoai_availability_date' );
+		return null;
 	}
 
 	/**
@@ -678,7 +651,7 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @return string|null Product expiration date or null.
 	 */
 	protected function get_expiration_date( \WC_Product $product ): ?string {
-		return $this->get_meta_value( $product, '_wpfoai_expiration_date' );
+		return null;
 	}
 
 	/**
@@ -713,6 +686,7 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @return string|null Product color or null.
 	 */
 	protected function get_color( \WC_Product $product ): ?string {
+		// Using pa_color attribute from WooCommerce - no override field
 		return $product->get_attribute( 'pa_color' ) ? $product->get_attribute( 'pa_color' ) : null;
 	}
 
@@ -723,6 +697,7 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @return string|null Product size or null.
 	 */
 	protected function get_size( \WC_Product $product ): ?string {
+		// Using pa_size attribute from WooCommerce - no override field
 		return $product->get_attribute( 'pa_size' ) ? $product->get_attribute( 'pa_size' ) : null;
 	}
 
@@ -733,6 +708,7 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @return string|null Product size system or null.
 	 */
 	protected function get_size_system( \WC_Product $product ): ?string {
+		// Using pa_size_system attribute from WooCommerce - no override field
 		return $product->get_attribute( 'pa_size_system' ) ? $product->get_attribute( 'pa_size_system' ) : null;
 	}
 
@@ -743,6 +719,7 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @return string|null Product gender or null.
 	 */
 	protected function get_gender( \WC_Product $product ): ?string {
+		// Using pa_gender attribute from WooCommerce - no override field
 		return $product->get_attribute( 'pa_gender' ) ? $product->get_attribute( 'pa_gender' ) : null;
 	}
 
@@ -844,17 +821,17 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @return string|null Product warning or null.
 	 */
 	protected function get_warning( \WC_Product $product ): ?string {
-		return $this->get_meta_value( $product, '_wpfoai_warning' );
+		return null;
 	}
 
 	/**
-	 * Get product warning.
+	 * Get product warning URL.
 	 *
 	 * @param \WC_Product $product Product object.
-	 * @return string|null Product warning or null.
+	 * @return string|null Product warning URL or null.
 	 */
 	protected function get_warning_url( \WC_Product $product ): ?string {
-		return $this->get_meta_value( $product, '_wpfoai_warning_url' );
+		return null;
 	}
 
 	/**
@@ -864,7 +841,7 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @return string|null Product age restriction or null.
 	 */
 	protected function get_age_restriction( \WC_Product $product ): ?string {
-		return $this->get_meta_value( $product, '_wpfoai_age_restriction' );
+		return null;
 	}
 
 	/**
@@ -874,7 +851,7 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @return string|null Product Q and A or null.
 	 */
 	protected function get_q_and_a( \WC_Product $product ): ?string {
-		return $this->get_meta_value( $product, '_wpfoai_q_and_a' );
+		return null;
 	}
 
 	/**
