@@ -48,7 +48,7 @@ class AdminController {
 	/**
 	 * Dependencies injector.
 	 *
-	 * @param OpenAIIntegration $openai_integration The OpenAI integration.
+	 * @param OpenAIIntegration  $openai_integration The OpenAI integration.
 	 * @param SettingsRepository $settings The settings repository.
 	 */
 	public function init(
@@ -56,8 +56,8 @@ class AdminController {
 		SettingsRepository $settings
 	) {
 		$this->openai_integration = $openai_integration;
-		$this->logger         = function_exists( 'wc_get_logger' ) ? wc_get_logger() : null;
-		$this->settings       = $settings;
+		$this->logger             = function_exists( 'wc_get_logger' ) ? wc_get_logger() : null;
+		$this->settings           = $settings;
 	}
 
 	/**
@@ -73,7 +73,7 @@ class AdminController {
 	public function scheduled_push(): void {
 		$headers = [ 'Content-Type' => 'application/json' ];
 
-		$endpoint = $this->settings->get( 'endpoint_url', '' );
+		$endpoint = $this->settings->get_endpoint_url();
 		if ( empty( $endpoint ) ) {
 			return;
 		}

@@ -114,7 +114,7 @@ class Command extends WP_CLI_Command {
 		// Verify settings in advance if there is a requirement to send the feed.
 		$endpoint = null;
 		if ( $send ) {
-			$endpoint = $this->settings->get( 'endpoint_url', '' );
+			$endpoint = $this->settings->get_endpoint_url();
 			if ( empty( $endpoint ) ) {
 				return WP_CLI::error( 'Endpoint URL is not configured. Aborting.' );
 			}
