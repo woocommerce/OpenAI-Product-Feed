@@ -174,11 +174,13 @@ class Command extends WP_CLI_Command {
 			WP_CLI::log( 'Sending feed to API...' );
 		}
 
-		$push = new Push( $endpoint );
+		$push   = new Push( $endpoint );
 		$result = $push->deliver( $feed );
 
 		// No need to do wonders with the response, just print it.
-		WP_CLI::success( 'Received a successful response from the API:' );
+		if ( ! $silent ) {
+			WP_CLI::success( 'Received a successful response from the API:' );
+		}
 		WP_CLI::print_value( $result->get_data() );
 	}
 }

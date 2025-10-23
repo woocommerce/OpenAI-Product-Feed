@@ -14,13 +14,34 @@ use WP_REST_Response;
 // This file uses cURL heavily. It's a requirement for the plugin.
 // phpcs:disable WordPress.WP.AlternativeFunctions
 
+/**
+ * Delivery method for pushing feeds to a remote through cURL.
+ */
 class Push implements FileDeliveryInterface {
-	private $endpoint;
+	/**
+	 * The endpoint to push the feed to.
+	 *
+	 * @var string
+	 */
+	private string $endpoint;
 
+	/**
+	 * Constructor.
+	 *
+	 * @param string $endpoint The endpoint to push the feed to.
+	 */
 	public function __construct( string $endpoint ) {
 		$this->endpoint = $endpoint;
 	}
 
+	/**
+	 * Deliver the feed.
+	 *
+	 * @param FileBasedFeedInterface $feed The feed to deliver.
+	 * @return WP_REST_Response The response from the remote endpoint.
+	 * @throws RuntimeException If the request fails.
+	 * @throws RuntimeException If the HTTP code is not between 200 and 299.
+	 */
 	public function deliver( FileBasedFeedInterface $feed ): WP_REST_Response {
 		$path = $feed->get_file_path();
 
