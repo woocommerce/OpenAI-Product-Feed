@@ -444,7 +444,7 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @return string|null Product material or null.
 	 */
 	protected function get_material( \WC_Product $product ): ?string {
-		return $product->get_attribute( 'pa_material' ) ? $product->get_attribute( 'pa_material' ) : null;
+		return $this->get_attribute_or_return_null( $product, 'pa_material' );
 	}
 
 	/**
@@ -474,7 +474,13 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @return string|null Product weight with unit or 0 kg.
 	 */
 	protected function get_weight( \WC_Product $product ): ?string {
-		return $this->format_weight( $product ) ? $this->format_weight( $product ) : '0 kg';
+		$weight = $product->get_weight();
+		if ( ! $weight ) {
+			return '0'; // No unit needed, zero is zero. This is not temperature!
+		}
+
+		$unit = $this->get_weight_unit();
+		return $weight . ' ' . $unit;
 	}
 
 	/**
@@ -566,8 +572,7 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @return string|null Product price or null.
 	 */
 	protected function get_price( \WC_Product $product ): ?string {
-		$currency = get_woocommerce_currency();
-		return $this->format_price( $product->get_regular_price(), $currency );
+		return $this->format_price( $product->get_regular_price(), $this->get_currency_code() );
 	}
 
 	/**
@@ -577,8 +582,7 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @return string|null Product sale price or null.
 	 */
 	protected function get_sale_price( \WC_Product $product ): ?string {
-		$currency = get_woocommerce_currency();
-		return $this->format_price( $product->get_sale_price(), $currency );
+		return $this->format_price( $product->get_sale_price(), $this->get_currency_code() );
 	}
 
 	/**
@@ -674,7 +678,7 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @return string|null Product color or null.
 	 */
 	protected function get_color( \WC_Product $product ): ?string {
-		return $product->get_attribute( 'pa_color' ) ? $product->get_attribute( 'pa_color' ) : null;
+		return $this->get_attribute_or_return_null( $product, 'pa_color' );
 	}
 
 	/**
@@ -684,7 +688,7 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @return string|null Product size or null.
 	 */
 	protected function get_size( \WC_Product $product ): ?string {
-		return $product->get_attribute( 'pa_size' ) ? $product->get_attribute( 'pa_size' ) : null;
+		return $this->get_attribute_or_return_null( $product, 'pa_size' );
 	}
 
 	/**
@@ -694,7 +698,7 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @return string|null Product size system or null.
 	 */
 	protected function get_size_system( \WC_Product $product ): ?string {
-		return $product->get_attribute( 'pa_size_system' ) ? $product->get_attribute( 'pa_size_system' ) : null;
+		return $this->get_attribute_or_return_null( $product, 'pa_size_system' );
 	}
 
 	/**
@@ -704,7 +708,7 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @return string|null Product gender or null.
 	 */
 	protected function get_gender( \WC_Product $product ): ?string {
-		return $product->get_attribute( 'pa_gender' ) ? $product->get_attribute( 'pa_gender' ) : null;
+		return $this->get_attribute_or_return_null( $product, 'pa_gender' );
 	}
 
 	/**
@@ -839,6 +843,31 @@ final class ProductMapper implements ProductMapperInterface {
 	}
 
 	/**
+	 * Get attribute or return null.
+	 *
+	 * @param \WC_Product $product Product object.
+	 * @param string      $attribute Attribute name.
+	 * @return string|null Attribute value or null.
+	 */
+	private function get_attribute_or_return_null( \WC_Product $product, string $attribute ): ?string {
+		$value = $product->get_attribute( $attribute );
+		return $value ? (string) $value : null;
+	}
+
+	/**
+	 * Get weight unit.
+	 *
+	 * @return string Weight unit.
+	 */
+	private function get_weight_unit(): string {
+		static $cached;
+		if ( ! isset( $cached ) ) {
+			$cached = get_option( 'woocommerce_weight_unit' );
+		}
+		return $cached;
+	}
+
+	/**
 	 * Get category path.
 	 *
 	 * @param \WC_Product $product Product object.
@@ -911,22 +940,6 @@ final class ProductMapper implements ProductMapperInterface {
 	}
 
 	/**
-	 * Format weight with unit.
-	 *
-	 * @param \WC_Product $product Product object.
-	 * @return string|null Formatted weight or null.
-	 */
-	private function format_weight( \WC_Product $product ): ?string {
-		$weight = $product->get_weight();
-		if ( ! $weight ) {
-			return null;
-		}
-
-		$unit = get_option( 'woocommerce_weight_unit' );
-		return $weight . ' ' . $unit;
-	}
-
-	/**
 	 * Format dimension with unit.
 	 *
 	 * @param string|null $dimension Dimension value.
@@ -937,8 +950,7 @@ final class ProductMapper implements ProductMapperInterface {
 			return null;
 		}
 
-		$unit = get_option( 'woocommerce_dimension_unit' );
-		return $dimension . ' ' . $unit;
+		return $dimension . ' ' . $this->get_dimension_unit();
 	}
 
 	/**
@@ -956,8 +968,22 @@ final class ProductMapper implements ProductMapperInterface {
 			return null;
 		}
 
-		$unit = get_option( 'woocommerce_dimension_unit' );
-		return sprintf( '%sx%sx%s %s', $length, $width, $height, $unit );
+		return sprintf( '%sx%sx%s %s', $length, $width, $height, $this->get_dimension_unit() );
+	}
+
+	/**
+	 * Get dimension unit.
+	 *
+	 * Caches the option, as it is not something that changes mid-request.
+	 *
+	 * @return string Dimension unit.
+	 */
+	private function get_dimension_unit(): string {
+		static $cached;
+		if ( ! isset( $cached ) ) {
+			$cached = get_option( 'woocommerce_dimension_unit' );
+		}
+		return $cached;
 	}
 
 	/**
@@ -990,6 +1016,21 @@ final class ProductMapper implements ProductMapperInterface {
 		}
 
 		return array_filter( array_map( 'wp_get_attachment_url', $gallery_ids ) );
+	}
+
+	/**
+	 * Get currency.
+	 *
+	 * Caches the option, as it is not something that changes mid-request.
+	 *
+	 * @return string Currency code.
+	 */
+	private function get_currency_code(): string {
+		static $cached;
+		if ( ! isset( $cached ) ) {
+			$cached = get_woocommerce_currency();
+		}
+		return $cached;
 	}
 
 	/**
@@ -1041,7 +1082,6 @@ final class ProductMapper implements ProductMapperInterface {
 		}
 
 		$shipping_data = [];
-		$currency      = get_woocommerce_currency();
 		$zones         = $this->get_cached_shipping_zones();
 
 		foreach ( $zones as $zone ) {
@@ -1052,7 +1092,7 @@ final class ProductMapper implements ProductMapperInterface {
 				$price        = $this->get_shipping_price( $method );
 
 				foreach ( $locations as $location ) {
-					$shipping_string = $this->build_shipping_string( $location, $method_title, $price, $currency );
+					$shipping_string = $this->build_shipping_string( $location, $method_title, $price, $this->get_currency_code() );
 					if ( $shipping_string ) {
 						$shipping_data[] = $shipping_string;
 					}
