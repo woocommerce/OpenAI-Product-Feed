@@ -12,14 +12,13 @@ namespace Automattic\WooCommerce\ProductFeedForOpenAI\CLI;
 use WP_CLI;
 use WP_CLI_Command;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Core\IntegrationRegistry;
+use Automattic\WooCommerce\ProductFeedForOpenAI\DeliveryMethods\Push;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\FileBasedFeedInterface;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductWalker;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\WalkerProgress;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Settings\SettingsRepository;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Utils\MemoryManager;
 use RuntimeException;
-
-// This file uses cURL heavily. It's a requirement for the plugin.
-// phpcs:disable WordPress.WP.AlternativeFunctions
 
 // This is CLI. Non-escaped content should not break it.
 // phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped
@@ -130,13 +129,24 @@ class Command extends WP_CLI_Command {
 			WP_CLI::log( 'Starting feed generation...' );
 		}
 
+		$total_time     = microtime( true );
+		$total_items    = 0;
+		$iteration_time = microtime( true );
 		$walker->walk(
-			function ( WalkerProgress $progress ) use ( $silent ) {
+			function ( WalkerProgress $progress ) use ( $silent, &$iteration_time, &$total_items ) {
 				if ( $silent ) {
 					return;
 				}
 
-				WP_CLI::log( "Batch $progress->processed_batches/$progress->total_batch_count: Processed $progress->processed_items/$progress->total_count products" );
+				$items_count = $progress->processed_items - $total_items;
+				$total_items = $progress->processed_items; // reset.
+
+				$duration       = microtime( true ) - $iteration_time;
+				$iteration_time = microtime( true ); // reset.
+
+				$per_item = round( ( $duration / $items_count ) * 1000, 2 );
+
+				WP_CLI::log( "Batch $progress->processed_batches/$progress->total_batch_count: Processed $progress->processed_items/$progress->total_count products. Available memory: " . MemoryManager::get_available_memory() . "%. Time per item: $per_item ms" );
 			}
 		);
 
@@ -154,6 +164,7 @@ class Command extends WP_CLI_Command {
 		if ( ! $silent ) {
 			WP_CLI::success( 'Feed generated successfully' );
 			WP_CLI::log( "Path: $path" );
+			WP_CLI::log( 'Time taken: ' . intval( ( microtime( true ) - $total_time ) ) . ' seconds' );
 
 			if ( ! $send ) {
 				WP_CLI::log( 'The --send option was not provided, the feed has not been sent.' );
@@ -163,34 +174,11 @@ class Command extends WP_CLI_Command {
 			WP_CLI::log( 'Sending feed to API...' );
 		}
 
-		$ch = curl_init( $endpoint );
-		curl_setopt_array(
-			$ch,
-			[
-				CURLOPT_POST           => true,
-				CURLOPT_INFILE         => fopen( $path, 'rb' ),
-				CURLOPT_INFILESIZE     => filesize( $path ),
-				CURLOPT_RETURNTRANSFER => true,
-				CURLOPT_HTTPHEADER     => [
-					'Content-Type: application/json',
-				],
-			]
-		);
-		$response = curl_exec( $ch );
-
-		if ( false === $response ) {
-			// phpcs:ignore
-			throw new RuntimeException( 'cURL error: ' . curl_error( $ch ) );
-		}
-
-		$http_code = curl_getinfo( $ch, CURLINFO_HTTP_CODE );
-		if ( $http_code < 200 || $http_code > 299 ) {
-			throw new RuntimeException( 'Received non-200 HTTP code: ' . $http_code );
-		}
-		curl_close( $ch );
+		$push = new Push( $endpoint );
+		$result = $push->deliver( $feed );
 
 		// No need to do wonders with the response, just print it.
 		WP_CLI::success( 'Received a successful response from the API:' );
-		WP_CLI::print_value( json_decode( $response, true ) );
+		WP_CLI::print_value( $result->get_data() );
 	}
 }
