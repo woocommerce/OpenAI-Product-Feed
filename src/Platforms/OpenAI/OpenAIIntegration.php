@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI;
 
+use Automattic\WooCommerce\ProductFeedForOpenAI\Core\DependencyManagement\Container;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\FeedInterface;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\FeedValidatorInterface;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductMapperInterface;
@@ -24,31 +25,19 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class OpenAIIntegration implements IntegrationInterface {
 	/**
-	 * Product mapper instance.
+	 * Container instance.
 	 *
-	 * @var ProductMapperInterface
+	 * @var Container
 	 */
-	private ProductMapperInterface $product_mapper;
-
-	/**
-	 * Feed validator instance.
-	 *
-	 * @var FeedValidatorInterface
-	 */
-	private FeedValidatorInterface $feed_validator;
+	private Container $container;
 
 	/**
 	 * Dependency injector.
 	 *
-	 * @param ProductMapper $product_mapper The product mapper.
-	 * @param FeedValidator $feed_validator The feed validator.
+	 * @param Container $container Dependency container.
 	 */
-	public function init(
-		ProductMapper $product_mapper,
-		FeedValidator $feed_validator
-	) {
-		$this->product_mapper = $product_mapper;
-		$this->feed_validator = $feed_validator;
+	public function init( Container $container ) {
+		$this->container = $container;
 	}
 
 	/**
@@ -75,7 +64,8 @@ class OpenAIIntegration implements IntegrationInterface {
 	 * @return ProductMapperInterface The product mapper.
 	 */
 	public function get_product_mapper(): ProductMapperInterface {
-		return $this->product_mapper;
+		// Instantiate only when needed, meaning while generating feeds.
+		return $this->container->get( ProductMapper::class );
 	}
 
 	/**
@@ -84,6 +74,7 @@ class OpenAIIntegration implements IntegrationInterface {
 	 * @return FeedValidatorInterface The feed validator.
 	 */
 	public function get_feed_validator(): FeedValidatorInterface {
-		return $this->feed_validator;
+		// Instantiate only when needed, meaning while generating feeds.
+		return $this->container->get( FeedValidator::class );
 	}
 }
