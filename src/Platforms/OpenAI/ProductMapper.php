@@ -140,6 +140,8 @@ final class ProductMapper implements ProductMapperInterface {
 
 		if ( $mapper_method && method_exists( $this, $mapper_method ) ) {
 			$value = $this->$mapper_method( $product, $parent_product );
+		} else {
+			$value = null;
 		}
 
 		if ( empty( $value ) && isset( $config['default'] ) ) {
@@ -256,15 +258,11 @@ final class ProductMapper implements ProductMapperInterface {
 			'dimensions'                => 'get_dimensions',
 			'image_link'                => 'get_image_link',
 			'additional_image_link'     => 'get_additional_image_link',
-			'video_link'                => 'get_video_link',
-			'model_3d_link'             => 'get_model_3d_link',
 			'price'                     => 'get_price',
 			'sale_price'                => 'get_sale_price',
 			'sale_price_effective_date' => 'get_sale_price_effective_date',
 			'availability'              => 'get_availability',
 			'inventory_quantity'        => 'get_inventory_quantity',
-			'availability_date'         => 'get_availability_date',
-			'expiration_date'           => 'get_expiration_date',
 			'item_group_id'             => 'get_item_group_id',
 			'item_group_title'          => 'get_item_group_title',
 			'color'                     => 'get_color',
@@ -280,10 +278,6 @@ final class ProductMapper implements ProductMapperInterface {
 			'shipping'                  => 'get_shipping',
 			'pickup_method'             => 'get_pickup_method',
 			'pickup_sla'                => 'get_pickup_sla',
-			'warning'                   => 'get_warning',
-			'warning_url'               => 'get_warning_url',
-			'age_restriction'           => 'get_age_restriction',
-			'q_and_a'                   => 'get_q_and_a',
 			'related_product_id'        => 'get_related_product_id',
 			'relationship_type'         => 'get_relationship_type',
 		];
@@ -455,7 +449,7 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @return string|null Product material or null.
 	 */
 	protected function get_material( \WC_Product $product ): ?string {
-		// Using pa_material attribute from WooCommerce Product Brands or similar taxonomy
+		// Using pa_material attribute from WooCommerce Product Brands or similar taxonomy.
 		return $product->get_attribute( 'pa_material' ) ? $product->get_attribute( 'pa_material' ) : null;
 	}
 
@@ -466,7 +460,7 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @return string Product condition, defaults to 'new'.
 	 */
 	protected function get_condition( \WC_Product $product ): string {
-		$condition =$product->get_meta( ProductFieldsController::KEY_CONDITION );
+		$condition = $product->get_meta( ProductFieldsController::KEY_CONDITION );
 		return $condition ?? 'new';
 	}
 
@@ -477,7 +471,7 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @return string|null Product age group or null.
 	 */
 	protected function get_age_group( \WC_Product $product ): ?string {
-		// Using pa_age_group attribute from WooCommerce
+		// Using pa_age_group attribute from WooCommerce.
 		return $product->get_attribute( 'pa_age_group' ) ? $product->get_attribute( 'pa_age_group' ) : null;
 	}
 
@@ -554,26 +548,6 @@ final class ProductMapper implements ProductMapperInterface {
 	}
 
 	/**
-	 * Get product video link.
-	 *
-	 * @param \WC_Product $product Product object.
-	 * @return string|null Product video URL or null.
-	 */
-	protected function get_video_link( \WC_Product $product ): ?string {
-		return null;
-	}
-
-	/**
-	 * Get product 3D model link.
-	 *
-	 * @param \WC_Product $product Product object.
-	 * @return string|null Product 3D model URL or null.
-	 */
-	protected function get_model_3d_link( \WC_Product $product ): ?string {
-		return null;
-	}
-
-	/**
 	 * Get product price with currency.
 	 *
 	 * @param \WC_Product $product Product object.
@@ -637,26 +611,6 @@ final class ProductMapper implements ProductMapperInterface {
 	}
 
 	/**
-	 * Get product availability date.
-	 *
-	 * @param \WC_Product $product Product object.
-	 * @return string|null Product availability date or null.
-	 */
-	protected function get_availability_date( \WC_Product $product ): ?string {
-		return null;
-	}
-
-	/**
-	 * Get product expiration date.
-	 *
-	 * @param \WC_Product $product Product object.
-	 * @return string|null Product expiration date or null.
-	 */
-	protected function get_expiration_date( \WC_Product $product ): ?string {
-		return null;
-	}
-
-	/**
 	 * Get product item group ID.
 	 *
 	 * @param \WC_Product      $product Product object.
@@ -688,7 +642,7 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @return string|null Product color or null.
 	 */
 	protected function get_color( \WC_Product $product ): ?string {
-		// Using pa_color attribute from WooCommerce - no override field
+		// Using pa_color attribute from WooCommerce - no override field.
 		return $product->get_attribute( 'pa_color' ) ? $product->get_attribute( 'pa_color' ) : null;
 	}
 
@@ -699,7 +653,7 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @return string|null Product size or null.
 	 */
 	protected function get_size( \WC_Product $product ): ?string {
-		// Using pa_size attribute from WooCommerce - no override field
+		// Using pa_size attribute from WooCommerce - no override field.
 		return $product->get_attribute( 'pa_size' ) ? $product->get_attribute( 'pa_size' ) : null;
 	}
 
@@ -710,7 +664,7 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @return string|null Product size system or null.
 	 */
 	protected function get_size_system( \WC_Product $product ): ?string {
-		// Using pa_size_system attribute from WooCommerce - no override field
+		// Using pa_size_system attribute from WooCommerce - no override field.
 		return $product->get_attribute( 'pa_size_system' ) ? $product->get_attribute( 'pa_size_system' ) : null;
 	}
 
@@ -721,7 +675,7 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @return string|null Product gender or null.
 	 */
 	protected function get_gender( \WC_Product $product ): ?string {
-		// Using pa_gender attribute from WooCommerce - no override field
+		// Using pa_gender attribute from WooCommerce - no override field.
 		return $product->get_attribute( 'pa_gender' ) ? $product->get_attribute( 'pa_gender' ) : null;
 	}
 
@@ -813,46 +767,6 @@ final class ProductMapper implements ProductMapperInterface {
 			$pickup_sla = $this->settings->get( 'pickup_sla' );
 			return $pickup_sla ? (string) $pickup_sla : null;
 		}
-		return null;
-	}
-
-	/**
-	 * Get product warning.
-	 *
-	 * @param \WC_Product $product Product object.
-	 * @return string|null Product warning or null.
-	 */
-	protected function get_warning( \WC_Product $product ): ?string {
-		return null;
-	}
-
-	/**
-	 * Get product warning URL.
-	 *
-	 * @param \WC_Product $product Product object.
-	 * @return string|null Product warning URL or null.
-	 */
-	protected function get_warning_url( \WC_Product $product ): ?string {
-		return null;
-	}
-
-	/**
-	 * Get product age restriction.
-	 *
-	 * @param \WC_Product $product Product object.
-	 * @return string|null Product age restriction or null.
-	 */
-	protected function get_age_restriction( \WC_Product $product ): ?string {
-		return null;
-	}
-
-	/**
-	 * Get product Q and A.
-	 *
-	 * @param \WC_Product $product Product object.
-	 * @return string|null Product Q and A or null.
-	 */
-	protected function get_q_and_a( \WC_Product $product ): ?string {
 		return null;
 	}
 

@@ -15,7 +15,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Handles WooCommerce product data tab for OpenAI feed attributes
- *
  */
 class ProductFieldsController {
 
@@ -79,7 +78,7 @@ class ProductFieldsController {
 	 * @param \WC_Product $product Product object being saved.
 	 */
 	public function save_product_fields( \WC_Product $product ): void {
-		if ( ! isset( $_POST['woocommerce_meta_nonce'] ) || ! wp_verify_nonce( wp_unslash( $_POST['woocommerce_meta_nonce'] ), 'woocommerce_save_data' ) ) {
+		if ( ! isset( $_POST['woocommerce_meta_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['woocommerce_meta_nonce'] ) ), 'woocommerce_save_data' ) ) {
 			return;
 		}
 

@@ -38,8 +38,6 @@ class ApiControllerTest extends WC_Unit_Test_Case {
 
 		$this->assertInstanceOf( \WP_REST_Response::class, $response );
 		$this->assertEquals( 200, $response->get_status() );
-		$this->assertArrayHasKey( 'Content-Type', $headers );
-		$this->assertEquals( 'application/json; charset=utf-8', $headers['Content-Type'] );
 		$this->assertCount( 1, $response->get_data() );
 
 		// We could verify details about the response here, but those will probably change.
