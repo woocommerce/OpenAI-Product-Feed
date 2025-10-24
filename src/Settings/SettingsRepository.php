@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Settings repository implementation - stateless adapter to Woo core registry
  */
-final class SettingsRepository {
+class SettingsRepository {
 
 	/**
 	 * Get setting value.
@@ -51,7 +51,8 @@ final class SettingsRepository {
 				// No break.
 			default:
 				if ( ! empty( $openai[ $key ] ) ) {
-					return $openai[ $key ];
+					$value = $openai[ $key ];
+					return is_string( $value ) ? trim( $value ) : $value;
 				}
 
 				return ! empty( $general[ $key ] )
@@ -60,6 +61,25 @@ final class SettingsRepository {
 		}
 	}
 
+	/**
+	 * Get the endpoint URL.
+	 *
+	 * @return string|null The endpoint URL.
+	 */
+	public function get_endpoint_url(): ?string {
+		/**
+		 * Allows the endpoint URL to be changed.
+		 *
+		 * @since 0.1.0
+		 * @todo Either change the prefix or remove `openai` from the name, depending on how the plugin is split.
+		 *
+		 * @param string $endpoint_url The endpoint URL.
+		 * @return string
+		 */
+		$endpoint_url = apply_filters( 'wpfoai_openai_endpoint_url', $this->get( 'endpoint_url', '' ) );
+
+		return ! empty( $endpoint_url ) ? $endpoint_url : null;
+	}
 	/**
 	 * Get the full Woo agentic registry option value.
 	 *
