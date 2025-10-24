@@ -100,9 +100,10 @@ class ApiController {
 	/**
 	 * Handle preview feed request
 	 *
+	 * @param \WP_REST_Request $request Request object.
 	 * @return \WP_REST_Response|\WP_Error Response object or error.
 	 */
-	public function handle_preview_feed() {
+	public function handle_preview_feed( \WP_REST_Request $request ) {
 		try {
 			$feed = new StreamFeed();
 
@@ -114,8 +115,12 @@ class ApiController {
 
 			$product_walker->add_time_limit( 30 );
 
-			// The feed will automatically output everything needed.
-			$product_walker->walk();
+			$additional_args = [];
+			if ( $request->get_param( 'product_id' ) ) {
+				$additional_args['include'] = [ $request->get_param( 'product_id' ) ];
+			}
+
+			$product_walker->walk( null, $additional_args );
 		} catch ( \Exception $e ) {
 			return new \WP_Error(
 				'woocommerce_rest_feed_error',
