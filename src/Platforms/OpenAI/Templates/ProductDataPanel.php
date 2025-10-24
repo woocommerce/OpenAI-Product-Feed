@@ -82,21 +82,4 @@ if ( ! $product instanceof \WC_Product ) {
 
 	</div>
 
-	<?php
-	$rest_url    = rest_url( 'wc/v3/openai-feed' );
-	$preview_url = add_query_arg(
-		[
-			'product_id' => $product->get_id(),
-			'_wpnonce'   => wp_create_nonce( 'wp_rest' ),
-		],
-		$rest_url
-	);
-	?>
-	<p style="margin: 8px 0;">
-		<?php echo esc_html__( 'Preview this product in the feed (admin-only):', 'woocommerce-product-feed-openai' ); ?>
-		<a href="<?php echo esc_url( $preview_url ); ?>" target="_blank">
-			<?php echo esc_html__( 'Open preview', 'woocommerce-product-feed-openai' ); ?>
-		</a>
-	</p>
-
 </div>
