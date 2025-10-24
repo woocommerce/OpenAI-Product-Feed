@@ -19,6 +19,7 @@ use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\FeedValidator;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\ProductMapper;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Settings\SettingsRepository;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Storage\JsonFileFeed;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Utils\MemoryManager;
 
 /**
  * CLI command for generating a product feed.
@@ -67,6 +68,9 @@ class Command extends WP_CLI_Command {
 	 *
 	 * ## OPTIONS
 	 *
+	 * [--integration=<integration>]
+	 * : The slug of the integration to use. Required.
+	 *
 	 * [--timeout=<seconds>]
 	 * : The number of seconds to extend the execution time limit per batch.
 	 * ---
@@ -97,6 +101,7 @@ class Command extends WP_CLI_Command {
 	 *
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
+	 * @throws RuntimeException If the cURL request fails.
 	 */
 	public function generate( $args, $assoc_args ) {
 		// Read args and prepare defaults.
@@ -115,7 +120,7 @@ class Command extends WP_CLI_Command {
 		}
 
 		// Initialize the feed and walker, set them up.
-		$feed   = new JsonFileFeed();
+		$feed   = new JsonFileFeed( 'openai-feed' );
 		$walker = new ProductWalker( $this->product_mapper, $this->validator, $feed );
 		$walker->set_batch_size( $batch_size );
 		$walker->add_time_limit( $timeout );
@@ -124,13 +129,24 @@ class Command extends WP_CLI_Command {
 			WP_CLI::log( 'Starting feed generation...' );
 		}
 
+		$total_time     = microtime( true );
+		$total_items    = 0;
+		$iteration_time = microtime( true );
 		$walker->walk(
-			function ( WalkerProgress $progress ) use ( $silent ) {
+			function ( WalkerProgress $progress ) use ( $silent, &$iteration_time, &$total_items ) {
 				if ( $silent ) {
 					return;
 				}
 
-				WP_CLI::log( "Batch $progress->processed_batches/$progress->total_batch_count: Processed $progress->processed_items/$progress->total_count products" );
+				$items_count = $progress->processed_items - $total_items;
+				$total_items = $progress->processed_items; // reset.
+
+				$duration       = microtime( true ) - $iteration_time;
+				$iteration_time = microtime( true ); // reset.
+
+				$per_item = round( ( $duration / $items_count ) * 1000, 2 );
+
+				WP_CLI::log( "Batch $progress->processed_batches/$progress->total_batch_count: Processed $progress->processed_items/$progress->total_count products. Available memory: " . MemoryManager::get_available_memory() . "%. Time per item: $per_item ms" );
 			}
 		);
 
@@ -143,6 +159,7 @@ class Command extends WP_CLI_Command {
 		if ( ! $silent ) {
 			WP_CLI::success( 'Feed generated successfully' );
 			WP_CLI::log( "Path: $path" );
+			WP_CLI::log( 'Time taken: ' . intval( ( microtime( true ) - $total_time ) ) . ' seconds' );
 
 			if ( ! $send ) {
 				WP_CLI::log( 'The --send option was not provided, the feed has not been sent.' );
@@ -160,7 +177,7 @@ class Command extends WP_CLI_Command {
 			[
 				'headers' => $headers,
 				'timeout' => 30,
-				'body'    => wp_json_encode( $feed->deliver() ),
+				'body'    => file_get_contents( $feed->get_file_path() ), // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
 			]
 		);
 
