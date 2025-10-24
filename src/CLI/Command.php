@@ -9,7 +9,6 @@ declare(strict_types=1);
 
 namespace Automattic\WooCommerce\ProductFeedForOpenAI\CLI;
 
-use Automattic\WooCommerce\ProductFeedForOpenAI\Admin\Helpers\CredentialValidator;
 use WP_CLI;
 use WP_CLI_Command;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\FeedValidatorInterface;
@@ -18,6 +17,7 @@ use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductWalker;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\WalkerProgress;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\FeedValidator;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\ProductMapper;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Settings\SettingsRepository;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Storage\JsonFileFeed;
 
 /**
@@ -39,27 +39,27 @@ class Command extends WP_CLI_Command {
 	private FeedValidatorInterface $validator;
 
 	/**
-	 * Credential validator instance.
+	 * Settings repository instance.
 	 *
-	 * @var CredentialValidator
+	 * @var SettingsRepository
 	 */
-	private CredentialValidator $credential_validator;
+	private SettingsRepository $settings;
 
 	/**
 	 * Dependency injector.
 	 *
-	 * @param ProductMapper       $product_mapper The product mapper.
-	 * @param FeedValidator       $validator The feed validator.
-	 * @param CredentialValidator $credential_validator The credential validator.
+	 * @param ProductMapper      $product_mapper The product mapper.
+	 * @param FeedValidator      $validator The feed validator.
+	 * @param SettingsRepository $settings The settings repository.
 	 */
 	public function init(
 		ProductMapper $product_mapper,
 		FeedValidator $validator,
-		CredentialValidator $credential_validator
+		SettingsRepository $settings
 	) {
-		$this->product_mapper       = $product_mapper;
-		$this->validator            = $validator;
-		$this->credential_validator = $credential_validator;
+		$this->product_mapper = $product_mapper;
+		$this->validator      = $validator;
+		$this->settings       = $settings;
 	}
 
 	/**
@@ -108,7 +108,7 @@ class Command extends WP_CLI_Command {
 		// Verify settings in advance if there is a requirement to send the feed.
 		$endpoint = null;
 		if ( $send ) {
-			$endpoint = $this->credential_validator->get_endpoint_url();
+			$endpoint = $this->settings->get_endpoint_url();
 			if ( empty( $endpoint ) ) {
 				return WP_CLI::error( 'Endpoint URL is not configured. Aborting.' );
 			}
@@ -154,11 +154,6 @@ class Command extends WP_CLI_Command {
 
 		// Add the needed additional headers.
 		$headers = [];
-
-		$token = $this->credential_validator->get_auth_token();
-		if ( ! empty( $token ) ) {
-			$headers['Authorization'] = 'Bearer ' . $token;
-		}
 
 		$response = wp_remote_post(
 			$endpoint,

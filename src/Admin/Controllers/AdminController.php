@@ -10,10 +10,10 @@ declare(strict_types=1);
 namespace Automattic\WooCommerce\ProductFeedForOpenAI\Admin\Controllers;
 
 use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\FeedValidator;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Admin\Helpers\CredentialValidator;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductMapperInterface;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductWalker;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\ProductMapper;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Settings\SettingsRepository;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Storage\JsonInMemoryFeed;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -39,11 +39,11 @@ class AdminController {
 	private FeedValidator $validator;
 
 	/**
-	 * Credential validator instance.
+	 * Settings repository instance.
 	 *
-	 * @var CredentialValidator
+	 * @var SettingsRepository
 	 */
-	private CredentialValidator $credential_validator;
+	private SettingsRepository $settings;
 
 	/**
 	 * Logger instance.
@@ -57,19 +57,19 @@ class AdminController {
 	/**
 	 * Dependencies injector.
 	 *
-	 * @param FeedValidator       $validator The validator.
-	 * @param ProductMapper       $product_mapper The product mapper.
-	 * @param CredentialValidator $credential_validator The credential validator.
+	 * @param FeedValidator      $validator The validator.
+	 * @param ProductMapper      $product_mapper The product mapper.
+	 * @param SettingsRepository $settings The settings repository.
 	 */
 	public function init(
 		FeedValidator $validator,
 		ProductMapper $product_mapper,
-		CredentialValidator $credential_validator
+		SettingsRepository $settings
 	) {
-		$this->validator            = $validator;
-		$this->product_mapper       = $product_mapper;
-		$this->logger               = function_exists( 'wc_get_logger' ) ? wc_get_logger() : null;
-		$this->credential_validator = $credential_validator;
+		$this->validator      = $validator;
+		$this->product_mapper = $product_mapper;
+		$this->logger         = function_exists( 'wc_get_logger' ) ? wc_get_logger() : null;
+		$this->settings       = $settings;
 	}
 
 	/**
@@ -85,14 +85,9 @@ class AdminController {
 	public function scheduled_push(): void {
 		$headers = [ 'Content-Type' => 'application/json' ];
 
-		$endpoint = $this->credential_validator->get_endpoint_url();
+		$endpoint = $this->settings->get_endpoint_url();
 		if ( empty( $endpoint ) ) {
 			return;
-		}
-
-		$token = $this->credential_validator->get_auth_token();
-		if ( ! empty( $token ) ) {
-			$headers['Authorization'] = 'Bearer ' . $token;
 		}
 
 		$feed   = new JsonInMemoryFeed();
