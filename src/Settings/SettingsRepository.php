@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Settings repository implementation - stateless adapter to Woo core registry
  */
-final class SettingsRepository {
+class SettingsRepository {
 
 	/**
 	 * Get setting value.

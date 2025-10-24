@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace Automattic\WooCommerce\ProductFeedForOpenAI\CLI;
 
+use RuntimeException;
 use WP_CLI;
 use WP_CLI_Command;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Core\IntegrationRegistry;
@@ -18,7 +19,6 @@ use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductWalker;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\WalkerProgress;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Settings\SettingsRepository;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Utils\MemoryManager;
-use RuntimeException;
 
 // This is CLI. Non-escaped content should not break it.
 // phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped
