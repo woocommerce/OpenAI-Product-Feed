@@ -27,51 +27,6 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Uses a schema-driven approach to ensure all required fields are mapped correctly.
  */
 final class ProductMapper implements ProductMapperInterface {
-	const FIELD_MAPPINGS = [
-		'enable_search'             => 'get_enable_search',
-		'enable_checkout'           => 'get_enable_checkout',
-		'id'                        => 'get_id',
-		'title'                     => 'get_title',
-		'description'               => 'get_description',
-		'link'                      => 'get_link',
-		'gtin'                      => 'get_gtin',
-		'mpn'                       => 'get_mpn',
-		'product_category'          => 'get_product_category',
-		'brand'                     => 'get_brand',
-		'material'                  => 'get_material',
-		'condition'                 => 'get_condition',
-		'age_group'                 => 'get_age_group',
-		'weight'                    => 'get_weight',
-		'length'                    => 'get_length',
-		'width'                     => 'get_width',
-		'height'                    => 'get_height',
-		'dimensions'                => 'get_dimensions',
-		'image_link'                => 'get_image_link',
-		'additional_image_link'     => 'get_additional_image_link',
-		'price'                     => 'get_price',
-		'sale_price'                => 'get_sale_price',
-		'sale_price_effective_date' => 'get_sale_price_effective_date',
-		'availability'              => 'get_availability',
-		'inventory_quantity'        => 'get_inventory_quantity',
-		'item_group_id'             => 'get_item_group_id',
-		'item_group_title'          => 'get_item_group_title',
-		'color'                     => 'get_color',
-		'size'                      => 'get_size',
-		'size_system'               => 'get_size_system',
-		'gender'                    => 'get_gender',
-		'seller_name'               => 'get_seller_name',
-		'seller_url'                => 'get_seller_url',
-		'seller_privacy_policy'     => 'get_seller_privacy_policy',
-		'seller_tos'                => 'get_seller_tos',
-		'return_policy'             => 'get_return_policy',
-		'return_window'             => 'get_return_window',
-		'shipping'                  => 'get_shipping',
-		'pickup_method'             => 'get_pickup_method',
-		'pickup_sla'                => 'get_pickup_sla',
-		'related_product_id'        => 'get_related_product_id',
-		'relationship_type'         => 'get_relationship_type',
-	];
-
 	/**
 	 * Settings repository instance.
 	 *
@@ -172,9 +127,9 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @return mixed Mapped field value.
 	 */
 	protected function map_field( \WC_Product $product, string $field, array $config, ?\WC_Product $parent_product = null ) {
-		$mapper_method = self::FIELD_MAPPINGS[ $field ] ?? null;
+		$mapper_method = 'get_' . $field;
 
-		if ( $mapper_method && method_exists( $this, $mapper_method ) ) {
+		if ( method_exists( $this, $mapper_method ) ) {
 			$value = $this->$mapper_method( $product, $parent_product );
 		} else {
 			$value = null;
