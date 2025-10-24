@@ -75,7 +75,7 @@ final class FeedValidator implements FeedValidatorInterface {
 
 		if ( FeedSchema::is_field_required( $field, $row ) ) {
 			if ( empty( $value ) && '0' !== $value ) {
-				$message  = $config['error_message'] ?? "Missing {$field}";
+				$message  = $config['error_message'] ?? 'Missing ' . $config['description'];
 				$issues[] = $message;
 				return;
 			}
