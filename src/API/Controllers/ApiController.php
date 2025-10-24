@@ -114,14 +114,21 @@ class ApiController {
 	/**
 	 * Handle preview feed request
 	 *
+	 * @param \WP_REST_Request $request Request object.
 	 * @return \WP_REST_Response|\WP_Error Response object or error.
 	 */
-	public function handle_preview_feed() {
+	public function handle_preview_feed( \WP_REST_Request $request ) {
 		try {
 			$feed = new JsonFileFeed();
 
 			$product_walker = new ProductWalker( $this->product_mapper, $this->feed_validator, $feed );
-			$product_walker->walk();
+
+			$additional_args = [];
+			if ( $request->get_param( 'product_id' ) ) {
+				$additional_args['include'] = [ $request->get_param( 'product_id' ) ];
+			}
+
+			$product_walker->walk( null, $additional_args );
 
 			return rest_ensure_response( $feed->deliver() );
 		} catch ( \Exception $e ) {
