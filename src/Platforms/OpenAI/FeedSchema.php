@@ -318,8 +318,8 @@ class FeedSchema {
 			// Fulfillment.
 			'shipping'                  => [
 				'required'    => false,
-				'type'        => 'array', // @TODO: this is string in specs. Keep it here to iterate later.
-				'description' => 'Shipping method/cost/region',
+				'type'        => 'string',
+				'description' => 'Shipping method/cost/region (Multiple entries allowed; use colon separators)',
 			],
 			'delivery_estimate'         => [
 				'required'    => false,

@@ -44,9 +44,9 @@ final class ProductMapper implements ProductMapperInterface {
 	/**
 	 * Cached shipping data to prevent repeated queries.
 	 *
-	 * @var array|null
+	 * @var string|null
 	 */
-	private static ?array $cached_shipping_data = null;
+	private static ?string $cached_shipping_data = null;
 
 	/**
 	 * Cached shipping zones to prevent repeated API calls.
@@ -696,15 +696,6 @@ final class ProductMapper implements ProductMapperInterface {
 	}
 
 	/**
-	 * Get shipping data.
-	 *
-	 * @return array Shipping data array.
-	 */
-	protected function get_shipping(): array {
-		return $this->get_shipping_data();
-	}
-
-	/**
 	 * Get pickup method.
 	 *
 	 * @return string|null Pickup method or null.
@@ -916,15 +907,15 @@ final class ProductMapper implements ProductMapperInterface {
 	/**
 	 * Get shipping data from WooCommerce zones (cached globally to prevent repeated queries)
 	 *
-	 * @return array Shipping data array.
+	 * @return string Shipping data string.
 	 */
-	private function get_shipping_data(): array {
+	private function get_shipping(): string {
 		if ( null !== self::$cached_shipping_data ) {
 			return self::$cached_shipping_data;
 		}
 
 		if ( ! class_exists( 'WC_Shipping_Zones' ) ) {
-			self::$cached_shipping_data = [];
+			self::$cached_shipping_data = '';
 			return self::$cached_shipping_data;
 		}
 
@@ -947,7 +938,9 @@ final class ProductMapper implements ProductMapperInterface {
 			}
 		}
 
-		self::$cached_shipping_data = array_values( array_unique( $shipping_data ) );
+		$shipping_data              = array_values( array_unique( $shipping_data ) );
+		self::$cached_shipping_data = empty( $shipping_data ) ? '' : implode( '; ', $shipping_data );
+
 		return self::$cached_shipping_data;
 	}
 
