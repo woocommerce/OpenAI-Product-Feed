@@ -546,7 +546,12 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @return array Product gallery image URLs.
 	 */
 	protected function get_additional_image_link( \WC_Product $product, ?\WC_Product $parent_product ): array {
-		return $this->get_gallery_images( $product, $parent_product );
+		$gallery_ids = $product->get_gallery_image_ids();
+		if ( empty( $gallery_ids ) && $parent_product ) {
+			$gallery_ids = $parent_product->get_gallery_image_ids();
+		}
+
+		return array_filter( array_map( 'wp_get_attachment_url', $gallery_ids ) );
 	}
 
 	/**
@@ -903,22 +908,6 @@ final class ProductMapper implements ProductMapperInterface {
 		}
 
 		return $image_id ? wp_get_attachment_url( $image_id ) : '';
-	}
-
-	/**
-	 * Get gallery images.
-	 *
-	 * @param \WC_Product      $product Product object.
-	 * @param \WC_Product|null $parent_product  Parent product for fallback.
-	 * @return array Gallery image URLs.
-	 */
-	private function get_gallery_images( \WC_Product $product, ?\WC_Product $parent_product ): array {
-		$gallery_ids = $product->get_gallery_image_ids();
-		if ( empty( $gallery_ids ) && $parent_product ) {
-			$gallery_ids = $parent_product->get_gallery_image_ids();
-		}
-
-		return array_filter( array_map( 'wp_get_attachment_url', $gallery_ids ) );
 	}
 
 	/**
