@@ -144,7 +144,7 @@ class ProductWalker {
 			$progress->processed_items += $iterated;
 			++$progress->processed_batches;
 
-			if ( is_callable( $callback ) ) {
+			if ( is_callable( $callback ) && $iterated > 0 ) {
 				$callback( $progress );
 			}
 
