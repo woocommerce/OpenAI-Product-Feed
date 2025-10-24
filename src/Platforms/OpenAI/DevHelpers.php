@@ -65,6 +65,17 @@ class DevHelpers {
 	 * Add admin hooks.
 	 */
 	public function add_admin_hooks() {
+		/**
+		 * Filter to enable/disable dev helpers.
+		 *
+		 * @since 1.0.0
+		 * @param bool $enabled Whether to enable dev helpers.
+		 * @return bool Whether to enable dev helpers.
+		 */
+		if ( ! apply_filters( 'wpfoai_dev_helpers_enabled', false ) ) {
+			return;
+		}
+
 		add_action( 'add_meta_boxes', [ $this, 'add_meta_boxes' ] );
 		add_filter( 'manage_edit-product_columns', [ $this, 'add_custom_product_column' ] );
 		add_action( 'manage_product_posts_custom_column', [ $this, 'render_custom_product_column' ], 10, 2 );
