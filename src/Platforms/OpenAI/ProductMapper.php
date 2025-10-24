@@ -278,7 +278,7 @@ final class ProductMapper implements ProductMapperInterface {
 			'shipping'                  => 'get_shipping',
 			'pickup_method'             => 'get_pickup_method',
 			'pickup_sla'                => 'get_pickup_sla',
-			'related_product_id'        => 'get_related_product_id',
+			'related_product_id'        => 'get_related_product_id', // because FeedSchema::get_schema does not include this field.
 			'relationship_type'         => 'get_relationship_type',
 		];
 	}

@@ -34,8 +34,6 @@ class ApiControllerTest extends WC_Unit_Test_Case {
 		$request->set_param( 'product_id', $product->get_id() );
 
 		$response = $this->sut->handle_preview_feed( $request );
-		$headers  = $response->get_headers();
-
 		$this->assertInstanceOf( \WP_REST_Response::class, $response );
 		$this->assertEquals( 200, $response->get_status() );
 		$this->assertCount( 1, $response->get_data() );

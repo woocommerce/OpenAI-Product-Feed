@@ -145,6 +145,17 @@ class FeedSchema {
 				'type'        => 'string',
 				'description' => 'Combined dimensions (LxWxH unit)',
 			],
+			'related_product_id'        => [
+				'required'    => false,
+				'type'        => 'string',
+				'description' => 'Comma-separated list of related product IDs',
+			],
+			'relationship_type'         => [
+				'required'    => false,
+				'type'        => 'enum',
+				'values'      => [ 'part_of_set', 'required_part', 'often_bought_with', 'substitute', 'different_brand', 'accessory' ],
+				'description' => 'Relationship type',
+			],
 
 			// Media.
 			'image_link'                => [
