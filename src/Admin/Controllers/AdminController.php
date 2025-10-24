@@ -12,7 +12,7 @@ namespace Automattic\WooCommerce\ProductFeedForOpenAI\Admin\Controllers;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductWalker;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\OpenAIIntegration;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Settings\SettingsRepository;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Storage\JsonInMemoryFeed;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Storage\JsonFileFeed;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -78,7 +78,7 @@ class AdminController {
 			return;
 		}
 
-		$feed   = new JsonInMemoryFeed();
+		$feed   = new JsonFileFeed( 'openai-feed' );
 		$walker = new ProductWalker(
 			$this->openai_integration->get_product_mapper(),
 			$this->openai_integration->get_feed_validator(),
@@ -91,7 +91,7 @@ class AdminController {
 			[
 				'headers' => $headers,
 				'timeout' => 30,
-				'body'    => wp_json_encode( $feed->deliver() ),
+				'body'    => file_get_contents( $feed->get_file_path() ), // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
 			]
 		);
 
