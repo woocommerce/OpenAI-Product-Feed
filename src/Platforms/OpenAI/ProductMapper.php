@@ -278,7 +278,7 @@ final class ProductMapper implements ProductMapperInterface {
 			'shipping'                  => 'get_shipping',
 			'pickup_method'             => 'get_pickup_method',
 			'pickup_sla'                => 'get_pickup_sla',
-			'related_product_id'        => 'get_related_product_id', // because FeedSchema::get_schema does not include this field.
+			'related_product_id'        => 'get_related_product_id',
 			'relationship_type'         => 'get_relationship_type',
 		];
 	}
@@ -424,7 +424,20 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @return string|null Product category path or null.
 	 */
 	protected function get_product_category( \WC_Product $product ): ?string {
-		return $this->get_category_path( $product );
+		$terms = get_the_terms( $product->get_id(), 'product_cat' );
+		if ( ! $terms || is_wp_error( $terms ) ) {
+			return null;
+		}
+
+		$names = [];
+		foreach ( $terms as $term ) {
+			if ( 'uncategorized' === $term->slug ) {
+				continue;
+			}
+			$names[] = $term->name;
+		}
+
+		return empty( $names ) ? null : implode( ', ', $names );
 	}
 
 	/**
@@ -819,78 +832,6 @@ final class ProductMapper implements ProductMapperInterface {
 		}
 
 		return null;
-	}
-
-	/**
-	 * Get category path.
-	 *
-	 * @param \WC_Product $product Product object.
-	 * @return string|null Category path or null.
-	 */
-	private function get_category_path( \WC_Product $product ): ?string {
-		$terms = get_the_terms( $product->get_id(), 'product_cat' );
-		if ( ! $terms || is_wp_error( $terms ) ) {
-			return null;
-		}
-
-		$deepest_term = null;
-		$max_depth    = -1;
-
-		foreach ( $terms as $term ) {
-			$depth = $this->get_category_depth( $term );
-			if ( $depth > $max_depth ) {
-				$max_depth    = $depth;
-				$deepest_term = $term;
-			}
-		}
-
-		if ( ! $deepest_term ) {
-			return null;
-		}
-
-		return $this->build_category_path( $deepest_term );
-	}
-
-	/**
-	 * Get category depth.
-	 *
-	 * @param \WP_Term $term Term object.
-	 * @return int Category depth.
-	 */
-	private function get_category_depth( \WP_Term $term ): int {
-		$depth   = 0;
-		$current = $term;
-
-		while ( $current && $current->parent ) {
-			$current = get_term( $current->parent, 'product_cat' );
-			if ( is_wp_error( $current ) ) {
-				break;
-			}
-			++$depth;
-		}
-
-		return $depth;
-	}
-
-	/**
-	 * Build category path string.
-	 *
-	 * @param \WP_Term $term Term object.
-	 * @return string Category path string.
-	 */
-	private function build_category_path( \WP_Term $term ): string {
-		$path    = [ $term->name ];
-		$current = $term;
-
-		while ( $current->parent ) {
-			$current = get_term( $current->parent, 'product_cat' );
-			if ( is_wp_error( $current ) ) {
-				break;
-			}
-			array_unshift( $path, $current->name );
-		}
-
-		return implode( ' > ', $path );
 	}
 
 	/**
