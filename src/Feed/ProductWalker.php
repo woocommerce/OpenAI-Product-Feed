@@ -153,7 +153,7 @@ class ProductWalker {
 			}
 
 			// We don't want to use more than half of the available memory at the beginning of the script.
-			if ( $initial_available_memory - MemoryManager::get_available_memory() > $initial_available_memory / 2 ) {
+			if ( $initial_available_memory - MemoryManager::get_available_memory() >= $initial_available_memory / 2 ) {
 				MemoryManager::flush_caches();
 			}
 		} while ( $iterated === $this->per_page );
