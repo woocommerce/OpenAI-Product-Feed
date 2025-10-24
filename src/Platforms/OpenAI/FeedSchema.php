@@ -340,16 +340,16 @@ class FeedSchema {
 				'description' => 'Seller page',
 			],
 			'seller_privacy_policy'     => [
-				'required'      => false,
+				'required'    => false,
 				// @TODO: in the specs. Required, if enabled_checkout is true, i.e. 'required_when' => [ 'enable_checkout' => 'true' ].
-				'type'          => 'url',
-				'description'   => 'Seller-specific policies',
+				'type'        => 'url',
+				'description' => 'Seller-specific policies',
 			],
 			'seller_tos'                => [
-				'required'      => false,
+				'required'    => false,
 				// @TODO: in the specs. Required, if enabled_checkout is true, i.e. 'required_when' => [ 'enable_checkout' => 'true' ].
-				'type'          => 'url',
-				'description'   => 'Seller-specific terms of service',
+				'type'        => 'url',
+				'description' => 'Seller-specific terms of service',
 			],
 
 			// Returns.
@@ -359,7 +359,7 @@ class FeedSchema {
 				'description' => 'Return policy URL',
 			],
 			'return_window'             => [
-				'required'    => false, // @TODO: @TODO: this is required in the specs.
+				'required'    => false, // @TODO: this is required in the specs.
 				'type'        => 'integer',
 				'description' => 'Days allowed for return',
 			],
