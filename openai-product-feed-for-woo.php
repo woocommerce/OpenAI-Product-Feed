@@ -15,7 +15,7 @@
  * Requires at least:    6.0
  * Requires PHP:         7.4
  * WC requires at least: 9.1.0
- * WC tested up to:      10.3.0
+ * WC tested up to:      10.4.0
  */
 
 declare(strict_types=1);

@@ -29,19 +29,17 @@ if ( ! $product instanceof \WC_Product ) {
 		<?php
 		woocommerce_wp_checkbox(
 			[
-				'id'          => ProductFieldsController::KEY_DISABLE_SEARCH,
-				'value'       => $product->get_meta( ProductFieldsController::KEY_DISABLE_SEARCH ) === 'yes' ? 'yes' : 'no',
-				'label'       => __( 'Disable search', 'woocommerce-product-feed-openai' ),
-				'description' => __( 'Overrides global default for this product.', 'woocommerce-product-feed-openai' ),
+				'id'    => ProductFieldsController::KEY_DISABLE_SEARCH,
+				'value' => $product->get_meta( ProductFieldsController::KEY_DISABLE_SEARCH ) === 'yes' ? 'yes' : 'no',
+				'label' => __( 'Disable search', 'woocommerce-product-feed-openai' ),
 			]
 		);
 
 		woocommerce_wp_checkbox(
 			[
-				'id'          => ProductFieldsController::KEY_DISABLE_CHECKOUT,
-				'value'       => $product->get_meta( ProductFieldsController::KEY_DISABLE_CHECKOUT ) === 'yes' ? 'yes' : 'no',
-				'label'       => __( 'Disable checkout', 'woocommerce-product-feed-openai' ),
-				'description' => __( 'Requires search to be enabled.', 'woocommerce-product-feed-openai' ),
+				'id'    => ProductFieldsController::KEY_DISABLE_CHECKOUT,
+				'value' => $product->get_meta( ProductFieldsController::KEY_DISABLE_CHECKOUT ) === 'yes' ? 'yes' : 'no',
+				'label' => __( 'Disable checkout', 'woocommerce-product-feed-openai' ),
 			]
 		);
 		?>
