@@ -27,6 +27,50 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Uses a schema-driven approach to ensure all required fields are mapped correctly.
  */
 final class ProductMapper implements ProductMapperInterface {
+	const FIELD_MAPPINGS = [
+		'enable_search'             => 'get_enable_search',
+		'enable_checkout'           => 'get_enable_checkout',
+		'id'                        => 'get_id',
+		'title'                     => 'get_title',
+		'description'               => 'get_description',
+		'link'                      => 'get_link',
+		'gtin'                      => 'get_gtin',
+		'mpn'                       => 'get_mpn',
+		'product_category'          => 'get_product_category',
+		'brand'                     => 'get_brand',
+		'material'                  => 'get_material',
+		'condition'                 => 'get_condition',
+		'age_group'                 => 'get_age_group',
+		'weight'                    => 'get_weight',
+		'length'                    => 'get_length',
+		'width'                     => 'get_width',
+		'height'                    => 'get_height',
+		'dimensions'                => 'get_dimensions',
+		'image_link'                => 'get_image_link',
+		'additional_image_link'     => 'get_additional_image_link',
+		'price'                     => 'get_price',
+		'sale_price'                => 'get_sale_price',
+		'sale_price_effective_date' => 'get_sale_price_effective_date',
+		'availability'              => 'get_availability',
+		'inventory_quantity'        => 'get_inventory_quantity',
+		'item_group_id'             => 'get_item_group_id',
+		'item_group_title'          => 'get_item_group_title',
+		'color'                     => 'get_color',
+		'size'                      => 'get_size',
+		'size_system'               => 'get_size_system',
+		'gender'                    => 'get_gender',
+		'seller_name'               => 'get_seller_name',
+		'seller_url'                => 'get_seller_url',
+		'seller_privacy_policy'     => 'get_seller_privacy_policy',
+		'seller_tos'                => 'get_seller_tos',
+		'return_policy'             => 'get_return_policy',
+		'return_window'             => 'get_return_window',
+		'shipping'                  => 'get_shipping',
+		'pickup_method'             => 'get_pickup_method',
+		'pickup_sla'                => 'get_pickup_sla',
+		'related_product_id'        => 'get_related_product_id',
+		'relationship_type'         => 'get_relationship_type',
+	];
 
 	/**
 	 * Settings repository instance.
@@ -41,13 +85,6 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @var array
 	 */
 	protected array $schema;
-
-	/**
-	 * Product meta cache to prevent N+1 queries.
-	 *
-	 * @var array
-	 */
-	protected array $product_meta_cache = [];
 
 	/**
 	 * Cached shipping data to prevent repeated queries.
@@ -135,8 +172,7 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @return mixed Mapped field value.
 	 */
 	protected function map_field( \WC_Product $product, string $field, array $config, ?\WC_Product $parent_product = null ) {
-		$field_mappings = $this->get_field_mappings();
-		$mapper_method  = $field_mappings[ $field ] ?? null;
+		$mapper_method = self::FIELD_MAPPINGS[ $field ] ?? null;
 
 		if ( $mapper_method && method_exists( $this, $mapper_method ) ) {
 			$value = $this->$mapper_method( $product, $parent_product );
@@ -226,61 +262,6 @@ final class ProductMapper implements ProductMapperInterface {
 				return null !== $value && '' !== $value;
 			}
 		);
-	}
-
-	/**
-	 * Get field mappings for OpenAI feed format
-	 *
-	 * Maps OpenAI field names to ProductMapper method names.
-	 * This keeps the mapping logic separate from the schema.
-	 *
-	 * @return array Field name to method name mappings.
-	 */
-	protected function get_field_mappings(): array {
-		return [
-			'enable_search'             => 'get_enable_search',
-			'enable_checkout'           => 'get_enable_checkout',
-			'id'                        => 'get_id',
-			'title'                     => 'get_title',
-			'description'               => 'get_description',
-			'link'                      => 'get_link',
-			'gtin'                      => 'get_gtin',
-			'mpn'                       => 'get_mpn',
-			'product_category'          => 'get_product_category',
-			'brand'                     => 'get_brand',
-			'material'                  => 'get_material',
-			'condition'                 => 'get_condition',
-			'age_group'                 => 'get_age_group',
-			'weight'                    => 'get_weight',
-			'length'                    => 'get_length',
-			'width'                     => 'get_width',
-			'height'                    => 'get_height',
-			'dimensions'                => 'get_dimensions',
-			'image_link'                => 'get_image_link',
-			'additional_image_link'     => 'get_additional_image_link',
-			'price'                     => 'get_price',
-			'sale_price'                => 'get_sale_price',
-			'sale_price_effective_date' => 'get_sale_price_effective_date',
-			'availability'              => 'get_availability',
-			'inventory_quantity'        => 'get_inventory_quantity',
-			'item_group_id'             => 'get_item_group_id',
-			'item_group_title'          => 'get_item_group_title',
-			'color'                     => 'get_color',
-			'size'                      => 'get_size',
-			'size_system'               => 'get_size_system',
-			'gender'                    => 'get_gender',
-			'seller_name'               => 'get_seller_name',
-			'seller_url'                => 'get_seller_url',
-			'seller_privacy_policy'     => 'get_seller_privacy_policy',
-			'seller_tos'                => 'get_seller_tos',
-			'return_policy'             => 'get_return_policy',
-			'return_window'             => 'get_return_window',
-			'shipping'                  => 'get_shipping',
-			'pickup_method'             => 'get_pickup_method',
-			'pickup_sla'                => 'get_pickup_sla',
-			'related_product_id'        => 'get_related_product_id',
-			'relationship_type'         => 'get_relationship_type',
-		];
 	}
 
 	/**
@@ -379,7 +360,11 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @return string|null Product GTIN or null.
 	 */
 	protected function get_gtin( \WC_Product $product ): ?string {
-		return $product->get_global_unique_id();
+		$override = $product->get_meta( '_gtin' );
+		if ( empty( $override ) ) {
+			return $product->get_global_unique_id();
+		}
+		return $override;
 	}
 
 	/**
@@ -462,8 +447,7 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @return string|null Product material or null.
 	 */
 	protected function get_material( \WC_Product $product ): ?string {
-		// Using pa_material attribute from WooCommerce Product Brands or similar taxonomy.
-		return $product->get_attribute( 'pa_material' ) ? $product->get_attribute( 'pa_material' ) : null;
+		return $this->get_attribute_or_return_null( $product, 'pa_material' );
 	}
 
 	/**
@@ -484,8 +468,7 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @return string|null Product age group or null.
 	 */
 	protected function get_age_group( \WC_Product $product ): ?string {
-		// Using pa_age_group attribute from WooCommerce.
-		return $product->get_attribute( 'pa_age_group' ) ? $product->get_attribute( 'pa_age_group' ) : null;
+		return $this->get_attribute_or_return_null( $product, 'pa_age_group' );
 	}
 
 	/**
@@ -495,7 +478,13 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @return string|null Product weight with unit or 0 kg.
 	 */
 	protected function get_weight( \WC_Product $product ): ?string {
-		return $this->format_weight( $product ) ? $this->format_weight( $product ) : '0 kg';
+		$weight = $product->get_weight();
+		if ( ! $weight ) {
+			return '0'; // No unit needed, zero is zero. This is not temperature!
+		}
+
+		$unit = $this->get_weight_unit();
+		return $weight . ' ' . $unit;
 	}
 
 	/**
@@ -567,8 +556,7 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @return string|null Product price or null.
 	 */
 	protected function get_price( \WC_Product $product ): ?string {
-		$currency = get_woocommerce_currency();
-		return $this->format_price( $product->get_regular_price(), $currency );
+		return $this->format_price( $product->get_regular_price(), $this->get_currency_code() );
 	}
 
 	/**
@@ -578,8 +566,7 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @return string|null Product sale price or null.
 	 */
 	protected function get_sale_price( \WC_Product $product ): ?string {
-		$currency = get_woocommerce_currency();
-		return $this->format_price( $product->get_sale_price(), $currency );
+		return $this->format_price( $product->get_sale_price(), $this->get_currency_code() );
 	}
 
 	/**
@@ -655,8 +642,7 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @return string|null Product color or null.
 	 */
 	protected function get_color( \WC_Product $product ): ?string {
-		// Using pa_color attribute from WooCommerce - no override field.
-		return $product->get_attribute( 'pa_color' ) ? $product->get_attribute( 'pa_color' ) : null;
+		return $this->get_attribute_or_return_null( $product, 'pa_color' );
 	}
 
 	/**
@@ -666,8 +652,7 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @return string|null Product size or null.
 	 */
 	protected function get_size( \WC_Product $product ): ?string {
-		// Using pa_size attribute from WooCommerce - no override field.
-		return $product->get_attribute( 'pa_size' ) ? $product->get_attribute( 'pa_size' ) : null;
+		return $this->get_attribute_or_return_null( $product, 'pa_size' );
 	}
 
 	/**
@@ -677,8 +662,7 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @return string|null Product size system or null.
 	 */
 	protected function get_size_system( \WC_Product $product ): ?string {
-		// Using pa_size_system attribute from WooCommerce - no override field.
-		return $product->get_attribute( 'pa_size_system' ) ? $product->get_attribute( 'pa_size_system' ) : null;
+		return $this->get_attribute_or_return_null( $product, 'pa_size_system' );
 	}
 
 	/**
@@ -688,8 +672,7 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @return string|null Product gender or null.
 	 */
 	protected function get_gender( \WC_Product $product ): ?string {
-		// Using pa_gender attribute from WooCommerce - no override field.
-		return $product->get_attribute( 'pa_gender' ) ? $product->get_attribute( 'pa_gender' ) : null;
+		return $this->get_attribute_or_return_null( $product, 'pa_gender' );
 	}
 
 	/**
@@ -835,19 +818,28 @@ final class ProductMapper implements ProductMapperInterface {
 	}
 
 	/**
-	 * Format weight with unit.
+	 * Get attribute or return null.
 	 *
 	 * @param \WC_Product $product Product object.
-	 * @return string|null Formatted weight or null.
+	 * @param string      $attribute Attribute name.
+	 * @return string|null Attribute value or null.
 	 */
-	private function format_weight( \WC_Product $product ): ?string {
-		$weight = $product->get_weight();
-		if ( ! $weight ) {
-			return null;
-		}
+	private function get_attribute_or_return_null( \WC_Product $product, string $attribute ): ?string {
+		$value = $product->get_attribute( $attribute );
+		return $value ? (string) $value : null;
+	}
 
-		$unit = get_option( 'woocommerce_weight_unit' );
-		return $weight . ' ' . $unit;
+	/**
+	 * Get weight unit.
+	 *
+	 * @return string Weight unit.
+	 */
+	private function get_weight_unit(): string {
+		static $cached;
+		if ( ! isset( $cached ) ) {
+			$cached = get_option( 'woocommerce_weight_unit' );
+		}
+		return $cached;
 	}
 
 	/**
@@ -861,8 +853,7 @@ final class ProductMapper implements ProductMapperInterface {
 			return null;
 		}
 
-		$unit = get_option( 'woocommerce_dimension_unit' );
-		return $dimension . ' ' . $unit;
+		return $dimension . ' ' . $this->get_dimension_unit();
 	}
 
 	/**
@@ -880,8 +871,22 @@ final class ProductMapper implements ProductMapperInterface {
 			return null;
 		}
 
-		$unit = get_option( 'woocommerce_dimension_unit' );
-		return sprintf( '%sx%sx%s %s', $length, $width, $height, $unit );
+		return sprintf( '%sx%sx%s %s', $length, $width, $height, $this->get_dimension_unit() );
+	}
+
+	/**
+	 * Get dimension unit.
+	 *
+	 * Caches the option, as it is not something that changes mid-request.
+	 *
+	 * @return string Dimension unit.
+	 */
+	private function get_dimension_unit(): string {
+		static $cached;
+		if ( ! isset( $cached ) ) {
+			$cached = get_option( 'woocommerce_dimension_unit' );
+		}
+		return $cached;
 	}
 
 	/**
@@ -914,6 +919,21 @@ final class ProductMapper implements ProductMapperInterface {
 		}
 
 		return array_filter( array_map( 'wp_get_attachment_url', $gallery_ids ) );
+	}
+
+	/**
+	 * Get currency.
+	 *
+	 * Caches the option, as it is not something that changes mid-request.
+	 *
+	 * @return string Currency code.
+	 */
+	private function get_currency_code(): string {
+		static $cached;
+		if ( ! isset( $cached ) ) {
+			$cached = get_woocommerce_currency();
+		}
+		return $cached;
 	}
 
 	/**
@@ -965,7 +985,6 @@ final class ProductMapper implements ProductMapperInterface {
 		}
 
 		$shipping_data = [];
-		$currency      = get_woocommerce_currency();
 		$zones         = $this->get_cached_shipping_zones();
 
 		foreach ( $zones as $zone ) {
@@ -976,7 +995,7 @@ final class ProductMapper implements ProductMapperInterface {
 				$price        = $this->get_shipping_price( $method );
 
 				foreach ( $locations as $location ) {
-					$shipping_string = $this->build_shipping_string( $location, $method_title, $price, $currency );
+					$shipping_string = $this->build_shipping_string( $location, $method_title, $price, $this->get_currency_code() );
 					if ( $shipping_string ) {
 						$shipping_data[] = $shipping_string;
 					}
