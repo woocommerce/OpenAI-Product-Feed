@@ -9,6 +9,8 @@ declare(strict_types=1);
 
 namespace Automattic\WooCommerce\ProductFeedForOpenAI\Feed;
 
+use Automattic\WooCommerce\ProductFeedForOpenAI\Utils\MemoryManager;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -128,25 +130,31 @@ class ProductWalker {
 		// Instruct the feed to start.
 		$this->feed->start();
 
+		// Check how much memory is available at first.
+		$initial_available_memory = MemoryManager::get_available_memory();
+
 		do {
 			$result   = $this->iterate( $args, $progress ? $progress->processed_batches + 1 : 1, $this->per_page );
 			$iterated = count( $result->products );
 
-			// Indicate progress.
+			// Only done when the progress is not set. Will be modified otherwise.
 			if ( is_null( $progress ) ) {
 				$progress = WalkerProgress::from_wc_get_products_result( $result );
-			} else {
-				$progress = clone $progress;
 			}
 			$progress->processed_items += $iterated;
 			++$progress->processed_batches;
 
-			if ( is_callable( $callback ) ) {
+			if ( is_callable( $callback ) && $iterated > 0 ) {
 				$callback( $progress );
 			}
 
 			if ( $this->time_limit > 0 ) {
 				set_time_limit( $this->time_limit );
+			}
+
+			// We don't want to use more than half of the available memory at the beginning of the script.
+			if ( $initial_available_memory - MemoryManager::get_available_memory() >= $initial_available_memory / 2 ) {
+				MemoryManager::flush_caches();
 			}
 		} while ( $iterated === $this->per_page );
 

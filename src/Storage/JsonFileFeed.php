@@ -43,11 +43,27 @@ class JsonFileFeed implements FeedInterface {
 	private $file_handle = null;
 
 	/**
+	 * The base name of the feed file.
+	 *
+	 * @var string
+	 */
+	private $base_name;
+
+	/**
 	 * Indicates if the feed file has been completed.
 	 *
 	 * @var bool
 	 */
 	private $file_completed = false;
+
+	/**
+	 * Constructor.
+	 *
+	 * @param string $base_name The base name of the feed file.
+	 */
+	public function __construct( string $base_name ) {
+		$this->base_name = $base_name;
+	}
 
 	/**
 	 * Start the feed.
@@ -71,7 +87,7 @@ class JsonFileFeed implements FeedInterface {
 			);
 		}
 
-		$this->file_path   = $directory . wp_unique_filename( $directory, 'openai-feed.json' );
+		$this->file_path   = $directory . wp_unique_filename( $directory, $this->base_name . '.json' );
 		$this->file_handle = fopen( $this->file_path, 'w' );
 
 		if ( false === $this->file_handle ) {
@@ -118,27 +134,6 @@ class JsonFileFeed implements FeedInterface {
 
 		// Indicate that we have a complete file.
 		$this->file_completed = true;
-	}
-
-	/**
-	 * Deliver the feed and delete the temporary file.
-	 *
-	 * @return array An array that will be provided to WP_REST_Response.
-	 * @throws RuntimeException If the feed has not been completed.
-	 */
-	public function deliver(): array {
-		if ( ! $this->file_completed ) {
-			throw new RuntimeException(
-				esc_html(
-					__( 'Cannot deliver a feed that has not been completed.', 'woocommerce-product-feed-openai' )
-				)
-			);
-		}
-
-		// Temporary. There is no point in writing to the filesystem only to load the whole file into memory.
-		$data = json_decode( file_get_contents( $this->file_path ), true );
-		unlink( $this->file_path );
-		return $data;
 	}
 
 	/**
