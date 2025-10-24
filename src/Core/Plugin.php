@@ -11,7 +11,6 @@ namespace Automattic\WooCommerce\ProductFeedForOpenAI\Core;
 
 use Automattic\WooCommerce\ProductFeedForOpenAI\Admin\Controllers\AdminController;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\ProductFieldsController;
-use Automattic\WooCommerce\ProductFeedForOpenAI\API\Controllers\ApiController;
 use Automattic\WooCommerce\ProductFeedForOpenAI\CLI\Command;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\AgenticIntegration as OpenAIAgenticIntegration;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Core\DependencyManagement\Container;
@@ -77,8 +76,6 @@ final class Plugin {
 		$this->container->get( AdminController::class )->initialize();
 
 		$this->container->get( ProductFieldsController::class )->initialize();
-
-		$this->container->get( ApiController::class )->initialize();
 
 		$this->container->get( DevHelpers::class )->initialize();
 	}
