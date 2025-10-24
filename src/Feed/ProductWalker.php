@@ -97,9 +97,10 @@ class ProductWalker {
 	 * Walks through all products.
 	 *
 	 * @param callable $callback The callback to call after each batch of products is processed.
+	 * @param array    $additional_args Optional. Additional arguments to merge into the base query args.
 	 * @return int The total number of products processed.
 	 */
-	public function walk( ?callable $callback = null ): int {
+	public function walk( ?callable $callback = null, array $additional_args = [] ): int {
 		$progress = null;
 
 		/**
@@ -114,11 +115,14 @@ class ProductWalker {
 		 */
 		$args = apply_filters(
 			'wpfoai_product_feed_args',
-			[
-				'status' => [ 'publish' ],
-				'type'   => [ 'simple', 'variation' ],
-				'return' => 'objects',
-			]
+			array_merge(
+				[
+					'status' => [ 'publish' ],
+					'type'   => [ 'simple', 'variation' ],
+					'return' => 'objects',
+				],
+				$additional_args
+			)
 		);
 
 		// Instruct the feed to start.
