@@ -32,12 +32,28 @@ class OpenAIIntegration implements IntegrationInterface {
 	private Container $container;
 
 	/**
+	 * Settings instance.
+	 *
+	 * @var Settings
+	 */
+	private Settings $settings;
+
+	/**
 	 * Dependency injector.
 	 *
 	 * @param Container $container Dependency container.
+	 * @param Settings  $settings Settings repository.
 	 */
-	public function init( Container $container ) {
+	public function init( Container $container, Settings $settings ) {
 		$this->container = $container;
+		$this->settings  = $settings;
+	}
+
+	/**
+	 * Registers all needed hooks.
+	 */
+	public function register_hooks(): void {
+		$this->settings->register_hooks();
 	}
 
 	/**
@@ -55,7 +71,7 @@ class OpenAIIntegration implements IntegrationInterface {
 	 * @return FeedInterface The feed.
 	 */
 	public function create_feed(): FeedInterface {
-		return new JsonFileFeed( 'openai' );
+		return new JsonFileFeed( 'openai-feed' );
 	}
 
 	/**

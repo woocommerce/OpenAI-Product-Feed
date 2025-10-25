@@ -13,7 +13,6 @@ use Automattic\WooCommerce\ProductFeedForOpenAI\Admin\Controllers\AdminControlle
 use Automattic\WooCommerce\ProductFeedForOpenAI\CLI\Command;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Core\DependencyManagement\Container;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\IntegrationRegistry;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI\AgenticIntegration as OpenAIAgenticIntegration;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI\DevHelpers;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI\OpenAIIntegration;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI\ProductFieldsController;
@@ -70,15 +69,19 @@ final class Plugin {
 	 * Initialize plugin components
 	 */
 	public function init(): void {
-		// Bridge into Woo Integrations (ChatGPT provider) for simplified settings.
-		$this->container->get( OpenAIAgenticIntegration::class )->register();
-
 		// Initialize admin controller (no separate settings tab; configuration lives under Integrations → ChatGPT).
 		$this->container->get( AdminController::class )->initialize();
 
 		$this->container->get( ProductFieldsController::class )->initialize();
 
 		$this->container->get( DevHelpers::class )->initialize();
+
+		// Let all integrations register their hooks.
+		foreach ( $this->container->get( IntegrationRegistry::class )->get_integrations() as $integration ) {
+			if ( method_exists( $integration, 'register_hooks' ) ) {
+				$integration->register_hooks();
+			}
+		}
 	}
 
 	/**

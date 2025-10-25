@@ -46,4 +46,13 @@ class IntegrationRegistry {
 	public function get_integration( string $id ): ?IntegrationInterface {
 		return $this->integrations[ $id ] ?? null;
 	}
+
+	/**
+	 * Get all registered integrations.
+	 *
+	 * @return array<string,IntegrationInterface>
+	 */
+	public function get_integrations(): array {
+		return $this->integrations;
+	}
 }
