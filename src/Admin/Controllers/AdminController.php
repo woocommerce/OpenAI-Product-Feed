@@ -11,7 +11,7 @@ namespace Automattic\WooCommerce\ProductFeedForOpenAI\Admin\Controllers;
 
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductWalker;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI\OpenAIIntegration;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Settings\SettingsRepository;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI\Settings;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Storage\JsonFileFeed;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -32,9 +32,9 @@ class AdminController {
 	/**
 	 * Settings repository instance.
 	 *
-	 * @var SettingsRepository
+	 * @var Settings
 	 */
-	private SettingsRepository $settings;
+	private Settings $settings;
 
 	/**
 	 * Logger instance.
@@ -49,11 +49,11 @@ class AdminController {
 	 * Dependencies injector.
 	 *
 	 * @param OpenAIIntegration  $openai_integration The OpenAI integration.
-	 * @param SettingsRepository $settings The settings repository.
+	 * @param Settings $settings The settings repository.
 	 */
 	public function init(
 		OpenAIIntegration $openai_integration,
-		SettingsRepository $settings
+		Settings $settings
 	) {
 		$this->openai_integration = $openai_integration;
 		$this->logger             = function_exists( 'wc_get_logger' ) ? wc_get_logger() : null;

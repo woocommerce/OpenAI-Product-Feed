@@ -7,7 +7,7 @@
 
 declare(strict_types=1);
 
-namespace Automattic\WooCommerce\ProductFeedForOpenAI\Settings;
+namespace Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Settings repository implementation - stateless adapter to Woo core registry
  */
-class SettingsRepository {
+class Settings {
 
 	/**
 	 * Get setting value.

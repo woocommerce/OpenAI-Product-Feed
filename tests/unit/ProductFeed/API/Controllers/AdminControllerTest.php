@@ -3,7 +3,7 @@ declare( strict_types = 1 );
 
 use Automattic\WooCommerce\ProductFeedForOpenAI\Admin\Controllers\AdminController;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI\OpenAIIntegration;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Settings\SettingsRepository;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI\Settings;
 use PHPUnit\Framework\MockObject\MockObject;
 
 /**
@@ -20,7 +20,7 @@ class AdminControllerTest extends WC_Unit_Test_Case {
 	/**
 	 * Mock settings repository.
 	 *
-	 * @var SettingsRepository|MockObject
+	 * @var Settings|MockObject
 	 */
 	private $mock_settings;
 
@@ -34,7 +34,7 @@ class AdminControllerTest extends WC_Unit_Test_Case {
 	public function setUp(): void {
 		parent::setUp();
 
-		$this->mock_settings = $this->createMock( SettingsRepository::class );
+		$this->mock_settings = $this->createMock( Settings::class );
 		$this->mock_logger   = $this->createMock( WC_Logger::class );
 		add_filter( 'woocommerce_logging_class', fn() => $this->mock_logger );
 

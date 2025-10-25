@@ -11,7 +11,7 @@ namespace Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI;
 
 use Automattic\WooCommerce\Enums\ProductType;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductMapperInterface;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Settings\SettingsRepository;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI\Settings;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI\FeedSchema;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Utils\StringHelper;
 use RuntimeException;
@@ -30,9 +30,9 @@ final class ProductMapper implements ProductMapperInterface {
 	/**
 	 * Settings repository instance.
 	 *
-	 * @var SettingsRepository
+	 * @var Settings
 	 */
-	protected SettingsRepository $settings;
+	protected Settings $settings;
 
 	/**
 	 * OpenAI feed schema definition.
@@ -65,9 +65,9 @@ final class ProductMapper implements ProductMapperInterface {
 	/**
 	 * Dependency injector.
 	 *
-	 * @param SettingsRepository $settings Settings repository.
+	 * @param Settings $settings Settings repository.
 	 */
-	public function init( SettingsRepository $settings ) {
+	public function init( Settings $settings ) {
 		$this->settings = $settings;
 		$this->schema   = FeedSchema::get_schema();
 	}

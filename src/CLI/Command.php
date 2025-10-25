@@ -15,7 +15,7 @@ use WP_CLI_Command;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\IntegrationRegistry;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductWalker;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\WalkerProgress;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Settings\SettingsRepository;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI\Settings;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Utils\MemoryManager;
 
 // This is CLI. Non-escaped content should not break it.
@@ -35,19 +35,19 @@ class Command extends WP_CLI_Command {
 	/**
 	 * Settings repository instance.
 	 *
-	 * @var SettingsRepository
+	 * @var Settings
 	 */
-	private SettingsRepository $settings;
+	private Settings $settings;
 
 	/**
 	 * Dependency injector.
 	 *
 	 * @param IntegrationRegistry $integration_registry The integration registry.
-	 * @param SettingsRepository  $settings The settings repository.
+	 * @param Settings  $settings The settings repository.
 	 */
 	public function init(
 		IntegrationRegistry $integration_registry,
-		SettingsRepository $settings
+		Settings $settings
 	) {
 		$this->integration_registry = $integration_registry;
 		$this->settings             = $settings;
