@@ -9,10 +9,10 @@ declare(strict_types=1);
 
 namespace Automattic\WooCommerce\ProductFeedForOpenAI\Admin\Controllers;
 
-use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\FeedValidator;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI\FeedValidator;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductMapperInterface;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductWalker;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\ProductMapper;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI\ProductMapper;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Settings\SettingsRepository;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Storage\JsonFileFeed;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Storage\JsonInMemoryFeed;

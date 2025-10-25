@@ -2,8 +2,8 @@
 declare( strict_types = 1 );
 
 use Automattic\WooCommerce\ProductFeedForOpenAI\Admin\Controllers\AdminController;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\FeedValidator;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\ProductMapper;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI\FeedValidator;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI\ProductMapper;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Settings\SettingsRepository;
 use PHPUnit\Framework\MockObject\MockObject;
 

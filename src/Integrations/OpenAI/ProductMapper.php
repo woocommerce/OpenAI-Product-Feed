@@ -7,12 +7,12 @@
 
 declare(strict_types=1);
 
-namespace Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI;
+namespace Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI;
 
 use Automattic\WooCommerce\Enums\ProductType;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductMapperInterface;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Settings\SettingsRepository;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\FeedSchema;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI\FeedSchema;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Utils\StringHelper;
 use RuntimeException;
 
