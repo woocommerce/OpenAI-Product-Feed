@@ -2,8 +2,7 @@
 declare( strict_types = 1 );
 
 use Automattic\WooCommerce\ProductFeedForOpenAI\Admin\Controllers\AdminController;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI\FeedValidator;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI\ProductMapper;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI\OpenAIIntegration;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Settings\SettingsRepository;
 use PHPUnit\Framework\MockObject\MockObject;
 
@@ -41,8 +40,7 @@ class AdminControllerTest extends WC_Unit_Test_Case {
 
 		$this->sut = new AdminController();
 		$this->sut->init(
-			wpfoai_get_service( FeedValidator::class ),
-			wpfoai_get_service( ProductMapper::class ),
+			wpfoai_get_service( OpenAIIntegration::class ),
 			$this->mock_settings
 		);
 	}

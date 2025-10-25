@@ -9,13 +9,10 @@ declare(strict_types=1);
 
 namespace Automattic\WooCommerce\ProductFeedForOpenAI\Admin\Controllers;
 
-use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI\FeedValidator;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductMapperInterface;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductWalker;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI\ProductMapper;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI\OpenAIIntegration;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Settings\SettingsRepository;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Storage\JsonFileFeed;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Storage\JsonInMemoryFeed;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -26,18 +23,11 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class AdminController {
 	/**
-	 * Product mapper instance.
+	 * OpenAI integration instance.
 	 *
-	 * @var ProductMapperInterface
+	 * @var OpenAIIntegration
 	 */
-	private ProductMapperInterface $product_mapper;
-
-	/**
-	 * Validator instance.
-	 *
-	 * @var FeedValidator
-	 */
-	private FeedValidator $validator;
+	private OpenAIIntegration $openai_integration;
 
 	/**
 	 * Settings repository instance.
@@ -58,19 +48,16 @@ class AdminController {
 	/**
 	 * Dependencies injector.
 	 *
-	 * @param FeedValidator      $validator The validator.
-	 * @param ProductMapper      $product_mapper The product mapper.
+	 * @param OpenAIIntegration  $openai_integration The OpenAI integration.
 	 * @param SettingsRepository $settings The settings repository.
 	 */
 	public function init(
-		FeedValidator $validator,
-		ProductMapper $product_mapper,
+		OpenAIIntegration $openai_integration,
 		SettingsRepository $settings
 	) {
-		$this->validator      = $validator;
-		$this->product_mapper = $product_mapper;
-		$this->logger         = function_exists( 'wc_get_logger' ) ? wc_get_logger() : null;
-		$this->settings       = $settings;
+		$this->openai_integration = $openai_integration;
+		$this->logger             = function_exists( 'wc_get_logger' ) ? wc_get_logger() : null;
+		$this->settings           = $settings;
 	}
 
 	/**
@@ -92,7 +79,11 @@ class AdminController {
 		}
 
 		$feed   = new JsonFileFeed( 'openai-feed' );
-		$walker = new ProductWalker( $this->product_mapper, $this->validator, $feed );
+		$walker = new ProductWalker(
+			$this->openai_integration->get_product_mapper(),
+			$this->openai_integration->get_feed_validator(),
+			$feed
+		);
 		$walker->walk();
 
 		$response = wp_remote_post(
