@@ -121,7 +121,7 @@ final class Plugin {
 	public function deactivate(): void {
 		// Clean up scheduled events using Action Scheduler.
 		if ( function_exists( 'as_cancel_all_actions' ) ) {
-			as_cancel_all_actions( 'wpfoai_push_feed_event' );
+			as_cancel_all_actions( AdminController::SCHEDULED_ACTION_HOOK );
 		}
 	}
 

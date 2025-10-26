@@ -2,6 +2,7 @@
 declare( strict_types = 1 );
 
 use Automattic\WooCommerce\ProductFeedForOpenAI\Admin\Controllers\AdminController;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Core\DependencyManagement\Container;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI\OpenAIIntegration;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI\Settings;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -38,11 +39,14 @@ class AdminControllerTest extends WC_Unit_Test_Case {
 		$this->mock_logger   = $this->createMock( WC_Logger::class );
 		add_filter( 'woocommerce_logging_class', fn() => $this->mock_logger );
 
-		$this->sut = new AdminController();
-		$this->sut->init(
-			wpfoai_get_service( OpenAIIntegration::class ),
+		$integration = new OpenAIIntegration();
+		$integration->init(
+			wpfoai_get_service( Container::class ),
 			$this->mock_settings
 		);
+
+		$this->sut = new AdminController();
+		$this->sut->init( $integration );
 	}
 
 	public function tearDown(): void {

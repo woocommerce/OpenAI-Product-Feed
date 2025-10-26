@@ -48,4 +48,14 @@ interface IntegrationInterface {
 	 * @return FeedValidatorInterface The feed validator.
 	 */
 	public function get_feed_validator(): FeedValidatorInterface;
+
+	/**
+	 * Get the endpoint URL for pushing feeds.
+	 *
+	 * As one of the next steps, rather than returning the URL from
+	 * the integration, the integration should set up the push mechanism.
+	 *
+	 * @return string|null The endpoint URL.
+	 */
+	public function get_push_endpoint_url(): ?string;
 }

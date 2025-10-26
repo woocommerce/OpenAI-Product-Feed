@@ -15,7 +15,6 @@ use WP_CLI_Command;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\IntegrationRegistry;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductWalker;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\WalkerProgress;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI\Settings;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Utils\MemoryManager;
 
 // This is CLI. Non-escaped content should not break it.
@@ -33,24 +32,14 @@ class Command extends WP_CLI_Command {
 	private IntegrationRegistry $integration_registry;
 
 	/**
-	 * Settings repository instance.
-	 *
-	 * @var Settings
-	 */
-	private Settings $settings;
-
-	/**
 	 * Dependency injector.
 	 *
 	 * @param IntegrationRegistry $integration_registry The integration registry.
-	 * @param Settings  $settings The settings repository.
 	 */
 	public function init(
-		IntegrationRegistry $integration_registry,
-		Settings $settings
+		IntegrationRegistry $integration_registry
 	) {
 		$this->integration_registry = $integration_registry;
-		$this->settings             = $settings;
 	}
 
 	/**
@@ -111,7 +100,7 @@ class Command extends WP_CLI_Command {
 		// Verify settings in advance if there is a requirement to send the feed.
 		$endpoint = null;
 		if ( $send ) {
-			$endpoint = $this->settings->get_endpoint_url();
+			$endpoint = $integration->get_push_endpoint_url();
 			if ( empty( $endpoint ) ) {
 				return WP_CLI::error( 'Endpoint URL is not configured. Aborting.' );
 			}
@@ -180,6 +169,6 @@ class Command extends WP_CLI_Command {
 		);
 
 		// No need to do wonders with the response, just print it.
-		WP_CLI::print_value( $response );
+		WP_CLI::print_value( json_decode( $response['body'] ), [ 'format' => 'json' ] );
 	}
 }

@@ -11,7 +11,6 @@ namespace Automattic\WooCommerce\ProductFeedForOpenAI\Admin\Controllers;
 
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductWalker;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI\OpenAIIntegration;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI\Settings;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Storage\JsonFileFeed;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -30,13 +29,6 @@ class AdminController {
 	private OpenAIIntegration $openai_integration;
 
 	/**
-	 * Settings repository instance.
-	 *
-	 * @var Settings
-	 */
-	private Settings $settings;
-
-	/**
 	 * Logger instance.
 	 *
 	 * @var mixed
@@ -48,16 +40,11 @@ class AdminController {
 	/**
 	 * Dependencies injector.
 	 *
-	 * @param OpenAIIntegration  $openai_integration The OpenAI integration.
-	 * @param Settings $settings The settings repository.
+	 * @param OpenAIIntegration $openai_integration The OpenAI integration.
 	 */
-	public function init(
-		OpenAIIntegration $openai_integration,
-		Settings $settings
-	) {
+	public function init( OpenAIIntegration $openai_integration ) {
 		$this->openai_integration = $openai_integration;
 		$this->logger             = function_exists( 'wc_get_logger' ) ? wc_get_logger() : null;
-		$this->settings           = $settings;
 	}
 
 	/**
@@ -73,7 +60,7 @@ class AdminController {
 	public function scheduled_push(): void {
 		$headers = [ 'Content-Type' => 'application/json' ];
 
-		$endpoint = $this->settings->get_endpoint_url();
+		$endpoint = $this->openai_integration->get_push_endpoint_url();
 		if ( empty( $endpoint ) ) {
 			return;
 		}
