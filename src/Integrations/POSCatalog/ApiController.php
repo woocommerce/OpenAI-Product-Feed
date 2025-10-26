@@ -7,6 +7,7 @@
 
 namespace Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\POSCatalog;
 
+use Automattic\WooCommerce\ProductFeedForOpenAI\Core\DependencyManagement\Container;
 use WP_REST_Request;
 use WP_REST_Response;
 
@@ -21,19 +22,19 @@ class ApiController {
 	const ROUTE_NAMESPACE = 'wc/product-catalog/v1';
 
 	/**
-	 * Integration instance.
+	 * Container instance.
 	 *
-	 * @var POSIntegration
+	 * @var Container
 	 */
-	private POSIntegration $integration;
+	private $container;
 
 	/**
 	 * Dependency injector.
 	 *
-	 * @param POSIntegration $integration The integration instance.
+	 * @param Container $container The container instance. Everything else will be dynamic.
 	 */
-	public function init( POSIntegration $integration ) {
-		$this->integration = $integration;
+	public function init( Container $container ) {
+		$this->container = $container;
 	}
 
 	/**
@@ -44,9 +45,9 @@ class ApiController {
 			self::ROUTE_NAMESPACE,
 			'/create',
 			[
-				'methods'  => 'GET', // @todo: Switch back to POST and add validation.
-				'callback' => [ $this, 'generate_feed' ],
-				'permission_callback' => '__return_true',
+				'methods'             => 'GET', // @todo: Switch back to POST and add validation.
+				'callback'            => [ $this, 'generate_feed' ],
+				'permission_callback' => '__return_true', // @todo: This should be a proper permission callback.
 			]
 		);
 	}
@@ -58,8 +59,6 @@ class ApiController {
 	 * @return WP_REST_Response The response object.
 	 */
 	public function generate_feed( WP_REST_Request $request ) { // phpcs:ignore VariableAnalysis
-		$status = $this->integration->generate_feed();
-
-		return new WP_REST_Response( $status );
+		return new WP_REST_Response( $this->container->get( AsyncGenerator::class )->get_status() );
 	}
 }

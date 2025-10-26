@@ -11,8 +11,6 @@ use Automattic\WooCommerce\ProductFeedForOpenAI\Core\DependencyManagement\Contai
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\FeedInterface;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\FeedValidatorInterface;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductMapperInterface;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductWalker;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\WalkerProgress;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\IntegrationInterface;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Storage\JsonFileFeed;
 
@@ -24,8 +22,6 @@ if ( ! defined( 'ABSPATH' ) ) {
  * POS Catalog Integration
  */
 class POSIntegration implements IntegrationInterface {
-	const FEED_GENERATION_ACTION = 'wpfoai_pos_catalog_feed_generation';
-
 	/**
 	 * Container instance.
 	 *
@@ -58,7 +54,7 @@ class POSIntegration implements IntegrationInterface {
 	 */
 	public function register_hooks(): void {
 		add_action( 'rest_api_init', [ $this, 'rest_api_init' ] );
-		add_action( self::FEED_GENERATION_ACTION, [ $this, 'feed_generation_action' ] );
+		$this->container->get( AsyncGenerator::class )->register_hooks();
 	}
 
 	/**
@@ -113,83 +109,6 @@ class POSIntegration implements IntegrationInterface {
 	 * @return FeedValidatorInterface|null The feed validator.
 	 */
 	public function get_feed_validator(): ?FeedValidatorInterface {
-		return (
-			new class implements FeedValidatorInterface {
-				public function validate_entry( array $row, \WC_Product $product ): array {
-					return [];
-				}
-			}
-		);
-	}
-
-	public function generate_feed() {
-		$status = get_transient( 'pos_feed_status' );
-
-		if ( false === $status ) {
-			// Clear all previous actions to avoid race conditions.
-			as_unschedule_all_actions( self::FEED_GENERATION_ACTION );
-
-			$action_id = as_schedule_single_action( time() + 10, self::FEED_GENERATION_ACTION, [] );
-
-			$status = [
-				'action_id' => $action_id,
-				'status'    => 'scheduled',
-				'progress'  => 0,
-				'processed' => 0,
-				'total'     => -1,
-			];
-
-			set_transient(
-				'pos_feed_status',
-				$status,
-				DAY_IN_SECONDS
-			);
-		}
-
-		$response = array_merge( [], $status );
-		unset( $response['action_id'] );
-		return $response;
-	}
-
-	public function feed_generation_action() {
-		$status = get_transient( 'pos_feed_status' );
-
-		if ( 'scheduled' === $status['status'] ) {
-			$status['status'] = 'in_progress';
-			set_transient( 'pos_feed_status', $status, DAY_IN_SECONDS );
-
-			$feed = $this->create_feed();
-
-			$walker = new ProductWalker(
-				$this->get_product_mapper(),
-				$this->get_feed_validator(),
-				$feed
-			);
-
-			// Used while testing...
-			$walker->set_batch_size( 5 );
-
-			$walker->walk(
-				function ( WalkerProgress $progress ) use ( $status, $feed ) {
-					$this->update_feed_progress( $status, $progress, $feed );
-				}
-			);
-
-			// Get the updated transient.
-			$status = get_transient( 'pos_feed_status' );
-			$status['status'] = 'completed';
-			$status['url'] = $feed->get_file_url();
-			set_transient( 'pos_feed_status', $status, DAY_IN_SECONDS );
-		}
-	}
-
-	private function update_feed_progress( array $status, WalkerProgress $progress, FeedInterface $feed ) {
-		$status['progress'] = round( ( $progress->processed_items / $progress->total_count ) * 100, 2 );
-		$status['processed'] = $progress->processed_items;
-		$status['total'] = $progress->total_count;
-
-		set_transient( 'pos_feed_status', $status, DAY_IN_SECONDS );
-
-		sleep( 2 );
+		return $this->container->get( FeedValidator::class );
 	}
 }
