@@ -10,7 +10,6 @@ declare(strict_types=1);
 namespace Automattic\WooCommerce\ProductFeedForOpenAI\Storage;
 
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\FeedInterface;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\FileBasedFeedInterface;
 use RuntimeException;
 
 // This file works directly with local files. That's fine.
@@ -21,7 +20,7 @@ use RuntimeException;
  *
  * This class writes JSON directly to a file, entry by entry, without keeping everything in memory.
  */
-class JsonFileFeed implements FeedInterface, FileBasedFeedInterface {
+class JsonFileFeed implements FeedInterface {
 	/**
 	 * Indicates if there are previous entries in the feed.
 	 *

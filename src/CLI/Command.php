@@ -13,7 +13,6 @@ use RuntimeException;
 use WP_CLI;
 use WP_CLI_Command;
 use Automattic\WooCommerce\ProductFeedForOpenAI\DeliveryMethods\PushFile;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\FileBasedFeedInterface;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductWalker;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\WalkerProgress;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\IntegrationRegistry;
@@ -138,11 +137,6 @@ class Command extends WP_CLI_Command {
 				WP_CLI::log( "Batch $progress->processed_batches/$progress->total_batch_count: Processed $progress->processed_items/$progress->total_count products. Available memory: " . MemoryManager::get_available_memory() . "%. Time per item: $per_item ms" );
 			}
 		);
-
-		if ( ! is_a( $feed, FileBasedFeedInterface::class ) ) {
-			// To be figured out next.
-			return;
-		}
 
 		$path = $feed->get_file_path();
 		if ( $silent && ! $send ) {
