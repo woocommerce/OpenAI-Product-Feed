@@ -29,6 +29,27 @@ interface IntegrationInterface {
 	public function get_id(): string;
 
 	/**
+	 * Register hooks for the integration.
+	 *
+	 * @return void
+	 */
+	public function register_hooks(): void;
+
+	/**
+	 * Activate the integration.
+	 *
+	 * @return void
+	 */
+	public function activate(): void;
+
+	/**
+	 * Deactivate the integration.
+	 *
+	 * @return void
+	 */
+	public function deactivate(): void;
+
+	/**
 	 * Create a feed that is to be populated.
 	 *
 	 * @return FeedInterface The feed.

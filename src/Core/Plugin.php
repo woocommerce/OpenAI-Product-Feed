@@ -9,13 +9,10 @@ declare(strict_types=1);
 
 namespace Automattic\WooCommerce\ProductFeedForOpenAI\Core;
 
-use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI\ScheduledActionManager;
 use Automattic\WooCommerce\ProductFeedForOpenAI\CLI\Command;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Core\DependencyManagement\Container;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\IntegrationRegistry;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI\DevHelpers;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI\OpenAIIntegration;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI\ProductFieldsController;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -31,6 +28,13 @@ final class Plugin {
 	 * @var Container
 	 */
 	private Container $container;
+
+	/**
+	 * Integration registry.
+	 *
+	 * @var IntegrationRegistry
+	 */
+	private IntegrationRegistry $integration_registry;
 
 	/**
 	 * Get singleton instance.
@@ -57,30 +61,21 @@ final class Plugin {
 			return;
 		}
 
-		add_action( 'init', [ $this, 'init' ], 0 );
+		add_action( 'init', [ $this, 'register_hooks' ], 0 );
 		add_action( 'cli_init', [ $this, 'register_cli_commands' ] );
 
 		// Prepare all providers.
-		$registry = $this->container->get( IntegrationRegistry::class );
-		$registry->register_integration( $this->container->get( OpenAIIntegration::class ) );
+		$this->integration_registry = $this->container->get( IntegrationRegistry::class );
+		$this->integration_registry->register_integration( $this->container->get( OpenAIIntegration::class ) );
 	}
 
 	/**
 	 * Initialize plugin components
 	 */
-	public function init(): void {
-		// Initialize admin controller (no separate settings tab; configuration lives under Integrations → ChatGPT).
-		$this->container->get( ScheduledActionManager::class )->initialize();
-
-		$this->container->get( ProductFieldsController::class )->initialize();
-
-		$this->container->get( DevHelpers::class )->initialize();
-
+	public function register_hooks(): void {
 		// Let all integrations register their hooks.
 		foreach ( $this->container->get( IntegrationRegistry::class )->get_integrations() as $integration ) {
-			if ( method_exists( $integration, 'register_hooks' ) ) {
-				$integration->register_hooks();
-			}
+			$integration->register_hooks();
 		}
 	}
 
@@ -110,8 +105,8 @@ final class Plugin {
 			);
 		}
 
-		if ( ! as_has_scheduled_action( ScheduledActionManager::SCHEDULED_ACTION_HOOK ) ) {
-			as_schedule_recurring_action( time(), 60 * 15, ScheduledActionManager::SCHEDULED_ACTION_HOOK );
+		foreach ( $this->integration_registry->get_integrations() as $integration ) {
+			$integration->activate();
 		}
 	}
 
@@ -119,9 +114,8 @@ final class Plugin {
 	 * Plugin deactivation
 	 */
 	public function deactivate(): void {
-		// Clean up scheduled events using Action Scheduler.
-		if ( function_exists( 'as_cancel_all_actions' ) ) {
-			as_cancel_all_actions( ScheduledActionManager::SCHEDULED_ACTION_HOOK );
+		foreach ( $this->integration_registry->get_integrations() as $integration ) {
+			$integration->deactivate();
 		}
 	}
 

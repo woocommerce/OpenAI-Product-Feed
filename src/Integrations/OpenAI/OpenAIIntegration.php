@@ -54,6 +54,43 @@ class OpenAIIntegration implements IntegrationInterface {
 	 */
 	public function register_hooks(): void {
 		$this->settings->register_hooks();
+
+		// Initialize the integration classes.
+		// Done straight through the container, as most of them depend on this class.
+		$this->container->get( ScheduledActionManager::class )->initialize();
+		$this->container->get( ProductFieldsController::class )->initialize();
+		$this->container->get( DevHelpers::class )->initialize();
+	}
+
+	/**
+	 * Activate the integration.
+	 *
+	 * This method is called when the plugin is activated.
+	 * If there is ever a setting that controls active integrations,
+	 * this method might also be called when the integration is activated.
+	 *
+	 * @return void
+	 */
+	public function activate(): void {
+		if ( ! as_has_scheduled_action( ScheduledActionManager::SCHEDULED_ACTION_HOOK ) ) {
+			as_schedule_recurring_action( time(), 60 * 15, ScheduledActionManager::SCHEDULED_ACTION_HOOK );
+		}
+	}
+
+	/**
+	 * Deactivate the integration.
+	 *
+	 * This method is called when the plugin is deactivated.
+	 * If there is ever a setting that controls active integrations,
+	 * this method might also be called when the integration is deactivated.
+	 *
+	 * @return void
+	 */
+	public function deactivate(): void {
+		// Clean up scheduled events using Action Scheduler.
+		if ( function_exists( 'as_cancel_all_actions' ) ) {
+			as_cancel_all_actions( ScheduledActionManager::SCHEDULED_ACTION_HOOK );
+		}
 	}
 
 	/**
