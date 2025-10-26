@@ -57,6 +57,13 @@ class JsonFileFeed implements FeedInterface {
 	private $file_completed = false;
 
 	/**
+	 * The URL of the feed file.
+	 *
+	 * @var string|null
+	 */
+	private $file_url = null;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param string $base_name The base name of the feed file.
@@ -87,7 +94,9 @@ class JsonFileFeed implements FeedInterface {
 			);
 		}
 
-		$this->file_path   = $directory . wp_unique_filename( $directory, $this->base_name . '.json' );
+		$file_name         = wp_unique_filename( $directory, $this->base_name . '.json' );
+		$this->file_path   = $directory . $file_name;
+		$this->file_url    = $upload_dir['baseurl'] . '/product-feeds/' . $file_name;
 		$this->file_handle = fopen( $this->file_path, 'w' );
 
 		if ( false === $this->file_handle ) {
@@ -143,5 +152,18 @@ class JsonFileFeed implements FeedInterface {
 	 */
 	public function get_file_path(): string {
 		return $this->file_path;
+	}
+
+	/**
+	 * Get the URL of the feed file.
+	 *
+	 * @return string|null The URL of the feed file, null if not completed.
+	 */
+	public function get_file_url(): ?string {
+		if ( ! $this->file_completed ) {
+			return null;
+		}
+
+		return $this->file_url;
 	}
 }

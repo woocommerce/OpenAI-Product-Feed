@@ -39,4 +39,11 @@ interface FeedInterface {
 	 * @return string
 	 */
 	public function get_file_path(): string;
+
+	/**
+	 * Get the URL of the feed file.
+	 *
+	 * @return string|null The URL of the feed file, null if not completed.
+	 */
+	public function get_file_url(): ?string;
 }
