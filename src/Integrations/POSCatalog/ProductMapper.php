@@ -306,9 +306,12 @@ class ProductMapper implements ProductMapperInterface {
 	 * @return string
 	 */
 	protected function get_attribute_taxonomy_label( $name ) {
-		$tax    = get_taxonomy( $name );
-		$labels = get_taxonomy_labels( $tax );
+		$tax = get_taxonomy( $name );
+		if ( ! $tax ) {
+			return '';
+		}
 
+		$labels = get_taxonomy_labels( $tax );
 		return $labels->singular_name;
 	}
 
