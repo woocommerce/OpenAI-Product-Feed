@@ -35,6 +35,21 @@ final class AsyncGenerator {
 	const TRANSIENT_KEY = 'pos_feed_status';
 
 	/**
+	 * The time limit for each batch.
+	 *
+	 * @var int
+	 */
+	const TIME_LIMIT = 5 * MINUTE_IN_SECONDS;
+
+	/**
+	 * Feed expiry time, once completed.
+	 * If the feed is not downloaded within this timeframe, a new one will need to be generated.
+	 *
+	 * @var int
+	 */
+	const FEED_EXPIRY = 20 * MINUTE_IN_SECONDS;
+
+	/**
 	 * Integration instance.
 	 *
 	 * @var POSIntegration
@@ -72,7 +87,9 @@ final class AsyncGenerator {
 			// Clear all previous actions to avoid race conditions.
 			as_unschedule_all_actions( self::FEED_GENERATION_ACTION );
 
-			$action_id = as_schedule_single_action( time() + 10, self::FEED_GENERATION_ACTION, [] );
+			// Add a bit of delay to avoid race conditions.
+			$delay     = 10;
+			$action_id = as_schedule_single_action( time() + $delay, self::FEED_GENERATION_ACTION, [] );
 
 			$status = [
 				'action_id' => $action_id,
@@ -85,10 +102,11 @@ final class AsyncGenerator {
 			set_transient(
 				self::TRANSIENT_KEY,
 				$status,
-				DAY_IN_SECONDS
+				self::TIME_LIMIT + $delay,
 			);
 		}
 
+		// Respond with everything but the internal action ID.
 		$response = array_merge( [], $status );
 		unset( $response['action_id'] );
 		return $response;
@@ -108,7 +126,7 @@ final class AsyncGenerator {
 		}
 
 		$status['status'] = 'in_progress';
-		set_transient( self::TRANSIENT_KEY, $status, DAY_IN_SECONDS );
+		set_transient( self::TRANSIENT_KEY, $status, self::TIME_LIMIT );
 
 		$feed   = $this->integration->create_feed();
 		$walker = new ProductWalker(
@@ -122,13 +140,14 @@ final class AsyncGenerator {
 		$walker->walk(
 			function ( WalkerProgress $progress ) use ( &$status ) {
 				$status = $this->update_feed_progress( $status, $progress );
+				set_transient( self::TRANSIENT_KEY, $status, self::TIME_LIMIT );
 			}
 		);
 
 		// Store the final details.
 		$status['status'] = 'completed';
 		$status['url']    = $feed->get_file_url();
-		set_transient( self::TRANSIENT_KEY, $status, DAY_IN_SECONDS );
+		set_transient( self::TRANSIENT_KEY, $status, self::FEED_EXPIRY );
 	}
 
 	/**
@@ -142,12 +161,6 @@ final class AsyncGenerator {
 		$status['progress']  = round( ( $progress->processed_items / $progress->total_count ) * 100, 2 );
 		$status['processed'] = $progress->processed_items;
 		$status['total']     = $progress->total_count;
-
-		set_transient( self::TRANSIENT_KEY, $status, DAY_IN_SECONDS );
-
-		// Add a bit of sleep to assist with testing.
-		sleep( 4 );
-
 		return $status;
 	}
 }
