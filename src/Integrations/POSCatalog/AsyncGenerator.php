@@ -28,6 +28,13 @@ final class AsyncGenerator {
 	const FEED_GENERATION_ACTION = 'wpfoai_pos_catalog_feed_generation';
 
 	/**
+	 * The Action Scheduler action hook for the feed deletion.
+	 *
+	 * @var string
+	 */
+	const FEED_DELETION_ACTION = 'wpfoai_pos_catalog_feed_deletion';
+
+	/**
 	 * The transient key for the feed generation status.
 	 *
 	 * @var string
@@ -79,6 +86,7 @@ final class AsyncGenerator {
 	 */
 	public function register_hooks(): void {
 		add_action( self::FEED_GENERATION_ACTION, [ $this, 'feed_generation_action' ] );
+		add_action( self::FEED_DELETION_ACTION, [ $this, 'feed_deletion_action' ] );
 	}
 
 	/**
@@ -152,6 +160,13 @@ final class AsyncGenerator {
 		$status['url']   = $feed->get_file_url();
 		$status['path']  = $feed->get_file_path();
 		set_transient( self::TRANSIENT_KEY, $status, self::FEED_EXPIRY );
+
+		// Schedule another action to delete the file after the expiry time.
+		as_schedule_single_action(
+			time() + self::FEED_EXPIRY,
+			self::FEED_DELETION_ACTION,
+			[ 'path' => $feed->get_file_path() ]
+		);
 	}
 
 	/**
@@ -186,6 +201,17 @@ final class AsyncGenerator {
 			default:
 				throw new \Exception( 'Unknown feed generation state.' );
 		}
+	}
+
+	/**
+	 * Action scheduler callback for the feed deletion after expiry.
+	 *
+	 * @param array $args The arguments passed to the action.
+	 * @return void
+	 */
+	public function feed_deletion_action( array $args ) {
+		$path = $args['path'];
+		wp_delete_file( $path );
 	}
 
 	/**
