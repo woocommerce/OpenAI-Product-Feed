@@ -36,9 +36,9 @@ class ProductWalker {
 	/**
 	 * The feed validator.
 	 *
-	 * @var FeedValidatorInterface
+	 * @var FeedValidatorInterface|null
 	 */
-	private $validator;
+	private $validator = null;
 
 	/**
 	 * The number of products to iterate through per batch.
@@ -59,13 +59,13 @@ class ProductWalker {
 	 *
 	 * This class will not be available through DI. Instead, it needs to be instantiated directly.
 	 *
-	 * @param ProductMapperInterface $mapper The product mapper.
-	 * @param FeedValidatorInterface $validator The feed validator.
-	 * @param FeedInterface          $feed The feed.
+	 * @param ProductMapperInterface      $mapper The product mapper.
+	 * @param FeedValidatorInterface|null $validator The feed validator.
+	 * @param FeedInterface               $feed The feed.
 	 */
 	public function __construct(
 		ProductMapperInterface $mapper,
-		FeedValidatorInterface $validator,
+		?FeedValidatorInterface $validator = null,
 		FeedInterface $feed
 	) {
 		$this->mapper    = $mapper;
@@ -187,7 +187,7 @@ class ProductWalker {
 		foreach ( $result->products as $product ) {
 			$mapped_data = $this->mapper->map_product( $product );
 
-			if ( ! empty( $this->validator->validate_entry( $mapped_data, $product ) ) ) {
+			if ( $this->validator && ! empty( $this->validator->validate_entry( $mapped_data, $product ) ) ) {
 				continue;
 			}
 
