@@ -1,13 +1,13 @@
 <?php
 /**
- *  Admin Controller class.
+ * Scheduled Action Manager class.
  *
  * @package Automattic\WooCommerce\ProductFeedForOpenAI
  */
 
 declare(strict_types=1);
 
-namespace Automattic\WooCommerce\ProductFeedForOpenAI\Admin\Controllers;
+namespace Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI;
 
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductWalker;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI\OpenAIIntegration;
@@ -18,9 +18,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Admin controller for handling admin interface functionality.
+ * Scheduled Action Manager for handling regular push for the feed.
  */
-class AdminController {
+class ScheduledActionManager {
 	/**
 	 * OpenAI integration instance.
 	 *

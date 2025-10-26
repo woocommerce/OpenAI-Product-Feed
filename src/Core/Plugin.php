@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Automattic\WooCommerce\ProductFeedForOpenAI\Core;
 
-use Automattic\WooCommerce\ProductFeedForOpenAI\Admin\Controllers\AdminController;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI\ScheduledActionManager;
 use Automattic\WooCommerce\ProductFeedForOpenAI\CLI\Command;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Core\DependencyManagement\Container;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\IntegrationRegistry;
@@ -70,7 +70,7 @@ final class Plugin {
 	 */
 	public function init(): void {
 		// Initialize admin controller (no separate settings tab; configuration lives under Integrations → ChatGPT).
-		$this->container->get( AdminController::class )->initialize();
+		$this->container->get( ScheduledActionManager::class )->initialize();
 
 		$this->container->get( ProductFieldsController::class )->initialize();
 
@@ -110,8 +110,8 @@ final class Plugin {
 			);
 		}
 
-		if ( ! as_has_scheduled_action( AdminController::SCHEDULED_ACTION_HOOK ) ) {
-			as_schedule_recurring_action( time(), 60 * 15, AdminController::SCHEDULED_ACTION_HOOK );
+		if ( ! as_has_scheduled_action( ScheduledActionManager::SCHEDULED_ACTION_HOOK ) ) {
+			as_schedule_recurring_action( time(), 60 * 15, ScheduledActionManager::SCHEDULED_ACTION_HOOK );
 		}
 	}
 
@@ -121,7 +121,7 @@ final class Plugin {
 	public function deactivate(): void {
 		// Clean up scheduled events using Action Scheduler.
 		if ( function_exists( 'as_cancel_all_actions' ) ) {
-			as_cancel_all_actions( AdminController::SCHEDULED_ACTION_HOOK );
+			as_cancel_all_actions( ScheduledActionManager::SCHEDULED_ACTION_HOOK );
 		}
 	}
 

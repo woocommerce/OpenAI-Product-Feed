@@ -1,7 +1,7 @@
 <?php
 declare( strict_types = 1 );
 
-use Automattic\WooCommerce\ProductFeedForOpenAI\Admin\Controllers\AdminController;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI\ScheduledActionManager;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Core\DependencyManagement\Container;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI\OpenAIIntegration;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI\Settings;
@@ -10,13 +10,13 @@ use PHPUnit\Framework\MockObject\MockObject;
 /**
  * Admin controller test class.
  */
-class AdminControllerTest extends WC_Unit_Test_Case {
+class ScheduledActionManagerTest extends WC_Unit_Test_Case {
 	/**
 	 * API controller instance.
 	 *
-	 * @var AdminController
+	 * @var ScheduledActionManager
 	 */
-	private AdminController $sut;
+	private ScheduledActionManager $sut;
 
 	/**
 	 * Mock settings repository.
@@ -45,7 +45,7 @@ class AdminControllerTest extends WC_Unit_Test_Case {
 			$this->mock_settings
 		);
 
-		$this->sut = new AdminController();
+		$this->sut = new ScheduledActionManager();
 		$this->sut->init( $integration );
 	}
 
