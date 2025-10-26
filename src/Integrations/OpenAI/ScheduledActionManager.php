@@ -58,10 +58,8 @@ class ScheduledActionManager {
 	 * Cron job to push feed.
 	 */
 	public function scheduled_push(): void {
-		$headers = [ 'Content-Type' => 'application/json' ];
-
-		$endpoint = $this->openai_integration->get_push_endpoint_url();
-		if ( empty( $endpoint ) ) {
+		$delivery_method = $this->openai_integration->get_push_delivery_method();
+		if ( ! $delivery_method->check_setup() ) {
 			return;
 		}
 
@@ -73,14 +71,7 @@ class ScheduledActionManager {
 		);
 		$walker->walk();
 
-		$response = wp_remote_post(
-			$endpoint,
-			[
-				'headers' => $headers,
-				'timeout' => 30,
-				'body'    => file_get_contents( $feed->get_file_path() ), // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
-			]
-		);
+		$response = $delivery_method->deliver( $feed );
 
 		if ( is_wp_error( $response ) ) {
 			if ( $this->logger ) {

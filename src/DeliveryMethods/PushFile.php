@@ -35,6 +35,15 @@ class PushFile implements FileDeliveryInterface {
 	}
 
 	/**
+	 * Check if the delivery method is setup.
+	 *
+	 * @return bool True if the delivery method is setup, false otherwise.
+	 */
+	public function check_setup(): bool {
+		return ! empty( $this->endpoint );
+	}
+
+	/**
 	 * Deliver the feed.
 	 *
 	 * Yes, further headers and checks for the response are missing.

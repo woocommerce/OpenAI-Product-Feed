@@ -10,10 +10,13 @@ declare(strict_types=1);
 namespace Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI;
 
 use Automattic\WooCommerce\ProductFeedForOpenAI\Core\DependencyManagement\Container;
+use Automattic\WooCommerce\ProductFeedForOpenAI\DeliveryMethods\FileDeliveryInterface;
+use Automattic\WooCommerce\ProductFeedForOpenAI\DeliveryMethods\PushFile;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\FeedInterface;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\FeedValidatorInterface;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductMapperInterface;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\IntegrationInterface;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\PushIntegrationInterface;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Storage\JsonFileFeed;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -23,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * OpenAI Provider
  */
-class OpenAIIntegration implements IntegrationInterface {
+class OpenAIIntegration implements IntegrationInterface, PushIntegrationInterface {
 	/**
 	 * Container instance.
 	 *
@@ -124,22 +127,19 @@ class OpenAIIntegration implements IntegrationInterface {
 	/**
 	 * Get the feed validator for the provider.
 	 *
-	 * @return FeedValidatorInterface The feed validator.
+	 * @return FeedValidatorInterface|null The feed validator.
 	 */
-	public function get_feed_validator(): FeedValidatorInterface {
+	public function get_feed_validator(): ?FeedValidatorInterface {
 		// Instantiate only when needed, meaning while generating feeds.
 		return $this->container->get( FeedValidator::class );
 	}
 
 	/**
-	 * Get the endpoint URL for pushing feeds.
+	 * Get the push delivery method for the provider.
 	 *
-	 * As one of the next steps, rather than returning the URL from
-	 * the integration, the integration should set up the push mechanism.
-	 *
-	 * @return string|null The endpoint URL.
+	 * @return FileDeliveryInterface The push delivery method.
 	 */
-	public function get_push_endpoint_url(): ?string {
-		return $this->settings->get_endpoint_url();
+	public function get_push_delivery_method(): FileDeliveryInterface {
+		return new PushFile( $this->settings->get_endpoint_url() );
 	}
 }

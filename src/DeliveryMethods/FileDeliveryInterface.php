@@ -18,4 +18,11 @@ interface FileDeliveryInterface {
 	 * @return WP_REST_Response The response from the remote endpoint.
 	 */
 	public function deliver( FeedInterface $feed ): WP_REST_Response;
+
+	/**
+	 * Check if the delivery method is setup.
+	 *
+	 * @return bool True if the delivery method is setup, false otherwise.
+	 */
+	public function check_setup(): bool;
 }
