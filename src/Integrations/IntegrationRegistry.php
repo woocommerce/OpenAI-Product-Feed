@@ -29,7 +29,7 @@ class IntegrationRegistry {
 	private array $integrations = [];
 
 	/**
-	 * Register a Integration.
+	 * Register an Integration.
 	 *
 	 * @param IntegrationInterface $integration The integration to register.
 	 */
@@ -38,7 +38,7 @@ class IntegrationRegistry {
 	}
 
 	/**
-	 * Get a Integration by ID.
+	 * Get an Integration by ID.
 	 *
 	 * @param string $id The ID of the Integration.
 	 * @return IntegrationInterface|null The Integration, or null if it is not registered.
