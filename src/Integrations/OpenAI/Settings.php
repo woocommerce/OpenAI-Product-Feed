@@ -1,37 +1,95 @@
 <?php
 /**
- * WooCommerce Agentic (Integrations) bridge.
- *
- * Adds OpenAI-specific fields to the WooCommerce Integrations > ChatGPT section
- * and persists them in the shared registry. This lets the plugin simplify its
- * own settings and rely on Woo core’s unified settings surface.
+ *  Settings Repository class.
  *
  * @package Automattic\WooCommerce\ProductFeedForOpenAI
  */
 
 declare(strict_types=1);
 
-namespace Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI;
+namespace Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
 /**
- * AgenticIntegration
+ * Settings repository implementation - stateless adapter to Woo core registry
  */
-class AgenticIntegration {
-
+class Settings {
 	/**
-	 * Register hooks.
+	 * Registers all needed hooks.
 	 */
-	public function register(): void {
+	public function register_hooks(): void {
 		// Add OpenAI fields to the ChatGPT provider in Woo Integrations.
 		add_filter( 'woocommerce_agentic_commerce_providers', [ $this, 'extend_providers' ], 10, 2 );
 
 		// Persist additional fields to the registry when Integrations are saved.
 		// Accept a single arg for forward compatibility; rely on $_POST for values.
 		add_filter( 'woocommerce_agentic_commerce_save_settings', [ $this, 'save_settings' ], 10, 1 );
+	}
+
+	/**
+	 * Get setting value.
+	 *
+	 * @param string $key The setting key.
+	 * @param mixed  $default_value Default value if key not found.
+	 * @return mixed The setting value.
+	 */
+	public function get( string $key, $default_value = '' ) {
+		$registry = $this->get_agentic_registry();
+		$openai   = $registry['openai'] ?? [];
+		$general  = $registry['general'] ?? [];
+
+		switch ( $key ) {
+			case 'privacy_url':
+				return function_exists( 'get_privacy_policy_url' )
+					? get_privacy_policy_url()
+					: $default_value;
+			case 'tos_url':
+			case 'returns_url':
+				return function_exists( 'wc_terms_and_conditions_page_id' )
+					? get_permalink( wc_terms_and_conditions_page_id() )
+					: $default_value;
+			case 'seller_name':
+				return get_bloginfo( 'name' );
+			case 'seller_url':
+				return function_exists( 'wc_get_page_permalink' )
+					? wc_get_page_permalink( 'shop' )
+					: home_url();
+			case 'endpoint_url':
+				$key = 'feed_url';
+				// No break.
+			default:
+				if ( ! empty( $openai[ $key ] ) ) {
+					$value = $openai[ $key ];
+					return is_string( $value ) ? trim( $value ) : $value;
+				}
+
+				return ! empty( $general[ $key ] )
+					? $general[ $key ]
+					: $default_value;
+		}
+	}
+
+	/**
+	 * Get the endpoint URL.
+	 *
+	 * @return string|null The endpoint URL.
+	 */
+	public function get_endpoint_url(): ?string {
+		/**
+		 * Allows the endpoint URL to be changed.
+		 *
+		 * @since 0.1.0
+		 * @todo Either change the prefix or remove `openai` from the name, depending on how the plugin is split.
+		 *
+		 * @param string $endpoint_url The endpoint URL.
+		 * @return string
+		 */
+		$endpoint_url = apply_filters( 'wpfoai_openai_endpoint_url', $this->get( 'endpoint_url', '' ) );
+
+		return ! empty( $endpoint_url ) ? $endpoint_url : null;
 	}
 
 	/**
@@ -103,5 +161,15 @@ class AgenticIntegration {
 		}
 
 		return $registry;
+	}
+
+	/**
+	 * Get the full Woo agentic registry option value.
+	 *
+	 * @return array
+	 */
+	private function get_agentic_registry(): array {
+		$val = get_option( 'woocommerce_agentic_agent_registry' );
+		return is_array( $val ) ? $val : [];
 	}
 }

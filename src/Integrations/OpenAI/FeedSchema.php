@@ -7,7 +7,7 @@
 
 declare(strict_types=1);
 
-namespace Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI;
+namespace Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

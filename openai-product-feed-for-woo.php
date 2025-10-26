@@ -34,9 +34,7 @@ require_once WPFOAI_PLUGIN_DIR . 'vendor/autoload.php';
 // Initialize plugin after all plugins are loaded to ensure WooCommerce is available.
 add_action(
 	'plugins_loaded',
-	function () {
-		\Automattic\WooCommerce\ProductFeedForOpenAI\Core\Plugin::get_instance();
-	}
+	[ \Automattic\WooCommerce\ProductFeedForOpenAI\Core\Plugin::class, 'get_instance' ]
 );
 
 add_action(

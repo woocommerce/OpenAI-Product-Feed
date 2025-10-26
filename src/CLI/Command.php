@@ -12,12 +12,11 @@ namespace Automattic\WooCommerce\ProductFeedForOpenAI\CLI;
 use RuntimeException;
 use WP_CLI;
 use WP_CLI_Command;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Core\IntegrationRegistry;
 use Automattic\WooCommerce\ProductFeedForOpenAI\DeliveryMethods\PushFile;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\FileBasedFeedInterface;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductWalker;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\WalkerProgress;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Settings\SettingsRepository;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\IntegrationRegistry;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Utils\MemoryManager;
 
 // This is CLI. Non-escaped content should not break it.
@@ -35,24 +34,14 @@ class Command extends WP_CLI_Command {
 	private IntegrationRegistry $integration_registry;
 
 	/**
-	 * Settings repository instance.
-	 *
-	 * @var SettingsRepository
-	 */
-	private SettingsRepository $settings;
-
-	/**
 	 * Dependency injector.
 	 *
 	 * @param IntegrationRegistry $integration_registry The integration registry.
-	 * @param SettingsRepository  $settings The settings repository.
 	 */
 	public function init(
-		IntegrationRegistry $integration_registry,
-		SettingsRepository $settings
+		IntegrationRegistry $integration_registry
 	) {
 		$this->integration_registry = $integration_registry;
-		$this->settings             = $settings;
 	}
 
 	/**
@@ -113,7 +102,7 @@ class Command extends WP_CLI_Command {
 		// Verify settings in advance if there is a requirement to send the feed.
 		$endpoint = null;
 		if ( $send ) {
-			$endpoint = $this->settings->get_endpoint_url();
+			$endpoint = $integration->get_push_endpoint_url();
 			if ( empty( $endpoint ) ) {
 				return WP_CLI::error( 'Endpoint URL is not configured. Aborting.' );
 			}
@@ -181,6 +170,6 @@ class Command extends WP_CLI_Command {
 		if ( ! $silent ) {
 			WP_CLI::success( 'Received a successful response from the API:' );
 		}
-		WP_CLI::print_value( $result->get_data() );
+		WP_CLI::print_value( json_decode( $result->get_data() ), [ 'format' => 'json' ] );
 	}
 }

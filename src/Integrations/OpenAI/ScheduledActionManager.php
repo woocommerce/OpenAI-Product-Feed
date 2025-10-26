@@ -1,17 +1,16 @@
 <?php
 /**
- *  Admin Controller class.
+ * Scheduled Action Manager class.
  *
  * @package Automattic\WooCommerce\ProductFeedForOpenAI
  */
 
 declare(strict_types=1);
 
-namespace Automattic\WooCommerce\ProductFeedForOpenAI\Admin\Controllers;
+namespace Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI;
 
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductWalker;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\OpenAIIntegration;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Settings\SettingsRepository;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI\OpenAIIntegration;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Storage\JsonFileFeed;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -19,22 +18,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Admin controller for handling admin interface functionality.
+ * Scheduled Action Manager for handling regular push for the feed.
  */
-class AdminController {
+class ScheduledActionManager {
 	/**
 	 * OpenAI integration instance.
 	 *
 	 * @var OpenAIIntegration
 	 */
 	private OpenAIIntegration $openai_integration;
-
-	/**
-	 * Settings repository instance.
-	 *
-	 * @var SettingsRepository
-	 */
-	private SettingsRepository $settings;
 
 	/**
 	 * Logger instance.
@@ -48,16 +40,11 @@ class AdminController {
 	/**
 	 * Dependencies injector.
 	 *
-	 * @param OpenAIIntegration  $openai_integration The OpenAI integration.
-	 * @param SettingsRepository $settings The settings repository.
+	 * @param OpenAIIntegration $openai_integration The OpenAI integration.
 	 */
-	public function init(
-		OpenAIIntegration $openai_integration,
-		SettingsRepository $settings
-	) {
+	public function init( OpenAIIntegration $openai_integration ) {
 		$this->openai_integration = $openai_integration;
 		$this->logger             = function_exists( 'wc_get_logger' ) ? wc_get_logger() : null;
-		$this->settings           = $settings;
 	}
 
 	/**
@@ -73,7 +60,7 @@ class AdminController {
 	public function scheduled_push(): void {
 		$headers = [ 'Content-Type' => 'application/json' ];
 
-		$endpoint = $this->settings->get_endpoint_url();
+		$endpoint = $this->openai_integration->get_push_endpoint_url();
 		if ( empty( $endpoint ) ) {
 			return;
 		}

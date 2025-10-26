@@ -7,7 +7,7 @@
 
 declare(strict_types=1);
 
-namespace Automattic\WooCommerce\ProductFeedForOpenAI\Platforms;
+namespace Automattic\WooCommerce\ProductFeedForOpenAI\Integrations;
 
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\FeedInterface;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\FeedValidatorInterface;
@@ -29,6 +29,27 @@ interface IntegrationInterface {
 	public function get_id(): string;
 
 	/**
+	 * Register hooks for the integration.
+	 *
+	 * @return void
+	 */
+	public function register_hooks(): void;
+
+	/**
+	 * Activate the integration.
+	 *
+	 * @return void
+	 */
+	public function activate(): void;
+
+	/**
+	 * Deactivate the integration.
+	 *
+	 * @return void
+	 */
+	public function deactivate(): void;
+
+	/**
 	 * Create a feed that is to be populated.
 	 *
 	 * @return FeedInterface The feed.
@@ -48,4 +69,14 @@ interface IntegrationInterface {
 	 * @return FeedValidatorInterface The feed validator.
 	 */
 	public function get_feed_validator(): FeedValidatorInterface;
+
+	/**
+	 * Get the endpoint URL for pushing feeds.
+	 *
+	 * As one of the next steps, rather than returning the URL from
+	 * the integration, the integration should set up the push mechanism.
+	 *
+	 * @return string|null The endpoint URL.
+	 */
+	public function get_push_endpoint_url(): ?string;
 }
