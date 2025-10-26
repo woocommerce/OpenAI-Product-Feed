@@ -12,9 +12,10 @@ namespace Automattic\WooCommerce\ProductFeedForOpenAI\CLI;
 use RuntimeException;
 use WP_CLI;
 use WP_CLI_Command;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\IntegrationRegistry;
+use Automattic\WooCommerce\ProductFeedForOpenAI\DeliveryMethods\PushFile;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductWalker;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\WalkerProgress;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\IntegrationRegistry;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Utils\MemoryManager;
 
 // This is CLI. Non-escaped content should not break it.
@@ -156,19 +157,13 @@ class Command extends WP_CLI_Command {
 			WP_CLI::log( 'Sending feed to API...' );
 		}
 
-		// Add the needed additional headers.
-		$headers = [];
-
-		$response = wp_remote_post(
-			$endpoint,
-			[
-				'headers' => $headers,
-				'timeout' => 30,
-				'body'    => file_get_contents( $feed->get_file_path() ), // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
-			]
-		);
+		$push   = new PushFile( $endpoint );
+		$result = $push->deliver( $feed );
 
 		// No need to do wonders with the response, just print it.
-		WP_CLI::print_value( json_decode( $response['body'] ), [ 'format' => 'json' ] );
+		if ( ! $silent ) {
+			WP_CLI::success( 'Received a successful response from the API:' );
+		}
+		WP_CLI::print_value( json_decode( $result->get_data() ), [ 'format' => 'json' ] );
 	}
 }
