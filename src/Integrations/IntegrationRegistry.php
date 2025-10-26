@@ -11,8 +11,6 @@ declare(strict_types=1);
 
 namespace Automattic\WooCommerce\ProductFeedForOpenAI\Integrations;
 
-use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\IntegrationInterface;
-
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
