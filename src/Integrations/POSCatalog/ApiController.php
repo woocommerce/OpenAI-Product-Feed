@@ -48,6 +48,13 @@ class ApiController {
 				'methods'             => 'GET', // @todo: Switch back to POST and add validation.
 				'callback'            => [ $this, 'generate_feed' ],
 				'permission_callback' => '__return_true', // @todo: This should be a proper permission callback.
+				'args'                => [
+					'force' => [
+						'type'        => 'boolean',
+						'default'     => false,
+						'description' => 'Force regeneration of the feed. NOOP if generation is in progress.',
+					],
+				],
 			]
 		);
 	}
@@ -59,6 +66,24 @@ class ApiController {
 	 * @return WP_REST_Response The response object.
 	 */
 	public function generate_feed( WP_REST_Request $request ) { // phpcs:ignore VariableAnalysis
-		return new WP_REST_Response( $this->container->get( AsyncGenerator::class )->get_status() );
+		$generator = $this->container->get( AsyncGenerator::class );
+		try {
+			$response = $request->get_param( 'force' ) ? $generator->force_regeneration() : $generator->get_status();
+			if ( isset( $response['action_id'] ) ) {
+				unset( $response['action_id'] );
+			}
+			if ( isset( $response['path'] ) ) {
+				unset( $response['path'] );
+			}
+		} catch ( \Exception $e ) {
+			return new WP_REST_Response(
+				[
+					'success' => false,
+					'message' => $e->getMessage(),
+				],
+				500
+			);
+		}
+		return new WP_REST_Response( $response );
 	}
 }

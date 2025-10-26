@@ -50,6 +50,13 @@ final class AsyncGenerator {
 	const FEED_EXPIRY = 20 * MINUTE_IN_SECONDS;
 
 	/**
+	 * Possible states of generation.
+	 */
+	const STATE_SCHEDULED   = 'scheduled';
+	const STATE_IN_PROGRESS = 'in_progress';
+	const STATE_COMPLETED   = 'completed';
+
+	/**
 	 * Integration instance.
 	 *
 	 * @var POSIntegration
@@ -93,7 +100,7 @@ final class AsyncGenerator {
 
 			$status = [
 				'action_id' => $action_id,
-				'status'    => 'scheduled',
+				'state'     => self::STATE_SCHEDULED,
 				'progress'  => 0,
 				'processed' => 0,
 				'total'     => -1,
@@ -106,10 +113,7 @@ final class AsyncGenerator {
 			);
 		}
 
-		// Respond with everything but the internal action ID.
-		$response = array_merge( [], $status );
-		unset( $response['action_id'] );
-		return $response;
+		return $status;
 	}
 
 	/**
@@ -120,12 +124,12 @@ final class AsyncGenerator {
 	public function feed_generation_action() {
 		$status = get_transient( self::TRANSIENT_KEY );
 
-		if ( 'scheduled' !== $status['status'] ) {
+		if ( self::STATE_SCHEDULED !== $status['state'] ) {
 			// We should log that something was not right here.
 			return;
 		}
 
-		$status['status'] = 'in_progress';
+		$status['state'] = self::STATE_IN_PROGRESS;
 		set_transient( self::TRANSIENT_KEY, $status, self::TIME_LIMIT );
 
 		$feed   = $this->integration->create_feed();
@@ -136,7 +140,6 @@ final class AsyncGenerator {
 		);
 
 		// Used while testing...
-		$walker->set_batch_size( 5 );
 		$walker->walk(
 			function ( WalkerProgress $progress ) use ( &$status ) {
 				$status = $this->update_feed_progress( $status, $progress );
@@ -145,9 +148,44 @@ final class AsyncGenerator {
 		);
 
 		// Store the final details.
-		$status['status'] = 'completed';
-		$status['url']    = $feed->get_file_url();
+		$status['state'] = self::STATE_COMPLETED;
+		$status['url']   = $feed->get_file_url();
+		$status['path']  = $feed->get_file_path();
 		set_transient( self::TRANSIENT_KEY, $status, self::FEED_EXPIRY );
+	}
+
+	/**
+	 * Forces a regeneration of the feed.
+	 *
+	 * @return array The feed generation status.
+	 * @throws \Exception When there is a reason why the regeneration cannot be forced.
+	 */
+	public function force_regeneration(): array {
+		$status = get_transient( self::TRANSIENT_KEY );
+
+		// If there is no transient or, there is nothing to force.
+		if ( false === $status ) {
+			return $this->get_status();
+		}
+
+		switch ( $status['state'] ?? '' ) {
+			case self::STATE_SCHEDULED:
+				// If generation is scheduled, we can just let it be and return the current status.
+				// It should start shortly.
+				return $status;
+
+			case self::STATE_IN_PROGRESS:
+				throw new \Exception( 'Feed generation is already in progress and cannot be stopped.' );
+
+			case self::STATE_COMPLETED:
+				// Delete the existing file, clear the transient and let generation start again..
+				wp_delete_file( $status['path'] );
+				delete_transient( self::TRANSIENT_KEY );
+				return $this->get_status();
+
+			default:
+				throw new \Exception( 'Unknown feed generation state.' );
+		}
 	}
 
 	/**
