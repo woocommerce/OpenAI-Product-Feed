@@ -1,10 +1,10 @@
 <?php
 declare( strict_types = 1 );
 
-use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI\ScheduledActionManager;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAi\ScheduledActionManager;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Core\DependencyManagement\Container;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI\OpenAIIntegration;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI\Settings;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAi\OpenAIIntegration;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAi\Settings;
 use PHPUnit\Framework\MockObject\MockObject;
 
 /**

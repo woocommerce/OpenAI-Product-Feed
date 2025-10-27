@@ -7,10 +7,10 @@
 
 declare(strict_types=1);
 
-namespace Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI;
+namespace Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAi;
 
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductWalker;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI\OpenAIIntegration;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAi\OpenAIIntegration;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Storage\JsonFileFeed;
 
 if ( ! defined( 'ABSPATH' ) ) {
