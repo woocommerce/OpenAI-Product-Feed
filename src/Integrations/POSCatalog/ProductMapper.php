@@ -203,36 +203,11 @@ class ProductMapper implements ProductMapperInterface {
 				'alt'               => get_post_meta( $attachment_id, '_wp_attachment_image_alt', true ),
 				'srcset'            => (string) wp_get_attachment_image_srcset( $attachment_id, 'full' ),
 				'sizes'             => (string) wp_get_attachment_image_sizes( $attachment_id, 'full' ),
-				'thumbnail'         => current( $thumbnail ),
+				'thumbnail'         => is_array( $thumbnail ) ? current( $thumbnail ) : '',
 			];
 		}
 
 		return $images;
-	}
-
-	/**
-	 * Get image data for a single attachment
-	 *
-	 * @param int $attachment_id Attachment ID.
-	 * @param int $position Image position.
-	 * @return array|null Image data array or null if invalid.
-	 */
-	protected function get_image_data( int $attachment_id, int $position ): ?array {
-		$image_url = wp_get_attachment_url( $attachment_id );
-		if ( ! $image_url ) {
-			return null;
-		}
-
-		$attachment = get_post( $attachment_id );
-		$alt        = get_post_meta( $attachment_id, '_wp_attachment_image_alt', true );
-
-		return [
-			'id'       => $attachment_id,
-			'src'      => $image_url,
-			'title'    => $attachment ? get_the_title( $attachment_id ) : '',
-			'alt'      => $alt ? $alt : '',
-			'position' => $position,
-		];
 	}
 
 	/**
