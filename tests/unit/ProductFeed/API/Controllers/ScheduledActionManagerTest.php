@@ -3,9 +3,9 @@ declare( strict_types = 1 );
 
 use PHPUnit\Framework\MockObject\MockObject;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Core\DependencyManagement\Container;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI\ScheduledActionManager;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI\Settings;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI\OpenAIIntegration;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAi\ScheduledActionManager;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAi\Settings;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAi\OpenAiIntegration;
 
 /**
  * Admin controller test class.
@@ -39,7 +39,7 @@ class ScheduledActionManagerTest extends WC_Unit_Test_Case {
 		$this->mock_logger   = $this->createMock( WC_Logger::class );
 		add_filter( 'woocommerce_logging_class', fn() => $this->mock_logger );
 
-		$integration = new OpenAIIntegration();
+		$integration = new OpenAiIntegration();
 		$integration->init(
 			wpfoai_get_service( Container::class ),
 			$this->mock_settings

@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * OpenAI Provider
  */
-class OpenAIIntegration implements IntegrationInterface, PushIntegrationInterface {
+class OpenAiIntegration implements IntegrationInterface, PushIntegrationInterface {
 	/**
 	 * Container instance.
 	 *

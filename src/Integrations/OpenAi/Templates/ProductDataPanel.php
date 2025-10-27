@@ -9,7 +9,7 @@
 
 declare(strict_types=1);
 
-use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI\ProductFieldsController;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAi\ProductFieldsController;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

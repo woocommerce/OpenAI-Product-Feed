@@ -11,8 +11,8 @@ namespace Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI;
 
 use Automattic\WooCommerce\Enums\ProductType;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductMapperInterface;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI\Settings;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI\FeedSchema;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAi\Settings;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAi\FeedSchema;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Utils\StringHelper;
 use RuntimeException;
 

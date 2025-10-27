@@ -10,7 +10,7 @@ declare(strict_types=1);
 namespace Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI;
 
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\FeedValidatorInterface;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAI\FeedSchema;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAi\FeedSchema;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
