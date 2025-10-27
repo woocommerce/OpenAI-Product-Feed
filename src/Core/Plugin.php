@@ -9,12 +9,10 @@ declare(strict_types=1);
 
 namespace Automattic\WooCommerce\ProductFeedForOpenAI\Core;
 
-use Automattic\WooCommerce\ProductFeedForOpenAI\Admin\Controllers\AdminController;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\ProductFieldsController;
 use Automattic\WooCommerce\ProductFeedForOpenAI\CLI\Command;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\AgenticIntegration;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Core\DependencyManagement\Container;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\DevHelpers;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\IntegrationRegistry;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAi\OpenAiIntegration;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -24,14 +22,6 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Main plugin class - refactored to use dependency injection
  */
 final class Plugin {
-
-	/**
-	 * Plugin instance.
-	 *
-	 * @var Plugin|null
-	 */
-	private static ?Plugin $instance = null;
-
 	/**
 	 * Dependency injection container.
 	 *
@@ -40,11 +30,11 @@ final class Plugin {
 	private Container $container;
 
 	/**
-	 * Whether plugin has been initialized.
+	 * Integration registry.
 	 *
-	 * @var bool
+	 * @var IntegrationRegistry
 	 */
-	private bool $initialized = false;
+	private IntegrationRegistry $integration_registry;
 
 	/**
 	 * Get singleton instance.
@@ -52,10 +42,11 @@ final class Plugin {
 	 * @return Plugin The plugin instance.
 	 */
 	public static function get_instance(): Plugin {
-		if ( null === self::$instance ) {
-			self::$instance = new self();
+		static $instance;
+		if ( null === $instance ) {
+			$instance = new self();
 		}
-		return self::$instance;
+		return $instance;
 	}
 
 	/**
@@ -63,52 +54,39 @@ final class Plugin {
 	 */
 	private function __construct() {
 		$this->container = new Container();
-	}
 
-	/**
-	 * Initialize plugin
-	 */
-	public function initialize(): void {
-		if ( $this->initialized ) {
-			return;
-		}
+		// Prepare all providers.
+		$this->integration_registry = $this->container->get( IntegrationRegistry::class );
+		$this->integration_registry->register_integration( $this->container->get( OpenAiIntegration::class ) );
 
+		// Immediately initialize by adding the necessary top-level hooks.
 		if ( ! class_exists( 'WooCommerce' ) ) {
 			add_action( 'admin_notices', [ $this, 'show_woo_commerce_missing_notice' ] );
-			$this->initialized = true;
 			return;
 		}
 
-		// Initialize components on WordPress init hook.
-		add_action( 'init', [ $this, 'init' ], 0 );
-
-		// Register the CLI command as well.
-		if ( defined( 'WP_CLI' ) && WP_CLI ) {
-			add_action( 'cli_init', [ $this, 'register_cli_commands' ] );
-		}
-
-		$this->initialized = true;
+		add_action( 'init', [ $this, 'register_hooks' ], 0 );
+		add_action( 'cli_init', [ $this, 'register_cli_commands' ] );
 	}
 
 	/**
 	 * Initialize plugin components
 	 */
-	public function init(): void {
-		// Bridge into Woo Integrations (ChatGPT provider) for simplified settings.
-		$this->container->get( AgenticIntegration::class )->register();
-
-		// Initialize admin controller (no separate settings tab; configuration lives under Integrations → ChatGPT).
-		$this->container->get( AdminController::class )->initialize();
-
-		$this->container->get( ProductFieldsController::class )->initialize();
-
-		$this->container->get( DevHelpers::class )->initialize();
+	public function register_hooks(): void {
+		// Let all integrations register their hooks.
+		foreach ( $this->integration_registry->get_integrations() as $integration ) {
+			$integration->register_hooks();
+		}
 	}
 
 	/**
 	 * Register WP-CLI commands.
 	 */
 	public function register_cli_commands(): void {
+		if ( ! defined( 'WP_CLI' ) || ! WP_CLI ) {
+			return;
+		}
+
 		$command = $this->container->get( Command::class );
 		\WP_CLI::add_command( 'product-feed', $command );
 	}
@@ -127,8 +105,8 @@ final class Plugin {
 			);
 		}
 
-		if ( ! as_has_scheduled_action( AdminController::SCHEDULED_ACTION_HOOK ) ) {
-			as_schedule_recurring_action( time(), 60 * 15, AdminController::SCHEDULED_ACTION_HOOK );
+		foreach ( $this->integration_registry->get_integrations() as $integration ) {
+			$integration->activate();
 		}
 	}
 
@@ -136,9 +114,8 @@ final class Plugin {
 	 * Plugin deactivation
 	 */
 	public function deactivate(): void {
-		// Clean up scheduled events using Action Scheduler.
-		if ( function_exists( 'as_cancel_all_actions' ) ) {
-			as_cancel_all_actions( 'wpfoai_push_feed_event' );
+		foreach ( $this->integration_registry->get_integrations() as $integration ) {
+			$integration->deactivate();
 		}
 	}
 

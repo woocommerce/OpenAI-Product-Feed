@@ -9,58 +9,37 @@ declare(strict_types=1);
 
 namespace Automattic\WooCommerce\ProductFeedForOpenAI\CLI;
 
+use RuntimeException;
 use WP_CLI;
 use WP_CLI_Command;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\FeedValidatorInterface;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductMapperInterface;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\IntegrationRegistry;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductWalker;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\WalkerProgress;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\FeedValidator;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Platforms\OpenAI\ProductMapper;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Settings\SettingsRepository;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Storage\JsonFileFeed;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Utils\MemoryManager;
+
+// This is CLI. Non-escaped content should not break it.
+// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 
 /**
  * CLI command for generating a product feed.
  */
 class Command extends WP_CLI_Command {
 	/**
-	 * Product mapper instance.
+	 * Integration registry instance.
 	 *
-	 * @var ProductMapperInterface
+	 * @var IntegrationRegistry
 	 */
-	private ProductMapperInterface $product_mapper;
-
-	/**
-	 * Feed validator instance.
-	 *
-	 * @var FeedValidatorInterface
-	 */
-	private FeedValidatorInterface $validator;
-
-	/**
-	 * Settings repository instance.
-	 *
-	 * @var SettingsRepository
-	 */
-	private SettingsRepository $settings;
+	private IntegrationRegistry $integration_registry;
 
 	/**
 	 * Dependency injector.
 	 *
-	 * @param ProductMapper      $product_mapper The product mapper.
-	 * @param FeedValidator      $validator The feed validator.
-	 * @param SettingsRepository $settings The settings repository.
+	 * @param IntegrationRegistry $integration_registry The integration registry.
 	 */
 	public function init(
-		ProductMapper $product_mapper,
-		FeedValidator $validator,
-		SettingsRepository $settings
+		IntegrationRegistry $integration_registry
 	) {
-		$this->product_mapper = $product_mapper;
-		$this->validator      = $validator;
-		$this->settings       = $settings;
+		$this->integration_registry = $integration_registry;
 	}
 
 	/**
@@ -110,18 +89,26 @@ class Command extends WP_CLI_Command {
 		$silent     = (bool) \WP_CLI\Utils\get_flag_value( $assoc_args, 'silent', false );
 		$send       = (bool) \WP_CLI\Utils\get_flag_value( $assoc_args, 'send', false );
 
+		if ( ! isset( $assoc_args['integration'] ) ) {
+			return WP_CLI::error( 'Please provide the required --integration=<integration> parameter' );
+		}
+		$integration = $this->integration_registry->get_integration( $assoc_args['integration'] );
+		if ( null === $integration ) {
+			return WP_CLI::error( 'Integration not found' );
+		}
+
 		// Verify settings in advance if there is a requirement to send the feed.
 		$endpoint = null;
 		if ( $send ) {
-			$endpoint = $this->settings->get_endpoint_url();
+			$endpoint = $integration->get_push_endpoint_url();
 			if ( empty( $endpoint ) ) {
 				return WP_CLI::error( 'Endpoint URL is not configured. Aborting.' );
 			}
 		}
 
 		// Initialize the feed and walker, set them up.
-		$feed   = new JsonFileFeed( 'openai-feed' );
-		$walker = new ProductWalker( $this->product_mapper, $this->validator, $feed );
+		$feed   = $integration->create_feed();
+		$walker = new ProductWalker( $integration->get_product_mapper(), $integration->get_feed_validator(), $feed );
 		$walker->set_batch_size( $batch_size );
 		$walker->add_time_limit( $timeout );
 
@@ -182,6 +169,6 @@ class Command extends WP_CLI_Command {
 		);
 
 		// No need to do wonders with the response, just print it.
-		WP_CLI::print_value( $response );
+		WP_CLI::print_value( json_decode( $response['body'] ), [ 'format' => 'json' ] );
 	}
 }

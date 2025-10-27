@@ -32,4 +32,11 @@ interface FeedInterface {
 	 * @return void
 	 */
 	public function end(): void;
+
+	/**
+	 * Get the file path of the feed.
+	 *
+	 * @return string
+	 */
+	public function get_file_path(): string;
 }
