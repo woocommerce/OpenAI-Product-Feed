@@ -35,18 +35,11 @@ final class AsyncGenerator {
 	const FEED_DELETION_ACTION = 'wpfoai_pos_catalog_feed_deletion';
 
 	/**
-	 * The transient key for the feed generation status.
+	 * The option key for the feed generation status.
 	 *
 	 * @var string
 	 */
-	const TRANSIENT_KEY = 'pos_feed_status';
-
-	/**
-	 * The time limit for each batch.
-	 *
-	 * @var int
-	 */
-	const TIME_LIMIT = 5 * MINUTE_IN_SECONDS;
+	const OPTION_KEY = 'pos_feed_status';
 
 	/**
 	 * Feed expiry time, once completed.
@@ -96,7 +89,7 @@ final class AsyncGenerator {
 	 * @return array The feed generation status.
 	 */
 	public function get_status(): array {
-		$status = get_transient( self::TRANSIENT_KEY );
+		$status = get_option( self::OPTION_KEY );
 
 		if ( false === $status ) {
 			// Clear all previous actions to avoid race conditions.
@@ -114,10 +107,9 @@ final class AsyncGenerator {
 				'total'     => -1,
 			];
 
-			set_transient(
-				self::TRANSIENT_KEY,
-				$status,
-				self::TIME_LIMIT + $delay,
+			update_option(
+				self::OPTION_KEY,
+				$status
 			);
 		}
 
@@ -130,7 +122,7 @@ final class AsyncGenerator {
 	 * @return void
 	 */
 	public function feed_generation_action() {
-		$status = get_transient( self::TRANSIENT_KEY );
+		$status = get_option( self::OPTION_KEY );
 
 		if ( self::STATE_SCHEDULED !== $status['state'] ) {
 			// We should log that something was not right here.
@@ -138,7 +130,7 @@ final class AsyncGenerator {
 		}
 
 		$status['state'] = self::STATE_IN_PROGRESS;
-		set_transient( self::TRANSIENT_KEY, $status, self::TIME_LIMIT );
+		update_option( self::OPTION_KEY, $status );
 
 		$feed   = $this->integration->create_feed();
 		$walker = new ProductWalker(
@@ -151,7 +143,7 @@ final class AsyncGenerator {
 		$walker->walk(
 			function ( WalkerProgress $progress ) use ( &$status ) {
 				$status = $this->update_feed_progress( $status, $progress );
-				set_transient( self::TRANSIENT_KEY, $status, self::TIME_LIMIT );
+				update_option( self::OPTION_KEY, $status );
 			}
 		);
 
@@ -159,7 +151,7 @@ final class AsyncGenerator {
 		$status['state'] = self::STATE_COMPLETED;
 		$status['url']   = $feed->get_file_url();
 		$status['path']  = $feed->get_file_path();
-		set_transient( self::TRANSIENT_KEY, $status, self::FEED_EXPIRY );
+		update_option( self::OPTION_KEY, $status );
 
 		// Schedule another action to delete the file after the expiry time.
 		as_schedule_single_action(
@@ -176,9 +168,9 @@ final class AsyncGenerator {
 	 * @throws \Exception When there is a reason why the regeneration cannot be forced.
 	 */
 	public function force_regeneration(): array {
-		$status = get_transient( self::TRANSIENT_KEY );
+		$status = get_option( self::OPTION_KEY );
 
-		// If there is no transient or, there is nothing to force.
+		// If there is no optionr, there is nothing to force.
 		if ( false === $status ) {
 			return $this->get_status();
 		}
@@ -193,9 +185,9 @@ final class AsyncGenerator {
 				throw new \Exception( 'Feed generation is already in progress and cannot be stopped.' );
 
 			case self::STATE_COMPLETED:
-				// Delete the existing file, clear the transient and let generation start again..
+				// Delete the existing file, clear the option and let generation start again..
 				wp_delete_file( $status['path'] );
-				delete_transient( self::TRANSIENT_KEY );
+				delete_option( self::OPTION_KEY );
 				return $this->get_status();
 
 			default:
@@ -212,6 +204,7 @@ final class AsyncGenerator {
 	public function feed_deletion_action( array $args ) {
 		$path = $args['path'];
 		wp_delete_file( $path );
+		delete_option( self::OPTION_KEY );
 	}
 
 	/**
