@@ -169,6 +169,6 @@ class Command extends WP_CLI_Command {
 		if ( ! $silent ) {
 			WP_CLI::success( 'Received a successful response from the API:' );
 		}
-		WP_CLI::print_value( json_decode( $result->get_data() ), [ 'format' => 'json' ] );
+		WP_CLI::print_value( $result, [ 'format' => 'json' ] );
 	}
 }

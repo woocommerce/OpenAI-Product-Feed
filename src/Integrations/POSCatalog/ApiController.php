@@ -76,7 +76,7 @@ class ApiController {
 	 * @param WP_REST_Request $request The request object.
 	 * @return WP_REST_Response The response object.
 	 */
-	public function generate_feed( WP_REST_Request $request ) { // phpcs:ignore VariableAnalysis
+	public function generate_feed( WP_REST_Request $request ) {
 		$generator = $this->container->get( AsyncGenerator::class );
 		try {
 			$response = $request->get_param( 'force' ) ? $generator->force_regeneration() : $generator->get_status();

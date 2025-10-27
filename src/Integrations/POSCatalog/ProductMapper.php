@@ -49,9 +49,8 @@ class ProductMapper implements ProductMapperInterface {
 		 * Filter mapped catalog product data.
 		 *
 		 * @since 1.0.0
-		 * @param array            $row     Mapped product data.
-		 * @param WC_Product      $product Product object.
-		 * @param WC_Product|null $parent_product Parent product for variations.
+		 * @param array      $row     Mapped product data.
+		 * @param WC_Product $product Product object.
 		 */
 		return apply_filters( 'oapfw_map_catalog_product', $row, $product );
 	}
@@ -156,7 +155,7 @@ class ProductMapper implements ProductMapperInterface {
 	 * @param WC_Product $product Product object.
 	 * @return int Parent product ID or 0.
 	 */
-	protected function get_parent_id( WC_Product $product ): ?int {
+	protected function get_parent_id( WC_Product $product ): int {
 		return $product->is_type( 'variation' ) ? $product->get_parent_id() : 0;
 	}
 

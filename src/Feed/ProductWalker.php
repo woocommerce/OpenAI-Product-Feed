@@ -36,9 +36,9 @@ class ProductWalker {
 	/**
 	 * The feed validator.
 	 *
-	 * @var FeedValidatorInterface|null
+	 * @var FeedValidatorInterface
 	 */
-	private $validator = null;
+	private $validator;
 
 	/**
 	 * The number of products to iterate through per batch.

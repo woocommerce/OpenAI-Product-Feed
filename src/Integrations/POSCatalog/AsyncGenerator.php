@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 final class AsyncGenerator {
 	/**
-	 * The Action Scheduleraction hook for the feed generation.
+	 * The Action Scheduler action hook for the feed generation.
 	 *
 	 * @var string
 	 */
@@ -124,7 +124,7 @@ final class AsyncGenerator {
 	public function feed_generation_action() {
 		$status = get_option( self::OPTION_KEY );
 
-		if ( self::STATE_SCHEDULED !== $status['state'] ) {
+		if ( ! is_array( $status ) || ! isset( $status['state'] ) || self::STATE_SCHEDULED !== $status['state'] ) {
 			// We should log that something was not right here.
 			return;
 		}
@@ -169,7 +169,7 @@ final class AsyncGenerator {
 	public function force_regeneration(): array {
 		$status = get_option( self::OPTION_KEY );
 
-		// If there is no optionr, there is nothing to force.
+		// If there is no option, there is nothing to force.
 		if ( false === $status ) {
 			return $this->get_status();
 		}
@@ -184,7 +184,7 @@ final class AsyncGenerator {
 				throw new \Exception( 'Feed generation is already in progress and cannot be stopped.' );
 
 			case self::STATE_COMPLETED:
-				// Delete the existing file, clear the option and let generation start again..
+				// Delete the existing file, clear the option and let generation start again.
 				wp_delete_file( $status['path'] );
 				delete_option( self::OPTION_KEY );
 				return $this->get_status();
@@ -214,7 +214,9 @@ final class AsyncGenerator {
 	 * @return array                   Updated status of the feed generation.
 	 */
 	private function update_feed_progress( array $status, WalkerProgress $progress ): array {
-		$status['progress']  = round( ( $progress->processed_items / $progress->total_count ) * 100, 2 );
+		$status['progress']  = $progress->total_count > 0
+			? round( ( $progress->processed_items / $progress->total_count ) * 100, 2 )
+			: 0;
 		$status['processed'] = $progress->processed_items;
 		$status['total']     = $progress->total_count;
 		return $status;

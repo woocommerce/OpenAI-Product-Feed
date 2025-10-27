@@ -62,7 +62,7 @@ class PushFile implements FileDeliveryInterface {
 		 * @param array|null $pre The pre-request data.
 		 * @param string     $path The path to the feed file.
 		 * @param string     $endpoint The endpoint to push the feed to.
-		 * @return callable|null The pre-request action.
+		 * @return array|null Short-circuit response (same shape as deliver()) or null.
 		 * @since 0.1.0
 		 * @internal This filter should only be used for testing purposes.
 		 */
@@ -71,12 +71,14 @@ class PushFile implements FileDeliveryInterface {
 			return $pre;
 		}
 
+		$file_handle = fopen( $path, 'rb' );
+
 		$ch = curl_init( $this->endpoint );
 		curl_setopt_array(
 			$ch,
 			[
 				CURLOPT_POST           => true,
-				CURLOPT_INFILE         => fopen( $path, 'rb' ),
+				CURLOPT_INFILE         => $file_handle,
 				CURLOPT_INFILESIZE     => filesize( $path ),
 				CURLOPT_RETURNTRANSFER => true,
 				CURLOPT_HTTPHEADER     => [
@@ -96,6 +98,7 @@ class PushFile implements FileDeliveryInterface {
 			throw new RuntimeException( esc_html( 'Received non-200 HTTP code: ' . $http_code ) );
 		}
 		curl_close( $ch );
+		fclose( $file_handle );
 
 		return [
 			'body'      => $response,
