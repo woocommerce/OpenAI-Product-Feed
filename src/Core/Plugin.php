@@ -55,6 +55,10 @@ final class Plugin {
 	private function __construct() {
 		$this->container = new Container();
 
+		// Prepare all providers.
+		$this->integration_registry = $this->container->get( IntegrationRegistry::class );
+		$this->integration_registry->register_integration( $this->container->get( OpenAiIntegration::class ) );
+
 		// Immediately initialize by adding the necessary top-level hooks.
 		if ( ! class_exists( 'WooCommerce' ) ) {
 			add_action( 'admin_notices', [ $this, 'show_woo_commerce_missing_notice' ] );
@@ -63,10 +67,6 @@ final class Plugin {
 
 		add_action( 'init', [ $this, 'register_hooks' ], 0 );
 		add_action( 'cli_init', [ $this, 'register_cli_commands' ] );
-
-		// Prepare all providers.
-		$this->integration_registry = $this->container->get( IntegrationRegistry::class );
-		$this->integration_registry->register_integration( $this->container->get( OpenAiIntegration::class ) );
 	}
 
 	/**
