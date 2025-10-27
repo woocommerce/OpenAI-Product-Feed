@@ -125,7 +125,7 @@ final class AsyncGenerator {
 		$status = get_option( self::OPTION_KEY );
 
 		if ( ! is_array( $status ) || ! isset( $status['state'] ) || self::STATE_SCHEDULED !== $status['state'] ) {
-			// We should log that something was not right here.
+			wc_get_logger()->error( 'Invalid feed generation status', [ 'status' => $status ] );
 			return;
 		}
 
