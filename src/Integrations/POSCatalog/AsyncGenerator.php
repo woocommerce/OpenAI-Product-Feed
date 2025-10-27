@@ -139,7 +139,6 @@ final class AsyncGenerator {
 			$feed
 		);
 
-		// Used while testing...
 		$walker->walk(
 			function ( WalkerProgress $progress ) use ( &$status ) {
 				$status = $this->update_feed_progress( $status, $progress );

@@ -45,9 +45,9 @@ class ApiController {
 			self::ROUTE_NAMESPACE,
 			'/create',
 			[
-				'methods'             => 'GET', // @todo: Switch back to POST and add validation.
+				'methods'             => 'POST',
 				'callback'            => [ $this, 'generate_feed' ],
-				'permission_callback' => '__return_true', // @todo: This should be a proper permission callback.
+				'permission_callback' => [ $this, 'is_authorized' ],
 				'args'                => [
 					'force' => [
 						'type'        => 'boolean',
@@ -56,6 +56,17 @@ class ApiController {
 					],
 				],
 			]
+		);
+	}
+
+	/**
+	 * Checks if the current user has the necessary permissions to access the API.
+	 *
+	 * @return bool True if the user has the necessary permissions, false otherwise.
+	 */
+	public function is_authorized() {
+		return is_user_logged_in() && (
+			current_user_can( 'manage_woocommerce' ) || current_user_can( 'manage_options' )
 		);
 	}
 
