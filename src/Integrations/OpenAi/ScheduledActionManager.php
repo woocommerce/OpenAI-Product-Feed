@@ -11,7 +11,6 @@ namespace Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAi;
 
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductWalker;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAi\OpenAiIntegration;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Storage\JsonFileFeed;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -65,7 +64,7 @@ class ScheduledActionManager {
 			return;
 		}
 
-		$feed   = new JsonFileFeed( 'openai-feed' );
+		$feed   = $this->openai_integration->create_feed();
 		$walker = new ProductWalker(
 			$this->openai_integration->get_product_mapper(),
 			$this->openai_integration->get_feed_validator(),
