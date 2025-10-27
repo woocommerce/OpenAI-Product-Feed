@@ -12,7 +12,7 @@ namespace Automattic\WooCommerce\ProductFeedForOpenAI\Core;
 use Automattic\WooCommerce\ProductFeedForOpenAI\CLI\Command;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Core\DependencyManagement\Container;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\IntegrationRegistry;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAi\OpenAIIntegration;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAi\OpenAiIntegration;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -66,7 +66,7 @@ final class Plugin {
 
 		// Prepare all providers.
 		$this->integration_registry = $this->container->get( IntegrationRegistry::class );
-		$this->integration_registry->register_integration( $this->container->get( OpenAIIntegration::class ) );
+		$this->integration_registry->register_integration( $this->container->get( OpenAiIntegration::class ) );
 	}
 
 	/**

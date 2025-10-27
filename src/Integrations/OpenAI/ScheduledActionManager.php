@@ -10,7 +10,7 @@ declare(strict_types=1);
 namespace Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAi;
 
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductWalker;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAi\OpenAIIntegration;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAi\OpenAiIntegration;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Storage\JsonFileFeed;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -24,9 +24,9 @@ class ScheduledActionManager {
 	/**
 	 * OpenAI integration instance.
 	 *
-	 * @var OpenAIIntegration
+	 * @var OpenAiIntegration
 	 */
-	private OpenAIIntegration $openai_integration;
+	private OpenAiIntegration $openai_integration;
 
 	/**
 	 * Logger instance.
@@ -40,9 +40,9 @@ class ScheduledActionManager {
 	/**
 	 * Dependencies injector.
 	 *
-	 * @param OpenAIIntegration $openai_integration The OpenAI integration.
+	 * @param OpenAiIntegration $openai_integration The OpenAI integration.
 	 */
-	public function init( OpenAIIntegration $openai_integration ) {
+	public function init( OpenAiIntegration $openai_integration ) {
 		$this->openai_integration = $openai_integration;
 		$this->logger             = function_exists( 'wc_get_logger' ) ? wc_get_logger() : null;
 	}
