@@ -106,9 +106,9 @@ class POSIntegration implements IntegrationInterface {
 	/**
 	 * Get the feed validator for the provider.
 	 *
-	 * @return FeedValidatorInterface|null The feed validator.
+	 * @return FeedValidatorInterface The feed validator.
 	 */
-	public function get_feed_validator(): ?FeedValidatorInterface {
+	public function get_feed_validator(): FeedValidatorInterface {
 		return $this->container->get( FeedValidator::class );
 	}
 }

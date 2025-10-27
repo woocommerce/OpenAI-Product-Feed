@@ -66,7 +66,7 @@ interface IntegrationInterface {
 	/**
 	 * Get the feed validator for the provider.
 	 *
-	 * @return FeedValidatorInterface|null The feed validator. Null if none is needed.
+	 * @return FeedValidatorInterface The feed validator.
 	 */
-	public function get_feed_validator(): ?FeedValidatorInterface;
+	public function get_feed_validator(): FeedValidatorInterface;
 }
