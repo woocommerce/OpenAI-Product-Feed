@@ -74,7 +74,7 @@ final class Plugin {
 	 */
 	public function register_hooks(): void {
 		// Let all integrations register their hooks.
-		foreach ( $this->container->get( IntegrationRegistry::class )->get_integrations() as $integration ) {
+		foreach ( $this->integration_registry->get_integrations() as $integration ) {
 			$integration->register_hooks();
 		}
 	}
