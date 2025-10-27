@@ -72,11 +72,13 @@ class ScheduledActionManagerTest extends WC_Unit_Test_Case {
 		$product->save();
 
 		add_filter(
-			'pre_http_request',
-			function ( $pre, $args, $url ) use ( $endpoint_url, $product ) {
+			'wpfoai_push_file_pre_request',
+			function ( $pre, $file_path, $url ) use ( $endpoint_url, $product ) {
 				$this->assertEquals( $endpoint_url, $url );
 
-				$body = json_decode( $args['body'], true );
+				// PHPCS thinks `file_get_contents` is a remote call.
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+				$body = json_decode( file_get_contents( $file_path ), true );
 				$this->assertIsArray( $body );
 				$this->assertCount( 1, $body );
 				$this->assertEquals( $product->get_id(), $body[0]['id'] );

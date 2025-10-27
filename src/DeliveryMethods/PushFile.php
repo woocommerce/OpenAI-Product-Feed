@@ -9,7 +9,6 @@ namespace Automattic\WooCommerce\ProductFeedForOpenAI\DeliveryMethods;
 
 use RuntimeException;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\FeedInterface;
-use WP_REST_Response;
 
 // This file uses cURL heavily. It's a requirement for the plugin.
 // phpcs:disable WordPress.WP.AlternativeFunctions
@@ -50,12 +49,27 @@ class PushFile implements FileDeliveryInterface {
 	 * That will be one of the next PRs.
 	 *
 	 * @param FeedInterface $feed The feed to deliver.
-	 * @return WP_REST_Response The response from the remote endpoint.
+	 * @return array The response from the remote endpoint.
 	 * @throws RuntimeException If the request fails.
 	 * @throws RuntimeException If the HTTP code is not between 200 and 299.
 	 */
-	public function deliver( FeedInterface $feed ): WP_REST_Response {
+	public function deliver( FeedInterface $feed ): array {
 		$path = $feed->get_file_path();
+
+		/**
+		 * Allows the request to be pre-processed.
+		 *
+		 * @param array|null $pre The pre-request data.
+		 * @param string     $path The path to the feed file.
+		 * @param string     $endpoint The endpoint to push the feed to.
+		 * @return callable|null The pre-request action.
+		 * @since 0.1.0
+		 * @internal This filter should only be used for testing purposes.
+		 */
+		$pre = apply_filters( 'wpfoai_push_file_pre_request', null, $path, $this->endpoint );
+		if ( ! is_null( $pre ) ) {
+			return $pre;
+		}
 
 		$ch = curl_init( $this->endpoint );
 		curl_setopt_array(
@@ -83,6 +97,9 @@ class PushFile implements FileDeliveryInterface {
 		}
 		curl_close( $ch );
 
-		return new WP_REST_Response( $response, $http_code );
+		return [
+			'body'      => $response,
+			'http_code' => $http_code,
+		];
 	}
 }
