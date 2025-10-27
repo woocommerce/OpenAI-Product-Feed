@@ -140,6 +140,6 @@ class OpenAiIntegration implements IntegrationInterface, PushIntegrationInterfac
 	 * @return FileDeliveryInterface The push delivery method.
 	 */
 	public function get_push_delivery_method(): FileDeliveryInterface {
-		return new PushFile( $this->settings->get_endpoint_url() );
+		return new PushFile( $this->settings->get_endpoint_url() ?? '' );
 	}
 }
