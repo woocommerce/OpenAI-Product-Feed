@@ -37,7 +37,6 @@ class ScheduledActionManagerTest extends WC_Unit_Test_Case {
 
 		$this->mock_settings = $this->createMock( Settings::class );
 		$this->mock_logger   = $this->createMock( WC_Logger::class );
-		add_filter( 'woocommerce_logging_class', fn() => $this->mock_logger );
 
 		$integration = new OpenAiIntegration();
 		$integration->init(
@@ -46,7 +45,7 @@ class ScheduledActionManagerTest extends WC_Unit_Test_Case {
 		);
 
 		$this->sut = new ScheduledActionManager();
-		$this->sut->init( $integration );
+		$this->sut->init( $integration, $this->mock_logger );
 	}
 
 	public function tearDown(): void {
