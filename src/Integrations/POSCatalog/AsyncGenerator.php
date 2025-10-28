@@ -35,13 +35,6 @@ final class AsyncGenerator {
 	const FEED_DELETION_ACTION = 'wpfoai_pos_catalog_feed_deletion';
 
 	/**
-	 * The option key for the feed generation status.
-	 *
-	 * @var string
-	 */
-	const OPTION_KEY = 'pos_feed_status';
-
-	/**
 	 * Feed expiry time, once completed.
 	 * If the feed is not downloaded within this timeframe, a new one will need to be generated.
 	 *
@@ -79,25 +72,33 @@ final class AsyncGenerator {
 	 */
 	public function register_hooks(): void {
 		add_action( self::FEED_GENERATION_ACTION, [ $this, 'feed_generation_action' ] );
-		add_action( self::FEED_DELETION_ACTION, [ $this, 'feed_deletion_action' ] );
+		add_action( self::FEED_DELETION_ACTION, [ $this, 'feed_deletion_action' ], 10, 2 );
 	}
 
 	/**
 	 * Returns the current feed generation status.
 	 * Initiates one if not already running.
 	 *
-	 * @return array The feed generation status.
+	 * @param array|null $args The arguments to pass to the action.
+	 * @return array           The feed generation status.
 	 */
-	public function get_status(): array {
-		$status = get_option( self::OPTION_KEY );
+	public function get_status( ?array $args = null ): array {
+		// Determine the option key based on the integration ID and arguments.
+		$option_key = $this->get_option_key( $args );
+
+		$status = get_option( $option_key );
 
 		if ( false === $status ) {
 			// Clear all previous actions to avoid race conditions.
-			as_unschedule_all_actions( self::FEED_GENERATION_ACTION );
+			as_unschedule_all_actions( self::FEED_GENERATION_ACTION, [ 'option_key' => $option_key ] );
 
 			// Add a bit of delay to avoid race conditions.
 			$delay     = 10;
-			$action_id = as_schedule_single_action( time() + $delay, self::FEED_GENERATION_ACTION, [] );
+			$action_id = as_schedule_single_action(
+				time() + $delay,
+				self::FEED_GENERATION_ACTION,
+				[ 'option_key' => $option_key ]
+			);
 
 			$status = [
 				'action_id' => $action_id,
@@ -108,7 +109,7 @@ final class AsyncGenerator {
 			];
 
 			update_option(
-				self::OPTION_KEY,
+				$option_key,
 				$status
 			);
 		}
@@ -119,10 +120,11 @@ final class AsyncGenerator {
 	/**
 	 * Action scheduler callback for the feed generation.
 	 *
+	 * @param string $option_key The option key for the feed generation status.
 	 * @return void
 	 */
-	public function feed_generation_action() {
-		$status = get_option( self::OPTION_KEY );
+	public function feed_generation_action( string $option_key ) {
+		$status = get_option( $option_key );
 
 		if ( ! is_array( $status ) || ! isset( $status['state'] ) || self::STATE_SCHEDULED !== $status['state'] ) {
 			wc_get_logger()->error( 'Invalid feed generation status', [ 'status' => $status ] );
@@ -130,15 +132,15 @@ final class AsyncGenerator {
 		}
 
 		$status['state'] = self::STATE_IN_PROGRESS;
-		update_option( self::OPTION_KEY, $status );
+		update_option( $option_key, $status );
 
 		$feed   = $this->integration->create_feed();
 		$walker = ProductWalker::from_integration( $this->integration, $feed );
 
 		$walker->walk(
-			function ( WalkerProgress $progress ) use ( &$status ) {
+			function ( WalkerProgress $progress ) use ( &$status, $option_key ) {
 				$status = $this->update_feed_progress( $status, $progress );
-				update_option( self::OPTION_KEY, $status );
+				update_option( $option_key, $status );
 			}
 		);
 
@@ -146,24 +148,29 @@ final class AsyncGenerator {
 		$status['state'] = self::STATE_COMPLETED;
 		$status['url']   = $feed->get_file_url();
 		$status['path']  = $feed->get_file_path();
-		update_option( self::OPTION_KEY, $status );
+		update_option( $option_key, $status );
 
 		// Schedule another action to delete the file after the expiry time.
 		as_schedule_single_action(
 			time() + self::FEED_EXPIRY,
 			self::FEED_DELETION_ACTION,
-			[ 'path' => $feed->get_file_path() ]
+			[
+				$option_key,
+				$feed->get_file_path(),
+			]
 		);
 	}
 
 	/**
 	 * Forces a regeneration of the feed.
 	 *
+	 * @param array|null $args The arguments to pass to the action.
 	 * @return array The feed generation status.
 	 * @throws \Exception When there is a reason why the regeneration cannot be forced.
 	 */
-	public function force_regeneration(): array {
-		$status = get_option( self::OPTION_KEY );
+	public function force_regeneration( ?array $args = null ): array {
+		$option_key = $this->get_option_key( $args );
+		$status     = get_option( $option_key );
 
 		// If there is no option, there is nothing to force.
 		if ( false === $status ) {
@@ -182,7 +189,7 @@ final class AsyncGenerator {
 			case self::STATE_COMPLETED:
 				// Delete the existing file, clear the option and let generation start again.
 				wp_delete_file( $status['path'] );
-				delete_option( self::OPTION_KEY );
+				delete_option( $option_key );
 				return $this->get_status();
 
 			default:
@@ -193,13 +200,32 @@ final class AsyncGenerator {
 	/**
 	 * Action scheduler callback for the feed deletion after expiry.
 	 *
-	 * @param array $args The arguments passed to the action.
+	 * @param string $option_key The option key for the feed generation status.
+	 * @param string $path       The path to the feed file.
 	 * @return void
 	 */
-	public function feed_deletion_action( array $args ) {
-		$path = $args['path'];
+	public function feed_deletion_action( string $option_key, string $path ) {
+		delete_option( $option_key );
 		wp_delete_file( $path );
-		delete_option( self::OPTION_KEY );
+	}
+
+	/**
+	 * Returns the option key for the feed generation status.
+	 *
+	 * @param array|null $args The arguments to pass to the action.
+	 * @return string          The option key.
+	 */
+	private function get_option_key( ?array $args = null ): string {
+		return 'pos_feed_status_' . md5(
+			// WPCS dislikes serialize for security reasons, but it will be hashed immediately.
+			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize
+			serialize(
+				[
+					'integration' => $this->integration->get_id(),
+					'args'        => $args,
+				]
+			)
+		);
 	}
 
 	/**
