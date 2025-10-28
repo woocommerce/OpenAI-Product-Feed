@@ -71,6 +71,10 @@ class PushFile implements FileDeliveryInterface {
 			return $pre;
 		}
 
+		if ( ! file_exists( $path ) ) {
+			throw new RuntimeException( 'Feed file does not exist.' );
+		}
+
 		$file = fopen( $path, 'rb' );
 		if ( false === $file ) {
 			throw new RuntimeException( 'Unable to open feed file for reading.' );
