@@ -108,10 +108,11 @@ class FeedSchema {
 				'default'           => 'Generic',
 			],
 			'material'                  => [
-				'required'    => false, // @TODO: the specs tell that this is required.
+				'required'    => true,
 				'type'        => 'string',
 				'max_length'  => 100,
 				'description' => 'Primary material(s)',
+				'default'     => 'Generic',
 			],
 			'dimensions'                => [
 				'required'    => false,
@@ -340,26 +341,26 @@ class FeedSchema {
 				'description' => 'Seller page',
 			],
 			'seller_privacy_policy'     => [
-				'required'    => false,
-				// @TODO: in the specs. Required, if enabled_checkout is true, i.e. 'required_when' => [ 'enable_checkout' => 'true' ].
-				'type'        => 'url',
-				'description' => 'Seller-specific policies',
+				'required'      => false,
+				'required_when' => [ 'enable_checkout' => 'true' ],
+				'type'          => 'url',
+				'description'   => 'Seller-specific policies',
 			],
 			'seller_tos'                => [
-				'required'    => false,
-				// @TODO: in the specs. Required, if enabled_checkout is true, i.e. 'required_when' => [ 'enable_checkout' => 'true' ].
-				'type'        => 'url',
-				'description' => 'Seller-specific terms of service',
+				'required'      => false,
+				'required_when' => [ 'enable_checkout' => 'true' ],
+				'type'          => 'url',
+				'description'   => 'Seller-specific terms of service',
 			],
 
 			// Returns.
 			'return_policy'             => [
-				'required'    => false, // @TODO: required in the specs.
+				'required'    => true,
 				'type'        => 'url',
 				'description' => 'Return policy URL',
 			],
 			'return_window'             => [
-				'required'    => false, // @TODO: this is required in the specs.
+				'required'    => true,
 				'type'        => 'integer',
 				'description' => 'Days allowed for return',
 			],
