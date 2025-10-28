@@ -74,10 +74,20 @@ final class FeedValidator implements FeedValidatorInterface {
 
 		if ( FeedSchema::is_field_required( $field, $row ) ) {
 			if ( empty( $value ) && '0' !== $value ) {
-				$message  = $config['error_message'] ?? 'Missing ' . $config['description'];
+				$message  = $config['error_message'] ?? 'Missing required field: ' . $config['description'];
 				$issues[] = $message;
 				return;
 			}
+		}
+
+		/**
+		 * From specs: enable_search must be true in order for enable_checkout to be enabled for the product.
+		 */
+		if ( 'enable_checkout' === $field
+			&& 'true' === $value
+			&& 'false' === ( $row['enable_search'] ?? null )
+		) {
+			$issues[] = 'enable_checkout requires enable_search=true';
 		}
 
 		if ( empty( $value ) && '0' !== $value ) {
@@ -86,7 +96,6 @@ final class FeedValidator implements FeedValidatorInterface {
 
 		$this->validate_field_type( $field, $value, $config, $issues );
 		$this->validate_field_enum( $field, $value, $config, $issues );
-		$this->validate_field_dependencies( $field, $value, $config, $row, $issues );
 	}
 
 	/**
@@ -125,26 +134,6 @@ final class FeedValidator implements FeedValidatorInterface {
 		if ( isset( $config['values'] ) && ! in_array( $value, $config['values'], true ) ) {
 			$valid    = implode( '|', $config['values'] );
 			$issues[] = "{$field} must be {$valid}";
-		}
-	}
-
-	/**
-	 * Validate field dependencies
-	 *
-	 * @param string $field Field name.
-	 * @param mixed  $value Field value.
-	 * @param array  $config Field configuration.
-	 * @param array  $row Product data row.
-	 * @param array  $issues Reference to issues array.
-	 */
-	private function validate_field_dependencies( string $field, $value, array $config, array $row, array &$issues ): void {
-		if ( isset( $config['depends_on'] ) ) {
-			foreach ( $config['depends_on'] as $dep_field => $dep_value ) {
-				$current_value = $row[ $dep_field ] ?? null;
-				if ( $dep_value !== $current_value ) {
-					$issues[] = "{$field} requires {$dep_field}={$dep_value}";
-				}
-			}
 		}
 	}
 

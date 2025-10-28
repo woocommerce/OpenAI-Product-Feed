@@ -49,7 +49,6 @@ class FeedSchema {
 				'values'      => [ 'true', 'false' ],
 				'default'     => 'false',
 				'description' => 'Allows direct purchase inside ChatGPT',
-				'depends_on'  => [ 'enable_search' => 'true' ],
 			],
 
 			// Basic Product Data.
