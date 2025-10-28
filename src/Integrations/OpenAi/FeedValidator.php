@@ -56,7 +56,6 @@ final class FeedValidator implements FeedValidatorInterface {
 
 		// Additional custom validations.
 		$this->validate_brand_requirement( $entry, $issues );
-		$this->validate_prices( $entry, $issues );
 		$this->validate_sale_dates( $entry, $issues );
 
 		return $issues;
@@ -176,23 +175,6 @@ final class FeedValidator implements FeedValidatorInterface {
 
 		if ( ! $is_exempt && empty( $row['brand'] ) ) {
 			$issues[] = 'Brand is required (except for movies, books, music)';
-		}
-	}
-
-	/**
-	 * Validate price relationships
-	 *
-	 * @param array $row Product data row.
-	 * @param array $issues Reference to issues array.
-	 */
-	private function validate_prices( array $row, array &$issues ): void {
-		if ( ! empty( $row['sale_price'] ) && ! empty( $row['price'] ) ) {
-			$sale_price    = $this->extract_numeric_value( $row['sale_price'] );
-			$regular_price = $this->extract_numeric_value( $row['price'] );
-
-			if ( $sale_price > $regular_price ) {
-				$issues[] = 'sale_price must be <= price';
-			}
 		}
 	}
 
