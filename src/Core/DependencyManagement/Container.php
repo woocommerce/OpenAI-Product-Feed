@@ -7,6 +7,8 @@ declare( strict_types=1 );
 
 namespace Automattic\WooCommerce\ProductFeedForOpenAI\Core\DependencyManagement;
 
+use WC_Logger_Interface;
+
 /**
  * PSR11 compliant dependency injection container for the plugin.
  *
@@ -31,6 +33,7 @@ final class Container {
 			[
 				__CLASS__                          => $this,
 				'Psr\Container\ContainerInterface' => $this,
+				WC_Logger_Interface::class         => wc_get_logger(),
 			]
 		);
 	}

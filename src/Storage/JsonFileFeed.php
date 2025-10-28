@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace Automattic\WooCommerce\ProductFeedForOpenAI\Storage;
 
+use Automattic\WooCommerce\Internal\Utilities\FilesystemUtil;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\FeedInterface;
 use RuntimeException;
 
@@ -57,6 +58,13 @@ class JsonFileFeed implements FeedInterface {
 	private $file_completed = false;
 
 	/**
+	 * The URL of the feed file.
+	 *
+	 * @var string|null
+	 */
+	private $file_url = null;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param string $base_name The base name of the feed file.
@@ -75,7 +83,13 @@ class JsonFileFeed implements FeedInterface {
 		$upload_dir = wp_upload_dir( null, true );
 		$directory  = $upload_dir['basedir'] . DIRECTORY_SEPARATOR . 'product-feeds' . DIRECTORY_SEPARATOR;
 
-		if ( ! is_dir( $directory ) && ! wp_mkdir_p( $directory ) ) {
+		// Try to create the directory if it does not exist.
+		if ( ! is_dir( $directory ) ) {
+			FileSystemUtil::mkdir_p_not_indexable( $directory );
+		}
+
+		// `mkdir_p_not_indexable()` returns `void`, so we need to check again.
+		if ( ! is_dir( $directory ) ) {
 			throw new RuntimeException(
 				esc_html(
 					sprintf(
@@ -87,7 +101,9 @@ class JsonFileFeed implements FeedInterface {
 			);
 		}
 
-		$this->file_path   = $directory . wp_unique_filename( $directory, $this->base_name . '.json' );
+		$file_name         = wp_unique_filename( $directory, $this->base_name . '.json' );
+		$this->file_path   = $directory . $file_name;
+		$this->file_url    = $upload_dir['baseurl'] . '/product-feeds/' . $file_name;
 		$this->file_handle = fopen( $this->file_path, 'w' );
 
 		if ( false === $this->file_handle ) {
@@ -143,5 +159,18 @@ class JsonFileFeed implements FeedInterface {
 	 */
 	public function get_file_path(): string {
 		return $this->file_path;
+	}
+
+	/**
+	 * Get the URL of the feed file.
+	 *
+	 * @return string|null The URL of the feed file, null if not completed.
+	 */
+	public function get_file_url(): ?string {
+		if ( ! $this->file_completed ) {
+			return null;
+		}
+
+		return $this->file_url;
 	}
 }

@@ -1,11 +1,11 @@
 <?php
 declare( strict_types = 1 );
 
-use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAi\ScheduledActionManager;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Core\DependencyManagement\Container;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAi\OpenAiIntegration;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAi\Settings;
 use PHPUnit\Framework\MockObject\MockObject;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Core\DependencyManagement\Container;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAi\ScheduledActionManager;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAi\Settings;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAi\OpenAiIntegration;
 
 /**
  * Admin controller test class.
@@ -28,7 +28,7 @@ class ScheduledActionManagerTest extends WC_Unit_Test_Case {
 	/**
 	 * Mock logger.
 	 *
-	 * @var WC_Logger|MockObject
+	 * @var WC_Logger_Interface|MockObject
 	 */
 	private $mock_logger;
 
@@ -36,8 +36,7 @@ class ScheduledActionManagerTest extends WC_Unit_Test_Case {
 		parent::setUp();
 
 		$this->mock_settings = $this->createMock( Settings::class );
-		$this->mock_logger   = $this->createMock( WC_Logger::class );
-		add_filter( 'woocommerce_logging_class', fn() => $this->mock_logger );
+		$this->mock_logger   = $this->createMock( WC_Logger_Interface::class );
 
 		$integration = new OpenAiIntegration();
 		$integration->init(
@@ -46,13 +45,12 @@ class ScheduledActionManagerTest extends WC_Unit_Test_Case {
 		);
 
 		$this->sut = new ScheduledActionManager();
-		$this->sut->init( $integration );
+		$this->sut->init( $integration, $this->mock_logger );
 	}
 
 	public function tearDown(): void {
 		parent::tearDown();
-		remove_all_actions( 'pre_http_request' );
-		remove_all_actions( 'woocommerce_logging_class' );
+		remove_all_actions( 'wpfoai_push_file_pre_request' );
 	}
 
 	public function test_scheduled_push() {
@@ -72,11 +70,15 @@ class ScheduledActionManagerTest extends WC_Unit_Test_Case {
 		$product->save();
 
 		add_filter(
-			'pre_http_request',
-			function ( $pre, $args, $url ) use ( $endpoint_url, $product ) {
+			'wpfoai_push_file_pre_request',
+			function ( $pre, $file_path, $url ) use ( $endpoint_url, $product ) {
+				unset( $pre ); // avoid PHPMD UnusedFormalParameter.
+
 				$this->assertEquals( $endpoint_url, $url );
 
-				$body = json_decode( $args['body'], true );
+				// PHPCS thinks `file_get_contents` is a remote call.
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+				$body = json_decode( file_get_contents( $file_path ), true );
 				$this->assertIsArray( $body );
 				$this->assertCount( 1, $body );
 				$this->assertEquals( $product->get_id(), $body[0]['id'] );

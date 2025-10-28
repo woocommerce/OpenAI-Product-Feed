@@ -13,6 +13,7 @@ use Automattic\WooCommerce\ProductFeedForOpenAI\CLI\Command;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Core\DependencyManagement\Container;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\IntegrationRegistry;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAi\OpenAiIntegration;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\POSCatalog\POSIntegration;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -55,10 +56,6 @@ final class Plugin {
 	private function __construct() {
 		$this->container = new Container();
 
-		// Prepare all providers.
-		$this->integration_registry = $this->container->get( IntegrationRegistry::class );
-		$this->integration_registry->register_integration( $this->container->get( OpenAiIntegration::class ) );
-
 		// Immediately initialize by adding the necessary top-level hooks.
 		if ( ! class_exists( 'WooCommerce' ) ) {
 			add_action( 'admin_notices', [ $this, 'show_woo_commerce_missing_notice' ] );
@@ -67,6 +64,11 @@ final class Plugin {
 
 		add_action( 'init', [ $this, 'register_hooks' ], 0 );
 		add_action( 'cli_init', [ $this, 'register_cli_commands' ] );
+
+		// Prepare all providers.
+		$this->integration_registry = $this->container->get( IntegrationRegistry::class );
+		$this->integration_registry->register_integration( $this->container->get( OpenAiIntegration::class ) );
+		$this->integration_registry->register_integration( $this->container->get( POSIntegration::class ) );
 	}
 
 	/**
@@ -74,7 +76,7 @@ final class Plugin {
 	 */
 	public function register_hooks(): void {
 		// Let all integrations register their hooks.
-		foreach ( $this->integration_registry->get_integrations() as $integration ) {
+		foreach ( $this->container->get( IntegrationRegistry::class )->get_integrations() as $integration ) {
 			$integration->register_hooks();
 		}
 	}
