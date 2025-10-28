@@ -101,7 +101,16 @@ class JsonFileFeed implements FeedInterface {
 			);
 		}
 
-		$file_name         = wp_unique_filename( $directory, $this->base_name . '.json' );
+		/**
+		 * Generate a unique and private file name.
+		 *
+		 * @see https://github.com/woocommerce/woocommerce/pull/61332#discussion_r2431786208.
+		 *
+		 * Unlike that discussion, we are keeping track of the file name, so we can use the current date.
+		 */
+		$hash_data = $this->base_name . gmdate( 'r' );
+		$file_name = $this->base_name . '-' . time() . '-' . wp_hash( $hash_data ) . '.json';
+
 		$this->file_path   = $directory . $file_name;
 		$this->file_url    = $upload_dir['baseurl'] . '/product-feeds/' . $file_name;
 		$this->file_handle = fopen( $this->file_path, 'w' );
