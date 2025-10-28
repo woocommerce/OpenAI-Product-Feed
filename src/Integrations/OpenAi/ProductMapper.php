@@ -103,7 +103,7 @@ final class ProductMapper implements ProductMapperInterface {
 			$row[ $field ] = $this->map_field( $product, $field, $config, $parent_product );
 		}
 
-		$row = $this->validate_and_clean_row( $row );
+		$row = $this->clean_row( $row );
 
 		/**
 		 * Filter mapped product data before validation.
@@ -176,40 +176,12 @@ final class ProductMapper implements ProductMapperInterface {
 	}
 
 	/**
-	 * Validate and clean row data using schema
+	 * Remove null and empty fields from the row.
 	 *
 	 * @param array $row Product data row.
 	 * @return array Cleaned product data row.
 	 */
-	protected function validate_and_clean_row( array $row ): array {
-		foreach ( $this->schema as $field => $config ) {
-			if ( ! isset( $row[ $field ] ) ) {
-				continue;
-			}
-
-			if ( isset( $config['depends_on'] ) ) {
-				foreach ( $config['depends_on'] as $dep_field => $dep_value ) {
-					$current_value = $row[ $dep_field ] ?? null;
-					if ( $dep_value !== $current_value ) {
-						if ( 'boolean_string' === $config['type'] ) {
-							$row[ $field ] = 'false';
-						} else {
-							unset( $row[ $field ] );
-						}
-						break;
-					}
-				}
-			}
-
-			if ( isset( $config['pattern'] ) && ! empty( $row[ $field ] ) ) {
-				if ( ! preg_match( $config['pattern'], (string) $row[ $field ] ) ) {
-					if ( 'gtin' === $field ) {
-						$row[ $field ] = 'MISSING'; // Will be caught by validator.
-					}
-				}
-			}
-		}
-
+	protected function clean_row( array $row ): array {
 		return array_filter(
 			$row,
 			function ( $value ) {
