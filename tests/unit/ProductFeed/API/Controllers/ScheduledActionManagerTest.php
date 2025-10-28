@@ -28,7 +28,7 @@ class ScheduledActionManagerTest extends WC_Unit_Test_Case {
 	/**
 	 * Mock logger.
 	 *
-	 * @var WC_Logger|MockObject
+	 * @var WC_Logger_Interface|MockObject
 	 */
 	private $mock_logger;
 
@@ -36,7 +36,7 @@ class ScheduledActionManagerTest extends WC_Unit_Test_Case {
 		parent::setUp();
 
 		$this->mock_settings = $this->createMock( Settings::class );
-		$this->mock_logger   = $this->createMock( WC_Logger::class );
+		$this->mock_logger   = $this->createMock( WC_Logger_Interface::class );
 
 		$integration = new OpenAiIntegration();
 		$integration->init(
@@ -50,8 +50,7 @@ class ScheduledActionManagerTest extends WC_Unit_Test_Case {
 
 	public function tearDown(): void {
 		parent::tearDown();
-		remove_all_actions( 'pre_http_request' );
-		remove_all_actions( 'woocommerce_logging_class' );
+		remove_all_actions( 'wpfoai_push_file_pre_request' );
 	}
 
 	public function test_scheduled_push() {
@@ -73,6 +72,8 @@ class ScheduledActionManagerTest extends WC_Unit_Test_Case {
 		add_filter(
 			'wpfoai_push_file_pre_request',
 			function ( $pre, $file_path, $url ) use ( $endpoint_url, $product ) {
+				unset( $pre ); // avoid PHPMD UnusedFormalParameter.
+
 				$this->assertEquals( $endpoint_url, $url );
 
 				// PHPCS thinks `file_get_contents` is a remote call.
