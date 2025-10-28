@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace Automattic\WooCommerce\ProductFeedForOpenAI\Storage;
 
+use Automattic\WooCommerce\Internal\Utilities\FilesystemUtil;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\FeedInterface;
 use RuntimeException;
 
@@ -82,7 +83,13 @@ class JsonFileFeed implements FeedInterface {
 		$upload_dir = wp_upload_dir( null, true );
 		$directory  = $upload_dir['basedir'] . DIRECTORY_SEPARATOR . 'product-feeds' . DIRECTORY_SEPARATOR;
 
-		if ( ! is_dir( $directory ) && ! wp_mkdir_p( $directory ) ) {
+		// Try to create the directory if it does not exist.
+		if ( ! is_dir( $directory ) ) {
+			FileSystemUtil::mkdir_p_not_indexable( $directory );
+		}
+
+		// `mkdir_p_not_indexable()` returns `void`, so we need to check again.
+		if ( ! is_dir( $directory ) ) {
 			throw new RuntimeException(
 				esc_html(
 					sprintf(
