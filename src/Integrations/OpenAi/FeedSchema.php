@@ -456,32 +456,6 @@ class FeedSchema {
 	}
 
 	/**
-	 * Get required fields only
-	 */
-	public static function get_required_fields(): array {
-		return array_keys(
-			array_filter(
-				self::get_schema(),
-				function ( $field ) {
-					return true === $field['required'];
-				}
-			)
-		);
-	}
-
-	/**
-	 * Get conditional required fields
-	 */
-	public static function get_conditional_fields(): array {
-		return array_filter(
-			self::get_schema(),
-			function ( $field ) {
-				return isset( $field['required_when'] );
-			}
-		);
-	}
-
-	/**
 	 * Get field configuration
 	 *
 	 * @param string $field Field name.

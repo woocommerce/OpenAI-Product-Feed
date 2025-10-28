@@ -86,7 +86,6 @@ final class FeedValidator implements FeedValidatorInterface {
 		}
 
 		$this->validate_field_type( $field, $value, $config, $issues );
-		$this->validate_field_pattern( $field, $value, $config, $issues );
 		$this->validate_field_enum( $field, $value, $config, $issues );
 		$this->validate_field_dependencies( $field, $value, $config, $row, $issues );
 	}
@@ -118,21 +117,6 @@ final class FeedValidator implements FeedValidatorInterface {
 					$issues[] = "{$field} must be 'true' or 'false'";
 				}
 				break;
-		}
-	}
-
-	/**
-	 * Validate field pattern
-	 *
-	 * @param string $field Field name.
-	 * @param mixed  $value Field value.
-	 * @param array  $config Field configuration.
-	 * @param array  $issues Reference to issues array.
-	 */
-	private function validate_field_pattern( string $field, $value, array $config, array &$issues ): void {
-		if ( isset( $config['pattern'] ) && ! preg_match( $config['pattern'], (string) $value ) ) {
-			$message  = $config['error_message'] ?? "{$field} format is invalid";
-			$issues[] = $message;
 		}
 	}
 
