@@ -118,10 +118,6 @@ class PushFile implements FileDeliveryInterface {
 			if ( $http_code < 200 || $http_code > 299 ) {
 				throw new RuntimeException( 'Received non-2xx HTTP code: ' . $http_code );
 			}
-
-			if ( false === $response ) {
-				throw new RuntimeException( 'cURL error: ' . curl_error( $curl_handle ) );
-			}
 		} finally {
 			if ( is_resource( $file ) ) {
 				fclose( $file );
