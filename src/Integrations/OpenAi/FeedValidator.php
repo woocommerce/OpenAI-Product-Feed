@@ -147,7 +147,7 @@ final class FeedValidator implements FeedValidatorInterface {
 		if ( isset( $config['depends_on'] ) ) {
 			foreach ( $config['depends_on'] as $dep_field => $dep_value ) {
 				$current_value = $row[ $dep_field ] ?? null;
-				if ( 'true' === $value && $dep_value !== $current_value ) {
+				if ( $dep_value !== $current_value ) {
 					$issues[] = "{$field} requires {$dep_field}={$dep_value}";
 				}
 			}
