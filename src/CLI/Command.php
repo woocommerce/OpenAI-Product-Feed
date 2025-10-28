@@ -12,7 +12,6 @@ namespace Automattic\WooCommerce\ProductFeedForOpenAI\CLI;
 use RuntimeException;
 use WP_CLI;
 use WP_CLI_Command;
-use Automattic\WooCommerce\ProductFeedForOpenAI\DeliveryMethods\PushFile;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductWalker;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\WalkerProgress;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\IntegrationRegistry;
@@ -169,19 +168,12 @@ class Command extends WP_CLI_Command {
 			return WP_CLI::error( $e->getMessage() );
 		}
 
-		$code  = wp_remote_retrieve_response_code( $result );
-		$error = $code < 200 || $code > 299;
-		$body  = wp_remote_retrieve_body( $result );
-
-		// No need to do wonders with the response, just print it.
 		if ( ! $silent ) {
-			if ( $error ) {
-				WP_CLI::error( 'Received a non-200 HTTP code: ' . $code );
-			} else {
-				WP_CLI::success( 'Received a successful response from the API:' );
-			}
+			WP_CLI::success( 'Received a successful response from the API:' );
 		}
 
+		// No need to do wonders with the response, just print it.
+		$body = wp_remote_retrieve_body( $result );
 		if ( ! empty( $body ) ) {
 			WP_CLI::print_value( json_decode( $body, true ), [ 'format' => 'json' ] );
 		}
