@@ -112,7 +112,7 @@ class Command extends WP_CLI_Command {
 
 		// Initialize the feed and walker, set them up.
 		$feed   = $integration->create_feed();
-		$walker = new ProductWalker( $integration->get_product_mapper(), $integration->get_feed_validator(), $feed );
+		$walker = ProductWalker::from_integration( $integration, $feed );
 		$walker->set_batch_size( $batch_size );
 		$walker->add_time_limit( $timeout );
 

@@ -133,11 +133,7 @@ final class AsyncGenerator {
 		update_option( self::OPTION_KEY, $status );
 
 		$feed   = $this->integration->create_feed();
-		$walker = new ProductWalker(
-			$this->integration->get_product_mapper(),
-			$this->integration->get_feed_validator(),
-			$feed
-		);
+		$walker = ProductWalker::from_integration( $this->integration, $feed );
 
 		$walker->walk(
 			function ( WalkerProgress $progress ) use ( &$status ) {

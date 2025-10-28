@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace Automattic\WooCommerce\ProductFeedForOpenAI\Feed;
 
+use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\IntegrationInterface;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Utils\MemoryManager;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -63,7 +64,7 @@ class ProductWalker {
 	 * @param FeedValidatorInterface $validator The feed validator.
 	 * @param FeedInterface          $feed The feed.
 	 */
-	public function __construct(
+	private function __construct(
 		ProductMapperInterface $mapper,
 		FeedValidatorInterface $validator,
 		FeedInterface $feed
@@ -71,6 +72,29 @@ class ProductWalker {
 		$this->mapper    = $mapper;
 		$this->validator = $validator;
 		$this->feed      = $feed;
+	}
+
+	/**
+	 * Creates a new instance of the ProductWalker class based on an integration.
+	 *
+	 * The walker will mostly be set up based on the integration.
+	 * The feed is provided externally, as it might be based on the context (CLI, REST, Action Scheduler, etc.).
+	 *
+	 * @param IntegrationInterface $integration The integration.
+	 * @param FeedInterface        $feed        The feed.
+	 * @return self The ProductWalker instance.
+	 */
+	public static function from_integration(
+		IntegrationInterface $integration,
+		FeedInterface $feed
+	): self {
+		$instance = new self(
+			$integration->get_product_mapper(),
+			$integration->get_feed_validator(),
+			$feed
+		);
+
+		return $instance;
 	}
 
 	/**
