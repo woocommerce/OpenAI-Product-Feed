@@ -49,7 +49,8 @@ class PushFile implements FileDeliveryInterface {
 	 * That will be one of the next PRs.
 	 *
 	 * @param FeedInterface $feed The feed to deliver.
-	 * @return array The response from the remote endpoint.
+	 * @return array The response from the remote endpoint. Structure: ['body' => string, 'response' => ['code' => int]].
+	 *               Compatible with wp_remote_retrieve_* functions.
 	 * @throws RuntimeException If the request fails.
 	 * @throws RuntimeException If the HTTP code is not between 200 and 299.
 	 */
@@ -86,7 +87,8 @@ class PushFile implements FileDeliveryInterface {
 		}
 
 		// To avoid timeouts, but also give the responder enough time to receive the file, calculate the timeout.
-		$timeout = max( 10, $size / MB_IN_BYTES * 10 ); // 10 seconds per MB.
+		// Assumes ~100 KB/s transfer rate (10 seconds per MB). Minimum 10 seconds for small files.
+		$timeout = max( 10, $size / MB_IN_BYTES * 10 );
 
 		$curl_handle = curl_init( $this->endpoint );
 		curl_setopt_array(
