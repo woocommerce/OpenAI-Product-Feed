@@ -39,7 +39,7 @@ class PushFile implements FileDeliveryInterface {
 	 * @return bool True if the delivery method is setup, false otherwise.
 	 */
 	public function check_setup(): bool {
-		return ! empty( $this->endpoint );
+		return ! empty( $this->endpoint ) && wp_http_validate_url( $this->endpoint );
 	}
 
 	/**

@@ -12,6 +12,7 @@ namespace Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAi;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductWalker;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAi\OpenAiIntegration;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Storage\JsonFileFeed;
+use WC_Logger_Interface;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -40,11 +41,12 @@ class ScheduledActionManager {
 	/**
 	 * Dependencies injector.
 	 *
-	 * @param OpenAiIntegration $openai_integration The OpenAI integration.
+	 * @param OpenAiIntegration   $openai_integration The OpenAI integration.
+	 * @param WC_Logger_Interface $logger The logger.
 	 */
-	public function init( OpenAiIntegration $openai_integration ) {
+	public function init( OpenAiIntegration $openai_integration, WC_Logger_Interface $logger ) {
 		$this->openai_integration = $openai_integration;
-		$this->logger             = function_exists( 'wc_get_logger' ) ? wc_get_logger() : null;
+		$this->logger             = $logger;
 	}
 
 	/**
@@ -60,6 +62,7 @@ class ScheduledActionManager {
 	public function scheduled_push(): void {
 		$delivery_method = $this->openai_integration->get_push_delivery_method();
 		if ( ! $delivery_method->check_setup() ) {
+			$this->logger->info( 'Push delivery method not setup', [ 'source' => 'wpfoai' ] );
 			return;
 		}
 
