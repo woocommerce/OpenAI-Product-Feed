@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAi;
 
+use Automattic\WooCommerce\Enums\ProductStockStatus;
 use Automattic\WooCommerce\Enums\ProductType;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductMapperInterface;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Utils\StringHelper;
@@ -369,9 +370,6 @@ final class ProductMapper implements ProductMapperInterface {
 
 		$names = [];
 		foreach ( $terms as $term ) {
-			if ( 'uncategorized' === $term->slug ) {
-				continue;
-			}
 			$names[] = $term->name;
 		}
 
@@ -565,7 +563,22 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @return int Product inventory quantity.
 	 */
 	protected function get_inventory_quantity( \WC_Product $product ): int {
-		return $product->get_stock_quantity() ?? 0;
+		$stock_quantity = $product->get_stock_quantity();
+		if ( null !== $stock_quantity ) {
+			return $stock_quantity;
+		}
+
+		return ProductStockStatus::IN_STOCK === $product->get_stock_status()
+			/**
+			 * Filters the inventory quantity for in-stock products without stock management enabled.
+			 *
+			 * @since 0.1.0
+			 *
+			 * @param int         $quantity Default quantity (1 for in-stock products).
+			 * @param \WC_Product $product  The product object.
+			 */
+			? apply_filters( 'wpfoai_inventory_quantity_without_stock_management', 1, $product )
+			: 0;
 	}
 
 	/**
