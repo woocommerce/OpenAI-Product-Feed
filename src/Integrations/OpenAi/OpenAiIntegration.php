@@ -106,6 +106,17 @@ class OpenAiIntegration implements IntegrationInterface, PushIntegrationInterfac
 	}
 
 	/**
+	 * Get the query arguments for the product feed.
+	 *
+	 * @return array The query arguments.
+	 */
+	public function get_product_feed_query_args(): array {
+		return [
+			'type' => [ 'simple', 'variation' ],
+		];
+	}
+
+	/**
 	 * Create a feed that is to be populated.
 	 *
 	 * @return FeedInterface The feed.

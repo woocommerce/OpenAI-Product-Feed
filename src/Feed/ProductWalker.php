@@ -56,6 +56,13 @@ class ProductWalker {
 	private int $time_limit = 0;
 
 	/**
+	 * The query arguments to apply to the product query.
+	 *
+	 * @var array
+	 */
+	private $query_args;
+
+	/**
 	 * Class constructor.
 	 *
 	 * This class will not be available through DI. Instead, it needs to be instantiated directly.
@@ -63,15 +70,18 @@ class ProductWalker {
 	 * @param ProductMapperInterface $mapper The product mapper.
 	 * @param FeedValidatorInterface $validator The feed validator.
 	 * @param FeedInterface          $feed The feed.
+	 * @param array                  $query_args The query arguments.
 	 */
 	private function __construct(
 		ProductMapperInterface $mapper,
 		FeedValidatorInterface $validator,
-		FeedInterface $feed
+		FeedInterface $feed,
+		array $query_args
 	) {
-		$this->mapper    = $mapper;
-		$this->validator = $validator;
-		$this->feed      = $feed;
+		$this->mapper     = $mapper;
+		$this->validator  = $validator;
+		$this->feed       = $feed;
+		$this->query_args = $query_args;
 	}
 
 	/**
@@ -88,10 +98,36 @@ class ProductWalker {
 		IntegrationInterface $integration,
 		FeedInterface $feed
 	): self {
+		$query_args = array_merge(
+			[
+				'status' => [ 'publish' ],
+				'return' => 'objects',
+			],
+			$integration->get_product_feed_query_args()
+		);
+
+		/**
+		 * Allows the base arguments for querying products for product feeds to be changed.
+		 *
+		 * Variable products are not included by default, as their variations will be included.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param array                $query_args The arguments to pass to wc_get_products().
+		 * @param IntegrationInterface $integration The integration that the query belongs to.
+		 * @return array
+		 */
+		$query_args = apply_filters(
+			'wpfoai_product_feed_args',
+			$query_args,
+			$integration
+		);
+
 		$instance = new self(
 			$integration->get_product_mapper(),
 			$integration->get_feed_validator(),
-			$feed
+			$feed,
+			$query_args
 		);
 
 		return $instance;
@@ -128,25 +164,6 @@ class ProductWalker {
 	public function walk( ?callable $callback = null ): int {
 		$progress = null;
 
-		/**
-		 * Allows the base arguments for querying products for product feeds to be changed.
-		 *
-		 * Variable products are not included by default, as their variations will be included.
-		 *
-		 * @since 0.1.0
-		 *
-		 * @param array $args The arguments to pass to wc_get_products().
-		 * @return array
-		 */
-		$args = apply_filters(
-			'wpfoai_product_feed_args',
-			[
-				'status' => [ 'publish' ],
-				'type'   => [ 'simple', 'variation' ],
-				'return' => 'objects',
-			]
-		);
-
 		// Instruct the feed to start.
 		$this->feed->start();
 
@@ -154,7 +171,7 @@ class ProductWalker {
 		$initial_available_memory = MemoryManager::get_available_memory();
 
 		do {
-			$result   = $this->iterate( $args, $progress ? $progress->processed_batches + 1 : 1, $this->per_page );
+			$result   = $this->iterate( $this->query_args, $progress ? $progress->processed_batches + 1 : 1, $this->per_page );
 			$iterated = count( $result->products );
 
 			// Only done when the progress is not set. Will be modified otherwise.

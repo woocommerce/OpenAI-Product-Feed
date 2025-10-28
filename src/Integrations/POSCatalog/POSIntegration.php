@@ -48,6 +48,17 @@ class POSIntegration implements IntegrationInterface {
 	}
 
 	/**
+	 * Get the query arguments for the product feed.
+	 *
+	 * @return array The query arguments.
+	 */
+	public function get_product_feed_query_args(): array {
+		return [
+			'type' => [ 'simple', 'variable', 'variation' ],
+		];
+	}
+
+	/**
 	 * Register hooks for the integration.
 	 *
 	 * @return void

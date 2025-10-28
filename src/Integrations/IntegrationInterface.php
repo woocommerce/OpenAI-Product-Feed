@@ -50,6 +50,14 @@ interface IntegrationInterface {
 	public function deactivate(): void;
 
 	/**
+	 * Get the query arguments for the product feed.
+	 *
+	 * @see wc_get_products()
+	 * @return array The query arguments.
+	 */
+	public function get_product_feed_query_args(): array;
+
+	/**
 	 * Create a feed that is to be populated.
 	 *
 	 * @return FeedInterface The feed.
