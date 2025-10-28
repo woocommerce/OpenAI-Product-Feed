@@ -71,38 +71,66 @@ class PushFile implements FileDeliveryInterface {
 			return $pre;
 		}
 
-		$file_handle = fopen( $path, 'rb' );
+		$file = fopen( $path, 'rb' );
+		if ( false === $file ) {
+			throw new RuntimeException( 'Unable to open feed file for reading.' );
+		}
 
-		$ch = curl_init( $this->endpoint );
+		$size = filesize( $path );
+		if ( false === $size ) {
+			fclose( $file );
+			throw new RuntimeException( 'Unable to determine feed file size.' );
+		}
+
+		// To avoid timeouts, but also give the responder enough time to receive the file, calculate the timeout.
+		$timeout = max( 10, $size / MB_IN_BYTES * 10 ); // 10 seconds per MB.
+
+		$curl_handle = curl_init( $this->endpoint );
 		curl_setopt_array(
-			$ch,
+			$curl_handle,
 			[
-				CURLOPT_POST           => true,
-				CURLOPT_INFILE         => $file_handle,
-				CURLOPT_INFILESIZE     => filesize( $path ),
-				CURLOPT_RETURNTRANSFER => true,
-				CURLOPT_HTTPHEADER     => [
+				CURLOPT_POST            => true,
+				CURLOPT_INFILE          => $file,
+				CURLOPT_INFILESIZE      => $size,
+				CURLOPT_RETURNTRANSFER  => true,
+				CURLOPT_CONNECTTIMEOUT  => 10,
+				CURLOPT_TIMEOUT         => $timeout,
+				CURLOPT_PROTOCOLS       => CURLPROTO_HTTP | CURLPROTO_HTTPS,
+				CURLOPT_REDIR_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS,
+				CURLOPT_HTTPHEADER      => [
 					'Content-Type: application/json',
+					'Expect:', // avoid 100-continue stalls on some servers.
 				],
 			]
 		);
-		$response = curl_exec( $ch );
 
-		if ( false === $response ) {
-			// phpcs:ignore
-			throw new RuntimeException( 'cURL error: ' . curl_error( $ch ) );
-		}
+		try {
+			$response = curl_exec( $curl_handle );
+			if ( false === $response ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
+				throw new RuntimeException( 'cURL error: ' . curl_error( $curl_handle ) );
+			}
 
-		$http_code = curl_getinfo( $ch, CURLINFO_HTTP_CODE );
-		if ( $http_code < 200 || $http_code > 299 ) {
-			throw new RuntimeException( esc_html( 'Received non-200 HTTP code: ' . $http_code ) );
+			$http_code = curl_getinfo( $curl_handle, CURLINFO_HTTP_CODE );
+			if ( $http_code < 200 || $http_code > 299 ) {
+				throw new RuntimeException( 'Received non-2xx HTTP code: ' . $http_code );
+			}
+
+			if ( false === $response ) {
+				throw new RuntimeException( 'cURL error: ' . curl_error( $curl_handle ) );
+			}
+		} finally {
+			if ( is_resource( $file ) ) {
+				fclose( $file );
+			}
+			curl_close( $curl_handle );
 		}
-		curl_close( $ch );
-		fclose( $file_handle );
 
 		return [
-			'body'      => $response,
-			'http_code' => $http_code,
+			'body'     => $response,
+			'response' => [
+				'code' => $http_code,
+			],
 		];
 	}
 }

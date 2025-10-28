@@ -164,11 +164,21 @@ class Command extends WP_CLI_Command {
 		}
 
 		$result = $delivery_method->deliver( $feed );
+		$code   = wp_remote_retrieve_response_code( $result );
+		$error  = $code < 200 || $code > 299;
+		$body   = wp_remote_retrieve_body( $result );
 
 		// No need to do wonders with the response, just print it.
 		if ( ! $silent ) {
-			WP_CLI::success( 'Received a successful response from the API:' );
+			if ( $error ) {
+				WP_CLI::error( 'Received a non-200 HTTP code: ' . $code );
+			} else {
+				WP_CLI::success( 'Received a successful response from the API:' );
+			}
 		}
-		WP_CLI::print_value( $result, [ 'format' => 'json' ] );
+
+		if ( ! empty( $body ) ) {
+			WP_CLI::print_value( json_decode( $body, true ), [ 'format' => 'json' ] );
+		}
 	}
 }
