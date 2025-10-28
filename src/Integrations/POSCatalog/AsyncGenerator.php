@@ -106,6 +106,7 @@ final class AsyncGenerator {
 				'progress'  => 0,
 				'processed' => 0,
 				'total'     => -1,
+				'args'      => $args ?? [],
 			];
 
 			update_option(
