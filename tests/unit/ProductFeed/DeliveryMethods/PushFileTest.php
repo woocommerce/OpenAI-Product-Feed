@@ -18,7 +18,7 @@ class PushFileTest extends WC_Unit_Test_Case {
 	public function setUp(): void {
 		parent::setUp();
 
-		$this->sut = new PushFile( 'https://example.com/wc/v3/openai-feed' );
+		$this->sut = new PushFile( 'https://localhost/wc/v3/openai-feed' );
 	}
 
 	public function provider_check_setup() {
@@ -61,7 +61,7 @@ class PushFileTest extends WC_Unit_Test_Case {
 	public function test_deliver_defers_to_pre_request_filter() {
 		$callback = function ( $pre, $path, $endpoint ) {
 			$this->assertNull( $pre );
-			$this->assertEquals( 'https://example.com/wc/v3/openai-feed', $endpoint );
+			$this->assertEquals( 'https://localhost/wc/v3/openai-feed', $endpoint );
 			$this->assertEquals( '/random/missing/file.json', $path );
 
 			return [
@@ -90,27 +90,18 @@ class PushFileTest extends WC_Unit_Test_Case {
 			->willReturn( '/random/missing/file.json' ); // PushFile accepts non-JSON.
 
 		$this->expectException( RuntimeException::class );
+		$this->expectExceptionMessageMatches( '/unable to open feed file/i' );
 		$this->sut->deliver( $mock_feed );
 	}
 
-	public function test_deliver_throws_exception_if_file_cannot_be_opened() {
+	public function test_deliver_converts_curl_failures_to_runtime_exceptions() {
 		$mock_feed = $this->createMock( FeedInterface::class );
 		$mock_feed->expects( $this->once() )
 			->method( 'get_file_path' )
-			->willReturn( __DIR__ . '/no-access.json' );
+			->willReturn( __FILE__ );
 
 		$this->expectException( RuntimeException::class );
-		$this->expectExceptionMessageMatches( '/unable to open feed file for reading/' );
-		$this->sut->deliver( $mock_feed );
-	}
-
-	public function test_deliver_throws_exception_if_file_cannot_be_determined() {
-		$mock_feed = $this->createMock( FeedInterface::class );
-		$mock_feed->expects( $this->once() )
-			->method( 'get_file_path' )
-			->willReturn( '/random/missing/file.json' ); // PushFile accepts non-JSON.
-
-		$this->expectException( RuntimeException::class );
+		$this->expectExceptionMessageMatches( '/cURL error/i' );
 		$this->sut->deliver( $mock_feed );
 	}
 }

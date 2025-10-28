@@ -163,10 +163,15 @@ class Command extends WP_CLI_Command {
 			WP_CLI::log( 'Sending feed to API...' );
 		}
 
-		$result = $delivery_method->deliver( $feed );
-		$code   = wp_remote_retrieve_response_code( $result );
-		$error  = $code < 200 || $code > 299;
-		$body   = wp_remote_retrieve_body( $result );
+		try {
+			$result = $delivery_method->deliver( $feed );
+		} catch ( RuntimeException $e ) {
+			return WP_CLI::error( $e->getMessage() );
+		}
+
+		$code  = wp_remote_retrieve_response_code( $result );
+		$error = $code < 200 || $code > 299;
+		$body  = wp_remote_retrieve_body( $result );
 
 		// No need to do wonders with the response, just print it.
 		if ( ! $silent ) {

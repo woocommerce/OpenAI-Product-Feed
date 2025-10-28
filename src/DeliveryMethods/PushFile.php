@@ -71,13 +71,12 @@ class PushFile implements FileDeliveryInterface {
 			return $pre;
 		}
 
-		if ( ! file_exists( $path ) ) {
-			throw new RuntimeException( 'Feed file does not exist.' );
-		}
-
-		$file = fopen( $path, 'rb' );
+		// `fopen` triggers an error that cannot be caught.
+		// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+		$file = @fopen( $path, 'rb' );
 		if ( false === $file ) {
-			throw new RuntimeException( 'Unable to open feed file for reading.' );
+			$error = error_get_last();
+			throw new RuntimeException( 'Unable to open feed file for reading. ' . ( esc_html( $error['message'] ) ?? 'Unknown error' ) );
 		}
 
 		$size = filesize( $path );
