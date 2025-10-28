@@ -38,13 +38,15 @@ class FeedSchema {
 			// OpenAI Flags.
 			'enable_search'             => [
 				'required'    => true,
-				'type'        => 'boolean_string',
+				'type'        => 'enum',
+				'values'      => [ 'true', 'false' ],
 				'default'     => 'true',
 				'description' => 'Controls whether the product can be surfaced in ChatGPT search results',
 			],
 			'enable_checkout'           => [
 				'required'    => true,
-				'type'        => 'boolean_string',
+				'type'        => 'enum',
+				'values'      => [ 'true', 'false' ],
 				'default'     => 'false',
 				'description' => 'Allows direct purchase inside ChatGPT',
 				'depends_on'  => [ 'enable_search' => 'true' ],

@@ -110,12 +110,6 @@ final class FeedValidator implements FeedValidatorInterface {
 					$issues[] = "{$field} must be a valid URL";
 				}
 				break;
-
-			case 'boolean_string':
-				if ( ! in_array( $value, [ 'true', 'false', true ], true ) ) {
-					$issues[] = "{$field} must be 'true' or 'false'";
-				}
-				break;
 		}
 	}
 

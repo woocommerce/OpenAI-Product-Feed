@@ -154,9 +154,6 @@ final class ProductMapper implements ProductMapperInterface {
 		}
 
 		switch ( $config['type'] ) {
-			case 'boolean_string':
-				return StringHelper::bool_string( $value );
-
 			case 'integer':
 				return (int) $value;
 
@@ -222,7 +219,8 @@ final class ProductMapper implements ProductMapperInterface {
 	protected function get_enable_search( \WC_Product $product, ?\WC_Product $parent_product ): string {
 		// For variations, check parent product meta; for simple products, check product meta.
 		$check_product = $parent_product ? $parent_product : $product;
-		return $this->get_enable_with_override( $check_product, ProductFieldsController::KEY_DISABLE_SEARCH, 'enable_products_default', 'true' );
+		$value         = $this->get_enable_with_override( $check_product, ProductFieldsController::KEY_DISABLE_SEARCH, 'enable_products_default', 'true' );
+		return StringHelper::bool_string( $value );
 	}
 
 	/**
@@ -235,7 +233,8 @@ final class ProductMapper implements ProductMapperInterface {
 	protected function get_enable_checkout( \WC_Product $product, ?\WC_Product $parent_product ): string {
 		// For variations, check parent product meta; for simple products, check product meta.
 		$check_product = $parent_product ?? $product;
-		return $this->get_enable_with_override( $check_product, ProductFieldsController::KEY_DISABLE_CHECKOUT, 'enable_products_default', 'false' );
+		$value         = $this->get_enable_with_override( $check_product, ProductFieldsController::KEY_DISABLE_CHECKOUT, 'enable_products_default', 'false' );
+		return StringHelper::bool_string( $value );
 	}
 
 	/**
