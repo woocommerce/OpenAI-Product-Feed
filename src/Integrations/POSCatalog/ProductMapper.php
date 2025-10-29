@@ -21,29 +21,59 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class ProductMapper implements ProductMapperInterface {
 	/**
+	 * The fields to include in the mapped product data.
+	 * If null, all fields will be included.
+	 *
+	 * @var array|null
+	 */
+	private $fields = null;
+
+	/**
+	 * Set the fields to include in the mapped product data.
+	 *
+	 * @param array $fields Array of field names to include.
+	 * @return void
+	 */
+	public function set_fields( array $fields ): void {
+		$this->fields = $fields;
+	}
+
+	/**
 	 * Map WooCommerce product to catalog row
 	 *
 	 * @param WC_Product $product Product to map.
 	 * @return array Mapped product data array.
 	 */
 	public function map_product( WC_Product $product ): array {
-		$row = [
-			'id'                => $this->get_id( $product ),
-			'name'              => $this->get_name( $product ),
-			'type'              => $this->get_type( $product ),
-			'description'       => $this->get_description( $product ),
-			'short_description' => $this->get_short_description( $product ),
-			'sku'               => $this->get_sku( $product ),
-			'global_unique_id'  => $this->get_global_unique_id( $product ),
-			'price'             => $this->get_price( $product ),
-			'downloadable'      => $this->get_downloadable( $product ),
-			'parent_id'         => $this->get_parent_id( $product ),
-			'images'            => $this->get_images( $product ),
-			'attributes'        => $this->get_attributes( $product ),
-			'manage_stock'      => $this->get_manage_stock( $product ),
-			'stock_quantity'    => $this->get_stock_quantity( $product ),
-			'stock_status'      => $this->get_stock_status( $product ),
+		$field_map = [
+			'id'                => 'get_id',
+			'name'              => 'get_name',
+			'type'              => 'get_type',
+			'description'       => 'get_description',
+			'short_description' => 'get_short_description',
+			'sku'               => 'get_sku',
+			'global_unique_id'  => 'get_global_unique_id',
+			'price'             => 'get_price',
+			'downloadable'      => 'get_downloadable',
+			'parent_id'         => 'get_parent_id',
+			'images'            => 'get_images',
+			'attributes'        => 'get_attributes',
+			'manage_stock'      => 'get_manage_stock',
+			'stock_quantity'    => 'get_stock_quantity',
+			'stock_status'      => 'get_stock_status',
 		];
+
+		// Determine which fields to include.
+		$fields_to_include = is_null( $this->fields )
+			? array_keys( $field_map )
+			: array_intersect( $this->fields, array_keys( $field_map ) );
+
+		// Only compute the requested fields.
+		$row = [];
+		foreach ( $fields_to_include as $field ) {
+			$method      = $field_map[ $field ];
+			$row[ $field ] = $this->$method( $product );
+		}
 
 		/**
 		 * Filter mapped catalog product data.

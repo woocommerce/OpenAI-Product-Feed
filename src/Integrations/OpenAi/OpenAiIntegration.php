@@ -128,10 +128,12 @@ class OpenAiIntegration implements IntegrationInterface, PushIntegrationInterfac
 	/**
 	 * Get the product mapper for the provider.
 	 *
+	 * @param array|null $fields Optional array of fields to include in the mapped product data.
 	 * @return ProductMapperInterface The product mapper.
 	 */
-	public function get_product_mapper(): ProductMapperInterface {
+	public function get_product_mapper( ?array $fields = null ): ProductMapperInterface {
 		// Instantiate only when needed, meaning while generating feeds.
+		// Note: OpenAI mapper does not currently support field filtering.
 		return $this->container->get( ProductMapper::class );
 	}
 

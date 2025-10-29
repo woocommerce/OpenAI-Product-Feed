@@ -92,11 +92,13 @@ class ProductWalker {
 	 *
 	 * @param IntegrationInterface $integration The integration.
 	 * @param FeedInterface        $feed        The feed.
+	 * @param array|null           $args        Optional arguments. If contains 'fields' key, it will be passed to the product mapper.
 	 * @return self The ProductWalker instance.
 	 */
 	public static function from_integration(
 		IntegrationInterface $integration,
-		FeedInterface $feed
+		FeedInterface $feed,
+		?array $args = null
 	): self {
 		$query_args = array_merge(
 			[
@@ -123,8 +125,13 @@ class ProductWalker {
 			$integration
 		);
 
+		// Pass fields to the product mapper if specified.
+		$mapper = isset( $args['fields'] )
+			? $integration->get_product_mapper( $args['fields'] )
+			: $integration->get_product_mapper();
+
 		$instance = new self(
-			$integration->get_product_mapper(),
+			$mapper,
 			$integration->get_feed_validator(),
 			$feed,
 			$query_args

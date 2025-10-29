@@ -67,9 +67,10 @@ interface IntegrationInterface {
 	/**
 	 * Get the product mapper for the provider.
 	 *
+	 * @param array|null $fields Optional array of fields to include in the mapped product data.
 	 * @return ProductMapperInterface The product mapper.
 	 */
-	public function get_product_mapper(): ProductMapperInterface;
+	public function get_product_mapper( ?array $fields = null ): ProductMapperInterface;
 
 	/**
 	 * Get the feed validator for the provider.

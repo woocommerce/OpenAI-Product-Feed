@@ -108,10 +108,15 @@ class POSIntegration implements IntegrationInterface {
 	/**
 	 * Get the product mapper for the provider.
 	 *
+	 * @param array|null $fields Optional array of fields to include in the mapped product data.
 	 * @return ProductMapperInterface The product mapper.
 	 */
-	public function get_product_mapper(): ProductMapperInterface {
-		return $this->container->get( ProductMapper::class );
+	public function get_product_mapper( ?array $fields = null ): ProductMapperInterface {
+		$mapper = $this->container->get( ProductMapper::class );
+		if ( ! is_null( $fields ) ) {
+			$mapper->set_fields( $fields );
+		}
+		return $mapper;
 	}
 
 	/**
