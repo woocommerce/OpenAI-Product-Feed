@@ -58,6 +58,19 @@ final class FeedValidator implements FeedValidatorInterface {
 		$this->validate_brand_requirement( $entry, $issues );
 		$this->validate_sale_dates( $entry, $issues );
 
+		/**
+		 * From specs: enable_search must be true in order for enable_checkout to be enabled for the product.
+		 */
+		if (
+			! isset( $entry['enable_checkout'], $entry['enable_search'] )
+			|| (
+				'true' === $entry['enable_checkout']
+				&& 'true' !== ( $entry['enable_search'] ?? null )
+			)
+		) {
+			$issues[] = 'enable_checkout requires enable_search=true';
+		}
+
 		return $issues;
 	}
 
@@ -79,16 +92,6 @@ final class FeedValidator implements FeedValidatorInterface {
 				$issues[] = $message;
 				return;
 			}
-		}
-
-		/**
-		 * From specs: enable_search must be true in order for enable_checkout to be enabled for the product.
-		 */
-		if ( 'enable_checkout' === $field
-			&& 'true' === $value
-			&& 'true' !== ( $row['enable_search'] ?? null )
-		) {
-			$issues[] = 'enable_checkout requires enable_search=true';
 		}
 
 		if ( empty( $value ) && '0' !== $value ) {
