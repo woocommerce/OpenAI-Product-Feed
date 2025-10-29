@@ -56,8 +56,20 @@ final class FeedValidator implements FeedValidatorInterface {
 
 		// Additional custom validations.
 		$this->validate_brand_requirement( $entry, $issues );
-		$this->validate_prices( $entry, $issues );
 		$this->validate_sale_dates( $entry, $issues );
+
+		/**
+		 * From specs: enable_search must be true in order for enable_checkout to be enabled for the product.
+		 */
+		if (
+			! isset( $entry['enable_checkout'], $entry['enable_search'] )
+			|| (
+				'true' === $entry['enable_checkout']
+				&& 'true' !== ( $entry['enable_search'] ?? null )
+			)
+		) {
+			$issues[] = 'enable_checkout requires enable_search=true';
+		}
 
 		return $issues;
 	}
@@ -75,7 +87,8 @@ final class FeedValidator implements FeedValidatorInterface {
 
 		if ( FeedSchema::is_field_required( $field, $row ) ) {
 			if ( empty( $value ) && '0' !== $value ) {
-				$message  = $config['error_message'] ?? 'Missing ' . $config['description'];
+				$message  = $config['error_message']
+					?? 'Missing required field: ' . ( $config['description'] ?? $field );
 				$issues[] = $message;
 				return;
 			}
@@ -86,9 +99,7 @@ final class FeedValidator implements FeedValidatorInterface {
 		}
 
 		$this->validate_field_type( $field, $value, $config, $issues );
-		$this->validate_field_pattern( $field, $value, $config, $issues );
 		$this->validate_field_enum( $field, $value, $config, $issues );
-		$this->validate_field_dependencies( $field, $value, $config, $row, $issues );
 	}
 
 	/**
@@ -112,27 +123,6 @@ final class FeedValidator implements FeedValidatorInterface {
 					$issues[] = "{$field} must be a valid URL";
 				}
 				break;
-
-			case 'boolean_string':
-				if ( ! in_array( $value, [ 'true', 'false', true ], true ) ) {
-					$issues[] = "{$field} must be 'true' or 'false'";
-				}
-				break;
-		}
-	}
-
-	/**
-	 * Validate field pattern
-	 *
-	 * @param string $field Field name.
-	 * @param mixed  $value Field value.
-	 * @param array  $config Field configuration.
-	 * @param array  $issues Reference to issues array.
-	 */
-	private function validate_field_pattern( string $field, $value, array $config, array &$issues ): void {
-		if ( isset( $config['pattern'] ) && ! preg_match( $config['pattern'], (string) $value ) ) {
-			$message  = $config['error_message'] ?? "{$field} format is invalid";
-			$issues[] = $message;
 		}
 	}
 
@@ -148,26 +138,6 @@ final class FeedValidator implements FeedValidatorInterface {
 		if ( isset( $config['values'] ) && ! in_array( $value, $config['values'], true ) ) {
 			$valid    = implode( '|', $config['values'] );
 			$issues[] = "{$field} must be {$valid}";
-		}
-	}
-
-	/**
-	 * Validate field dependencies
-	 *
-	 * @param string $field Field name.
-	 * @param mixed  $value Field value.
-	 * @param array  $config Field configuration.
-	 * @param array  $row Product data row.
-	 * @param array  $issues Reference to issues array.
-	 */
-	private function validate_field_dependencies( string $field, $value, array $config, array $row, array &$issues ): void {
-		if ( isset( $config['depends_on'] ) ) {
-			foreach ( $config['depends_on'] as $dep_field => $dep_value ) {
-				$current_value = $row[ $dep_field ] ?? null;
-				if ( 'true' === $value && $dep_value !== $current_value ) {
-					$issues[] = "{$field} requires {$dep_field}={$dep_value}";
-				}
-			}
 		}
 	}
 
@@ -192,23 +162,6 @@ final class FeedValidator implements FeedValidatorInterface {
 
 		if ( ! $is_exempt && empty( $row['brand'] ) ) {
 			$issues[] = 'Brand is required (except for movies, books, music)';
-		}
-	}
-
-	/**
-	 * Validate price relationships
-	 *
-	 * @param array $row Product data row.
-	 * @param array $issues Reference to issues array.
-	 */
-	private function validate_prices( array $row, array &$issues ): void {
-		if ( ! empty( $row['sale_price'] ) && ! empty( $row['price'] ) ) {
-			$sale_price    = $this->extract_numeric_value( $row['sale_price'] );
-			$regular_price = $this->extract_numeric_value( $row['price'] );
-
-			if ( $sale_price > $regular_price ) {
-				$issues[] = 'sale_price must be <= price';
-			}
 		}
 	}
 
