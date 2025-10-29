@@ -5,6 +5,7 @@ namespace Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAi;
 
 use PHPUnit\Framework\MockObject\MockObject;
 use Automattic\WooCommerce\Enums\ProductType;
+use WC_Helper_Product;
 
 /**
  * ProductMapper test class.
@@ -51,7 +52,7 @@ class ProductMapperTest extends \WC_Unit_Test_Case {
 	 * Test mapping a simple product
 	 */
 	public function test_map_product_simple_product(): void {
-		$product = \WC_Helper_Product::create_simple_product();
+		$product = WC_Helper_Product::create_simple_product();
 		$product->set_name( 'Test Product' );
 		$product->set_description( 'Test Description' );
 		$product->set_regular_price( '99.99' );
@@ -81,7 +82,7 @@ class ProductMapperTest extends \WC_Unit_Test_Case {
 	 * Test mapping a variable product (parent)
 	 */
 	public function test_map_product_variable_product(): void {
-		$product = \WC_Helper_Product::create_variation_product();
+		$product = WC_Helper_Product::create_variation_product();
 		$product->set_name( 'Variable Product' );
 		$product->set_description( 'Variable Description' );
 		$product->save();
@@ -99,7 +100,7 @@ class ProductMapperTest extends \WC_Unit_Test_Case {
 	 * Test mapping a product variation with parent
 	 */
 	public function test_map_product_variation_with_parent(): void {
-		$variable_product = \WC_Helper_Product::create_variation_product();
+		$variable_product = WC_Helper_Product::create_variation_product();
 		$variable_product->set_name( 'Parent Product' );
 		$variable_product->save();
 
@@ -142,7 +143,7 @@ class ProductMapperTest extends \WC_Unit_Test_Case {
 	 * Test mapped product contains basic required fields
 	 */
 	public function test_map_product_contains_required_fields(): void {
-		$product = \WC_Helper_Product::create_simple_product();
+		$product = WC_Helper_Product::create_simple_product();
 		$product->set_name( 'Required Fields Test' );
 		$product->set_description( 'Description for required fields test' );
 		$product->set_stock_status( 'instock' );
@@ -165,7 +166,7 @@ class ProductMapperTest extends \WC_Unit_Test_Case {
 	 * Test field mapping with defaults from schema
 	 */
 	public function test_map_product_uses_default_values(): void {
-		$product = \WC_Helper_Product::create_simple_product();
+		$product = WC_Helper_Product::create_simple_product();
 		$product->save();
 
 		$result = $this->sut->map_product( $product );
@@ -184,7 +185,7 @@ class ProductMapperTest extends \WC_Unit_Test_Case {
 	 * Test type conversion for integer fields
 	 */
 	public function test_map_product_converts_integer_types(): void {
-		$product = \WC_Helper_Product::create_simple_product();
+		$product = WC_Helper_Product::create_simple_product();
 		$product->set_stock_quantity( 42 );
 		$product->set_manage_stock( true );
 		$product->save();
@@ -205,7 +206,7 @@ class ProductMapperTest extends \WC_Unit_Test_Case {
 	public function test_map_product_truncates_long_strings(): void {
 		$long_title = str_repeat( 'A', 200 ); // Exceeds max_length of 150.
 
-		$product = \WC_Helper_Product::create_simple_product();
+		$product = WC_Helper_Product::create_simple_product();
 		$product->set_name( $long_title );
 		$product->save();
 
@@ -221,7 +222,7 @@ class ProductMapperTest extends \WC_Unit_Test_Case {
 	 * Test row cleaning removes null and empty values
 	 */
 	public function test_map_product_cleans_null_and_empty_values(): void {
-		$product = \WC_Helper_Product::create_simple_product();
+		$product = WC_Helper_Product::create_simple_product();
 		$product->set_name( 'Clean Test' );
 		$product->set_description( 'Clean Description' );
 		// Don't set optional fields like gtin, mpn, etc...
@@ -242,7 +243,7 @@ class ProductMapperTest extends \WC_Unit_Test_Case {
 	 * Test wpfoai_map_product filter is applied
 	 */
 	public function test_map_product_applies_filter(): void {
-		$product = \WC_Helper_Product::create_simple_product();
+		$product = WC_Helper_Product::create_simple_product();
 		$product->save();
 
 		$filter_applied  = false;
@@ -269,7 +270,7 @@ class ProductMapperTest extends \WC_Unit_Test_Case {
 	 * Test enable_search mapping with product meta override
 	 */
 	public function test_map_product_enable_search_with_override(): void {
-		$product = \WC_Helper_Product::create_simple_product();
+		$product = WC_Helper_Product::create_simple_product();
 		$product->update_meta_data( ProductFieldsController::KEY_DISABLE_SEARCH, 'yes' );
 		$product->save();
 
@@ -285,7 +286,7 @@ class ProductMapperTest extends \WC_Unit_Test_Case {
 	 * Test enable_checkout mapping with product meta override
 	 */
 	public function test_map_product_enable_checkout_with_override(): void {
-		$product = \WC_Helper_Product::create_simple_product();
+		$product = WC_Helper_Product::create_simple_product();
 		$product->update_meta_data( ProductFieldsController::KEY_DISABLE_CHECKOUT, 'yes' );
 		$product->save();
 
@@ -301,7 +302,7 @@ class ProductMapperTest extends \WC_Unit_Test_Case {
 	 * Test price formatting with currency
 	 */
 	public function test_map_product_price_includes_currency(): void {
-		$product = \WC_Helper_Product::create_simple_product();
+		$product = WC_Helper_Product::create_simple_product();
 		$product->set_regular_price( '49.99' );
 		$product->save();
 
@@ -320,7 +321,7 @@ class ProductMapperTest extends \WC_Unit_Test_Case {
 	 * Test sale price mapping
 	 */
 	public function test_map_product_sale_price(): void {
-		$product = \WC_Helper_Product::create_simple_product();
+		$product = WC_Helper_Product::create_simple_product();
 		$product->set_regular_price( '99.99' );
 		$product->set_sale_price( '79.99' );
 		$product->save();
@@ -338,7 +339,7 @@ class ProductMapperTest extends \WC_Unit_Test_Case {
 	 * Test availability mapping for in stock product
 	 */
 	public function test_map_product_availability_in_stock(): void {
-		$product = \WC_Helper_Product::create_simple_product();
+		$product = WC_Helper_Product::create_simple_product();
 		$product->set_stock_status( 'instock' );
 		$product->save();
 
@@ -354,7 +355,7 @@ class ProductMapperTest extends \WC_Unit_Test_Case {
 	 * Test availability mapping for out of stock product
 	 */
 	public function test_map_product_availability_out_of_stock(): void {
-		$product = \WC_Helper_Product::create_simple_product();
+		$product = WC_Helper_Product::create_simple_product();
 		$product->set_stock_status( 'outofstock' );
 		$product->save();
 
@@ -370,7 +371,7 @@ class ProductMapperTest extends \WC_Unit_Test_Case {
 	 * Test availability mapping for backorder product
 	 */
 	public function test_map_product_availability_backorder(): void {
-		$product = \WC_Helper_Product::create_simple_product();
+		$product = WC_Helper_Product::create_simple_product();
 		$product->set_stock_status( 'onbackorder' );
 		$product->save();
 
@@ -386,7 +387,7 @@ class ProductMapperTest extends \WC_Unit_Test_Case {
 	 * Test inventory quantity for product with stock management
 	 */
 	public function test_map_product_inventory_quantity_with_stock_management(): void {
-		$product = \WC_Helper_Product::create_simple_product();
+		$product = WC_Helper_Product::create_simple_product();
 		$product->set_manage_stock( true );
 		$product->set_stock_quantity( 25 );
 		$product->save();
@@ -403,7 +404,7 @@ class ProductMapperTest extends \WC_Unit_Test_Case {
 	 * Test inventory quantity for product without stock management (in stock)
 	 */
 	public function test_map_product_inventory_quantity_without_stock_management_in_stock(): void {
-		$product = \WC_Helper_Product::create_simple_product();
+		$product = WC_Helper_Product::create_simple_product();
 		$product->set_manage_stock( false );
 		$product->set_stock_status( 'instock' );
 		$product->save();
@@ -420,7 +421,7 @@ class ProductMapperTest extends \WC_Unit_Test_Case {
 	 * Test inventory quantity for product without stock management (out of stock)
 	 */
 	public function test_map_product_inventory_quantity_without_stock_management_out_of_stock(): void {
-		$product = \WC_Helper_Product::create_simple_product();
+		$product = WC_Helper_Product::create_simple_product();
 		$product->set_manage_stock( false );
 		$product->set_stock_status( 'outofstock' );
 		$product->save();
@@ -437,27 +438,17 @@ class ProductMapperTest extends \WC_Unit_Test_Case {
 	 * Test brand mapping with attribute
 	 */
 	public function test_map_product_brand_from_attribute(): void {
-		$product = \WC_Helper_Product::create_simple_product();
-		$product->set_attributes(
-			[
-				'pa_brand' => new \WC_Product_Attribute(
-					[
-						'name'    => 'pa_brand',
-						'options' => [ 'TestBrand' ],
-						'visible' => true,
-					]
-				),
-			]
-		);
+		$product   = WC_Helper_Product::create_simple_product();
+		$attribute = WC_Helper_Product::create_product_attribute_object( 'brand', [ 'TestBrand' ] );
+		$product->set_attributes( [ $attribute ] );
 		$product->save();
 
-		// Note: WooCommerce test helpers may not fully support custom attributes.
-		// This test demonstrates the expected behavior.
 		$result = $this->sut->map_product( $product );
 
 		// Brand should either be set from attribute or default to 'Generic'.
 		$this->assertArrayHasKey( 'brand', $result );
 		$this->assertIsString( $result['brand'] );
+		$this->assertEquals( 'TestBrand', $result['brand'] );
 
 		$product->delete( true );
 	}
@@ -466,7 +457,7 @@ class ProductMapperTest extends \WC_Unit_Test_Case {
 	 * Test brand defaults to 'Generic' when not set
 	 */
 	public function test_map_product_brand_defaults_to_generic(): void {
-		$product = \WC_Helper_Product::create_simple_product();
+		$product = WC_Helper_Product::create_simple_product();
 		$product->save();
 
 		$result = $this->sut->map_product( $product );
@@ -481,7 +472,7 @@ class ProductMapperTest extends \WC_Unit_Test_Case {
 	 * Test condition mapping with meta
 	 */
 	public function test_map_product_condition_from_meta(): void {
-		$product = \WC_Helper_Product::create_simple_product();
+		$product = WC_Helper_Product::create_simple_product();
 		$product->update_meta_data( ProductFieldsController::KEY_CONDITION, 'refurbished' );
 		$product->save();
 
@@ -497,7 +488,7 @@ class ProductMapperTest extends \WC_Unit_Test_Case {
 	 * Test condition defaults to 'new' when not set
 	 */
 	public function test_map_product_condition_defaults_to_new(): void {
-		$product = \WC_Helper_Product::create_simple_product();
+		$product = WC_Helper_Product::create_simple_product();
 		// Don't set condition meta.
 		$product->save();
 
@@ -513,7 +504,7 @@ class ProductMapperTest extends \WC_Unit_Test_Case {
 	 * Test MPN generation when GTIN is not present
 	 */
 	public function test_map_product_mpn_generated_without_gtin(): void {
-		$product = \WC_Helper_Product::create_simple_product();
+		$product = WC_Helper_Product::create_simple_product();
 		$product->set_name( 'MPN Test Product' );
 		// Don't set GTIN.
 		$product->save();
@@ -532,7 +523,7 @@ class ProductMapperTest extends \WC_Unit_Test_Case {
 	 * Test product link is a valid URL
 	 */
 	public function test_map_product_link_is_valid_url(): void {
-		$product = \WC_Helper_Product::create_simple_product();
+		$product = WC_Helper_Product::create_simple_product();
 		$product->save();
 
 		$result = $this->sut->map_product( $product );
@@ -548,7 +539,7 @@ class ProductMapperTest extends \WC_Unit_Test_Case {
 	 * Test title has HTML tags stripped
 	 */
 	public function test_map_product_title_strips_html_tags(): void {
-		$product = \WC_Helper_Product::create_simple_product();
+		$product = WC_Helper_Product::create_simple_product();
 		$product->set_name( '<strong>HTML</strong> <em>Title</em>' );
 		$product->save();
 
@@ -566,7 +557,7 @@ class ProductMapperTest extends \WC_Unit_Test_Case {
 	 * Test description has HTML tags stripped
 	 */
 	public function test_map_product_description_strips_html_tags(): void {
-		$product = \WC_Helper_Product::create_simple_product();
+		$product = WC_Helper_Product::create_simple_product();
 		$product->set_description( '<p>HTML <strong>Description</strong></p>' );
 		$product->save();
 
@@ -583,7 +574,7 @@ class ProductMapperTest extends \WC_Unit_Test_Case {
 	 * Test description falls back to short description
 	 */
 	public function test_map_product_description_fallback_to_short_description(): void {
-		$product = \WC_Helper_Product::create_simple_product();
+		$product = WC_Helper_Product::create_simple_product();
 		$product->set_description( '' ); // Empty long description.
 		$product->set_short_description( 'This is a short description' );
 		$product->save();
@@ -616,7 +607,7 @@ class ProductMapperTest extends \WC_Unit_Test_Case {
 		$mapper = new ProductMapper();
 		$mapper->init( $mock_settings );
 
-		$product = \WC_Helper_Product::create_simple_product();
+		$product = WC_Helper_Product::create_simple_product();
 		$product->save();
 
 		$result = $mapper->map_product( $product );

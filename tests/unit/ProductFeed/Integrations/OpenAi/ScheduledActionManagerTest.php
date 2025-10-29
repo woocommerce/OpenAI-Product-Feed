@@ -36,6 +36,7 @@ class ScheduledActionManagerTest extends \WC_Unit_Test_Case {
 		parent::tearDown();
 		remove_all_filters( 'wpfoai_push_file_pre_request' );
 		remove_all_filters( 'woocommerce_terms_and_conditions_page_id' );
+		delete_option( 'woocommerce_agentic_agent_registry' );
 	}
 
 	public function test_scheduled_push() {
