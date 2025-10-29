@@ -9,10 +9,9 @@ declare(strict_types=1);
 
 namespace Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAi;
 
+use Automattic\WooCommerce\Enums\ProductStockStatus;
 use Automattic\WooCommerce\Enums\ProductType;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductMapperInterface;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAi\Settings;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAi\FeedSchema;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Utils\StringHelper;
 use RuntimeException;
 
@@ -44,9 +43,9 @@ final class ProductMapper implements ProductMapperInterface {
 	/**
 	 * Cached shipping data to prevent repeated queries.
 	 *
-	 * @var array|null
+	 * @var string|null
 	 */
-	private static ?array $cached_shipping_data = null;
+	private static ?string $cached_shipping_data = null;
 
 	/**
 	 * Cached shipping zones to prevent repeated API calls.
@@ -104,7 +103,7 @@ final class ProductMapper implements ProductMapperInterface {
 			$row[ $field ] = $this->map_field( $product, $field, $config, $parent_product );
 		}
 
-		$row = $this->validate_and_clean_row( $row );
+		$row = $this->clean_row( $row );
 
 		/**
 		 * Filter mapped product data before validation.
@@ -155,9 +154,6 @@ final class ProductMapper implements ProductMapperInterface {
 		}
 
 		switch ( $config['type'] ) {
-			case 'boolean_string':
-				return StringHelper::bool_string( $value );
-
 			case 'integer':
 				return (int) $value;
 
@@ -177,40 +173,12 @@ final class ProductMapper implements ProductMapperInterface {
 	}
 
 	/**
-	 * Validate and clean row data using schema
+	 * Remove null and empty fields from the row.
 	 *
 	 * @param array $row Product data row.
 	 * @return array Cleaned product data row.
 	 */
-	protected function validate_and_clean_row( array $row ): array {
-		foreach ( $this->schema as $field => $config ) {
-			if ( ! isset( $row[ $field ] ) ) {
-				continue;
-			}
-
-			if ( isset( $config['depends_on'] ) ) {
-				foreach ( $config['depends_on'] as $dep_field => $dep_value ) {
-					$current_value = $row[ $dep_field ] ?? null;
-					if ( $dep_value !== $current_value ) {
-						if ( 'boolean_string' === $config['type'] ) {
-							$row[ $field ] = 'false';
-						} else {
-							unset( $row[ $field ] );
-						}
-						break;
-					}
-				}
-			}
-
-			if ( isset( $config['pattern'] ) && ! empty( $row[ $field ] ) ) {
-				if ( ! preg_match( $config['pattern'], (string) $row[ $field ] ) ) {
-					if ( 'gtin' === $field ) {
-						$row[ $field ] = 'MISSING'; // Will be caught by validator.
-					}
-				}
-			}
-		}
-
+	protected function clean_row( array $row ): array {
 		return array_filter(
 			$row,
 			function ( $value ) {
@@ -251,7 +219,8 @@ final class ProductMapper implements ProductMapperInterface {
 	protected function get_enable_search( \WC_Product $product, ?\WC_Product $parent_product ): string {
 		// For variations, check parent product meta; for simple products, check product meta.
 		$check_product = $parent_product ? $parent_product : $product;
-		return $this->get_enable_with_override( $check_product, ProductFieldsController::KEY_DISABLE_SEARCH, 'enable_products_default', 'true' );
+		$value         = $this->get_enable_with_override( $check_product, ProductFieldsController::KEY_DISABLE_SEARCH, 'enable_products_default', 'true' );
+		return StringHelper::bool_string( $value );
 	}
 
 	/**
@@ -264,7 +233,8 @@ final class ProductMapper implements ProductMapperInterface {
 	protected function get_enable_checkout( \WC_Product $product, ?\WC_Product $parent_product ): string {
 		// For variations, check parent product meta; for simple products, check product meta.
 		$check_product = $parent_product ?? $product;
-		return $this->get_enable_with_override( $check_product, ProductFieldsController::KEY_DISABLE_CHECKOUT, 'enable_products_default', 'false' );
+		$value         = $this->get_enable_with_override( $check_product, ProductFieldsController::KEY_DISABLE_CHECKOUT, 'enable_products_default', 'false' );
+		return StringHelper::bool_string( $value );
 	}
 
 	/**
@@ -371,9 +341,6 @@ final class ProductMapper implements ProductMapperInterface {
 
 		$names = [];
 		foreach ( $terms as $term ) {
-			if ( 'uncategorized' === $term->slug ) {
-				continue;
-			}
 			$names[] = $term->name;
 		}
 
@@ -567,7 +534,22 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @return int Product inventory quantity.
 	 */
 	protected function get_inventory_quantity( \WC_Product $product ): int {
-		return $product->get_stock_quantity() ?? 0;
+		$stock_quantity = $product->get_stock_quantity();
+		if ( null !== $stock_quantity ) {
+			return $stock_quantity;
+		}
+
+		return ProductStockStatus::IN_STOCK === $product->get_stock_status()
+			/**
+			 * Filters the inventory quantity for in-stock products without stock management enabled.
+			 *
+			 * @since 0.1.0
+			 *
+			 * @param int         $quantity Default quantity (1 for in-stock products).
+			 * @param \WC_Product $product  The product object.
+			 */
+			? (int) apply_filters( 'wpfoai_inventory_quantity_without_stock_management', 1, $product )
+			: 0;
 	}
 
 	/**
@@ -693,15 +675,6 @@ final class ProductMapper implements ProductMapperInterface {
 	protected function get_return_window(): ?string {
 		$return_window = $this->settings->get( 'return_window' );
 		return $return_window ? (string) $return_window : null;
-	}
-
-	/**
-	 * Get shipping data.
-	 *
-	 * @return array Shipping data array.
-	 */
-	protected function get_shipping(): array {
-		return $this->get_shipping_data();
 	}
 
 	/**
@@ -916,15 +889,15 @@ final class ProductMapper implements ProductMapperInterface {
 	/**
 	 * Get shipping data from WooCommerce zones (cached globally to prevent repeated queries)
 	 *
-	 * @return array Shipping data array.
+	 * @return string Shipping data string.
 	 */
-	private function get_shipping_data(): array {
+	private function get_shipping(): string {
 		if ( null !== self::$cached_shipping_data ) {
 			return self::$cached_shipping_data;
 		}
 
 		if ( ! class_exists( 'WC_Shipping_Zones' ) ) {
-			self::$cached_shipping_data = [];
+			self::$cached_shipping_data = '';
 			return self::$cached_shipping_data;
 		}
 
@@ -947,7 +920,9 @@ final class ProductMapper implements ProductMapperInterface {
 			}
 		}
 
-		self::$cached_shipping_data = array_values( array_unique( $shipping_data ) );
+		$shipping_data              = array_values( array_unique( $shipping_data ) );
+		self::$cached_shipping_data = empty( $shipping_data ) ? '' : implode( '; ', $shipping_data );
+
 		return self::$cached_shipping_data;
 	}
 
