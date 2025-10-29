@@ -86,7 +86,7 @@ final class FeedValidator implements FeedValidatorInterface {
 		 */
 		if ( 'enable_checkout' === $field
 			&& 'true' === $value
-			&& 'false' === ( $row['enable_search'] ?? null )
+			&& 'true' !== ( $row['enable_search'] ?? null )
 		) {
 			$issues[] = 'enable_checkout requires enable_search=true';
 		}
