@@ -9,10 +9,9 @@ declare(strict_types=1);
 
 namespace Automattic\WooCommerce\ProductFeedForOpenAI\CLI;
 
-use RuntimeException;
+use Exception;
 use WP_CLI;
 use WP_CLI_Command;
-use Automattic\WooCommerce\ProductFeedForOpenAI\DeliveryMethods\PushFile;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductWalker;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\WalkerProgress;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\IntegrationRegistry;
@@ -80,7 +79,7 @@ class Command extends WP_CLI_Command {
 	 *
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
-	 * @throws RuntimeException If the cURL request fails.
+	 * @throws Exception If the cURL request fails.
 	 */
 	public function generate( $args, $assoc_args ) {
 		// Read args and prepare defaults.
@@ -163,12 +162,20 @@ class Command extends WP_CLI_Command {
 			WP_CLI::log( 'Sending feed to API...' );
 		}
 
-		$result = $delivery_method->deliver( $feed );
+		try {
+			$result = $delivery_method->deliver( $feed );
+		} catch ( Exception $e ) {
+			return WP_CLI::error( $e->getMessage() );
+		}
 
-		// No need to do wonders with the response, just print it.
 		if ( ! $silent ) {
 			WP_CLI::success( 'Received a successful response from the API:' );
 		}
-		WP_CLI::print_value( $result, [ 'format' => 'json' ] );
+
+		// No need to do wonders with the response, just print it.
+		$body = wp_remote_retrieve_body( $result );
+		if ( ! empty( $body ) ) {
+			WP_CLI::print_value( json_decode( $body, true ), [ 'format' => 'json' ] );
+		}
 	}
 }

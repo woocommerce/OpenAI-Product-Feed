@@ -1,10 +1,12 @@
 <?php
 declare( strict_types = 1 );
 
+namespace Automattic\WooCommerce\ProductFeedForOpenAI\Utils;
+
 /**
  * Demo test class for OpenAI Product Feed plugin.
  */
-class DemoTest extends WC_Unit_Test_Case {
+class StringHelperTest extends \WC_Unit_Test_Case {
 	/**
 	 * Simple assertion.
 	 */
@@ -16,6 +18,6 @@ class DemoTest extends WC_Unit_Test_Case {
 	 * Test a static method to make sure the autoloader works.
 	 */
 	public function test_plugin_class() {
-		$this->assertEquals( 'true', Automattic\WooCommerce\ProductFeedForOpenAI\Utils\StringHelper::bool_string( 'yes' ) );
+		$this->assertEquals( 'true', StringHelper::bool_string( 'yes' ) );
 	}
 }

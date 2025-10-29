@@ -11,7 +11,7 @@ namespace Automattic\WooCommerce\ProductFeedForOpenAI\Storage;
 
 use Automattic\WooCommerce\Internal\Utilities\FilesystemUtil;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\FeedInterface;
-use RuntimeException;
+use Exception;
 
 // This file works directly with local files. That's fine.
 // phpcs:disable WordPress.WP.AlternativeFunctions
@@ -77,7 +77,7 @@ class JsonFileFeed implements FeedInterface {
 	 * Start the feed.
 	 *
 	 * @return void
-	 * @throws RuntimeException If the feed directory cannot be created.
+	 * @throws Exception If the feed directory cannot be created.
 	 */
 	public function start(): void {
 		$upload_dir = wp_upload_dir( null, true );
@@ -90,7 +90,7 @@ class JsonFileFeed implements FeedInterface {
 
 		// `mkdir_p_not_indexable()` returns `void`, so we need to check again.
 		if ( ! is_dir( $directory ) ) {
-			throw new RuntimeException(
+			throw new Exception(
 				esc_html(
 					sprintf(
 						/* translators: %s: directory path */
@@ -116,7 +116,7 @@ class JsonFileFeed implements FeedInterface {
 		$this->file_handle = fopen( $this->file_path, 'w' );
 
 		if ( false === $this->file_handle ) {
-			throw new RuntimeException(
+			throw new Exception(
 				esc_html(
 					sprintf(
 						/* translators: %s: directory path */

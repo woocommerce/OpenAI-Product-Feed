@@ -11,7 +11,7 @@ namespace Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAi;
 
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductWalker;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAi\OpenAiIntegration;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Storage\JsonFileFeed;
+use Exception;
 use WC_Logger_Interface;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -70,21 +70,13 @@ class ScheduledActionManager {
 		$walker = ProductWalker::from_integration( $this->openai_integration, $feed );
 		$walker->walk();
 
-		$response = $delivery_method->deliver( $feed );
-
-		if ( is_wp_error( $response ) ) {
-			if ( $this->logger ) {
-				$this->logger->error( 'Feed push failed: ' . $response->get_error_message(), [ 'source' => 'wpfoai' ] );
-			}
-		} else {
-			$code = wp_remote_retrieve_response_code( $response );
-			if ( $this->logger ) {
-				if ( $code >= 200 && $code < 300 ) {
-					$this->logger->info( 'Feed push successful: HTTP ' . $code, [ 'source' => 'wpfoai' ] );
-				} else {
-					$this->logger->warning( 'Feed push returned HTTP ' . $code, [ 'source' => 'wpfoai' ] );
-				}
-			}
+		try {
+			$result = $delivery_method->deliver( $feed );
+		} catch ( Exception $e ) {
+			$this->logger->error( 'Feed push failed: ' . $e->getMessage(), [ 'source' => 'wpfoai' ] );
+			return;
 		}
+
+		$this->logger->info( 'Feed push successful: HTTP ' . wp_remote_retrieve_response_code( $result ), [ 'source' => 'wpfoai' ] );
 	}
 }
