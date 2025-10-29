@@ -1,16 +1,15 @@
 <?php
 declare( strict_types = 1 );
 
+namespace Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAi;
+
 use PHPUnit\Framework\MockObject\MockObject;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Core\DependencyManagement\Container;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAi\ScheduledActionManager;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAi\Settings;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAi\OpenAiIntegration;
 
 /**
  * Admin controller test class.
  */
-class ScheduledActionManagerTest extends WC_Unit_Test_Case {
+class ScheduledActionManagerTest extends \WC_Unit_Test_Case {
 	/**
 	 * API controller instance.
 	 *
@@ -28,7 +27,7 @@ class ScheduledActionManagerTest extends WC_Unit_Test_Case {
 	/**
 	 * Mock logger.
 	 *
-	 * @var WC_Logger_Interface|MockObject
+	 * @var \WC_Logger_Interface|MockObject
 	 */
 	private $mock_logger;
 
@@ -36,7 +35,7 @@ class ScheduledActionManagerTest extends WC_Unit_Test_Case {
 		parent::setUp();
 
 		$this->mock_settings = $this->createMock( Settings::class );
-		$this->mock_logger   = $this->createMock( WC_Logger_Interface::class );
+		$this->mock_logger   = $this->createMock( \WC_Logger_Interface::class );
 
 		$integration = new OpenAiIntegration();
 		$integration->init(
@@ -61,7 +60,7 @@ class ScheduledActionManagerTest extends WC_Unit_Test_Case {
 			->willReturn( $endpoint_url );
 
 		// Add the minimum viable fields for a product to appear in the feed.
-		$product = WC_Helper_Product::create_simple_product();
+		$product = \WC_Helper_Product::create_simple_product();
 		$product->set_global_unique_id( 1234 );
 		$product->update_meta_data( '_gtin', 1234 );
 		$product->set_manage_stock( true );
