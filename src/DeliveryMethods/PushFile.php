@@ -7,7 +7,7 @@
 
 namespace Automattic\WooCommerce\ProductFeedForOpenAI\DeliveryMethods;
 
-use RuntimeException;
+use Exception;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\FeedInterface;
 
 // This file uses cURL heavily. It's a requirement for the plugin.
@@ -49,9 +49,10 @@ class PushFile implements FileDeliveryInterface {
 	 * That will be one of the next PRs.
 	 *
 	 * @param FeedInterface $feed The feed to deliver.
-	 * @return array The response from the remote endpoint.
-	 * @throws RuntimeException If the request fails.
-	 * @throws RuntimeException If the HTTP code is not between 200 and 299.
+	 * @return array The response from the remote endpoint. Structure: ['body' => string, 'response' => ['code' => int]].
+	 *               Compatible with wp_remote_retrieve_* functions.
+	 * @throws Exception If the request fails.
+	 * @throws Exception If the HTTP code is not between 200 and 299.
 	 */
 	public function deliver( FeedInterface $feed ): array {
 		$path = $feed->get_file_path();
@@ -71,38 +72,66 @@ class PushFile implements FileDeliveryInterface {
 			return $pre;
 		}
 
-		$file_handle = fopen( $path, 'rb' );
+		// `fopen` triggers an error that cannot be caught.
+		// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+		$file = @fopen( $path, 'rb' );
+		if ( false === $file ) {
+			$error = error_get_last();
+			throw new Exception( 'Unable to open feed file for reading. ' . ( esc_html( $error['message'] ) ?? 'Unknown error' ) );
+		}
 
-		$ch = curl_init( $this->endpoint );
+		$size = filesize( $path );
+		if ( false === $size ) {
+			fclose( $file );
+			throw new Exception( 'Unable to determine feed file size.' );
+		}
+
+		// To avoid timeouts, but also give the responder enough time to receive the file, calculate the timeout.
+		// Assumes ~100 KB/s transfer rate (10 seconds per MB). Minimum 10 seconds for small files.
+		$timeout = max( 10, $size / MB_IN_BYTES * 10 );
+
+		$curl_handle = curl_init( $this->endpoint );
 		curl_setopt_array(
-			$ch,
+			$curl_handle,
 			[
-				CURLOPT_POST           => true,
-				CURLOPT_INFILE         => $file_handle,
-				CURLOPT_INFILESIZE     => filesize( $path ),
-				CURLOPT_RETURNTRANSFER => true,
-				CURLOPT_HTTPHEADER     => [
+				CURLOPT_POST            => true,
+				CURLOPT_INFILE          => $file,
+				CURLOPT_INFILESIZE      => $size,
+				CURLOPT_RETURNTRANSFER  => true,
+				CURLOPT_CONNECTTIMEOUT  => 10,
+				CURLOPT_TIMEOUT         => $timeout,
+				CURLOPT_PROTOCOLS       => CURLPROTO_HTTP | CURLPROTO_HTTPS,
+				CURLOPT_REDIR_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS,
+				CURLOPT_HTTPHEADER      => [
 					'Content-Type: application/json',
+					'Expect:', // avoid 100-continue stalls on some servers.
 				],
 			]
 		);
-		$response = curl_exec( $ch );
 
-		if ( false === $response ) {
-			// phpcs:ignore
-			throw new RuntimeException( 'cURL error: ' . curl_error( $ch ) );
-		}
+		try {
+			$response = curl_exec( $curl_handle );
+			if ( false === $response ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
+				throw new Exception( 'cURL error: ' . curl_error( $curl_handle ) );
+			}
 
-		$http_code = curl_getinfo( $ch, CURLINFO_HTTP_CODE );
-		if ( $http_code < 200 || $http_code > 299 ) {
-			throw new RuntimeException( esc_html( 'Received non-200 HTTP code: ' . $http_code ) );
+			$http_code = curl_getinfo( $curl_handle, CURLINFO_HTTP_CODE );
+			if ( $http_code < 200 || $http_code > 299 ) {
+				throw new Exception( 'Received non-2xx HTTP code: ' . $http_code );
+			}
+		} finally {
+			if ( is_resource( $file ) ) {
+				fclose( $file );
+			}
+			curl_close( $curl_handle );
 		}
-		curl_close( $ch );
-		fclose( $file_handle );
 
 		return [
-			'body'      => $response,
-			'http_code' => $http_code,
+			'body'     => $response,
+			'response' => [
+				'code' => $http_code,
+			],
 		];
 	}
 }
