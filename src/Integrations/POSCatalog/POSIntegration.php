@@ -39,18 +39,14 @@ class POSIntegration implements IntegrationInterface {
 	}
 
 	/**
-	 * Get the ID of the provider.
-	 *
-	 * @return string The ID of the provider.
+	 * {@inheritdoc}
 	 */
 	public function get_id(): string {
 		return 'pos';
 	}
 
 	/**
-	 * Get the query arguments for the product feed.
-	 *
-	 * @return array The query arguments.
+	 * {@inheritdoc}
 	 */
 	public function get_product_feed_query_args(): array {
 		return [
@@ -59,9 +55,7 @@ class POSIntegration implements IntegrationInterface {
 	}
 
 	/**
-	 * Register hooks for the integration.
-	 *
-	 * @return void
+	 * {@inheritdoc}
 	 */
 	public function register_hooks(): void {
 		add_action( 'rest_api_init', [ $this, 'rest_api_init' ] );
@@ -79,45 +73,35 @@ class POSIntegration implements IntegrationInterface {
 	}
 
 	/**
-	 * Activate the integration.
-	 *
-	 * @return void
+	 * {@inheritdoc}
 	 */
 	public function activate(): void {
 		// At the moment, there are no activation steps for the POS catalog.
 	}
 
 	/**
-	 * Deactivate the integration.
-	 *
-	 * @return void
+	 * {@inheritdoc}
 	 */
 	public function deactivate(): void {
 		// At the moment, there are no deactivation steps for the POS catalog.
 	}
 
 	/**
-	 * Create a feed that is to be populated.
-	 *
-	 * @return FeedInterface The feed.
+	 * {@inheritdoc}
 	 */
 	public function create_feed(): FeedInterface {
 		return new JsonFileFeed( 'pos-catalog-feed' );
 	}
 
 	/**
-	 * Get the product mapper for the provider.
-	 *
-	 * @return ProductMapperInterface The product mapper.
+	 * {@inheritdoc}
 	 */
 	public function get_product_mapper(): ProductMapperInterface {
 		return $this->container->get( ProductMapper::class );
 	}
 
 	/**
-	 * Get the feed validator for the provider.
-	 *
-	 * @return FeedValidatorInterface The feed validator.
+	 * {@inheritdoc}
 	 */
 	public function get_feed_validator(): FeedValidatorInterface {
 		return $this->container->get( FeedValidator::class );

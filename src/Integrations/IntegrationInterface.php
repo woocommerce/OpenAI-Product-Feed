@@ -38,12 +38,20 @@ interface IntegrationInterface {
 	/**
 	 * Activate the integration.
 	 *
+	 * This method is called when the plugin is activated.
+	 * If there is ever a setting that controls active integrations,
+	 * this method might also be called when the integration is activated.
+	 *
 	 * @return void
 	 */
 	public function activate(): void;
 
 	/**
 	 * Deactivate the integration.
+	 *
+	 * This method is called when the plugin is deactivated.
+	 * If there is ever a setting that controls active integrations,
+	 * this method might also be called when the integration is deactivated.
 	 *
 	 * @return void
 	 */

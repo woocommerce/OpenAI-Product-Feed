@@ -53,7 +53,7 @@ class OpenAiIntegration implements IntegrationInterface, PushIntegrationInterfac
 	}
 
 	/**
-	 * Registers all needed hooks.
+	 * {@inheritdoc}
 	 */
 	public function register_hooks(): void {
 		$this->settings->register_hooks();
@@ -66,13 +66,7 @@ class OpenAiIntegration implements IntegrationInterface, PushIntegrationInterfac
 	}
 
 	/**
-	 * Activate the integration.
-	 *
-	 * This method is called when the plugin is activated.
-	 * If there is ever a setting that controls active integrations,
-	 * this method might also be called when the integration is activated.
-	 *
-	 * @return void
+	 * {@inheritdoc}
 	 */
 	public function activate(): void {
 		if ( ! as_has_scheduled_action( ScheduledActionManager::SCHEDULED_ACTION_HOOK ) ) {
@@ -81,13 +75,7 @@ class OpenAiIntegration implements IntegrationInterface, PushIntegrationInterfac
 	}
 
 	/**
-	 * Deactivate the integration.
-	 *
-	 * This method is called when the plugin is deactivated.
-	 * If there is ever a setting that controls active integrations,
-	 * this method might also be called when the integration is deactivated.
-	 *
-	 * @return void
+	 * {@inheritdoc}
 	 */
 	public function deactivate(): void {
 		// Clean up scheduled events using Action Scheduler.
@@ -97,18 +85,14 @@ class OpenAiIntegration implements IntegrationInterface, PushIntegrationInterfac
 	}
 
 	/**
-	 * Get the ID of the provider.
-	 *
-	 * @return string The ID of the provider.
+	 * {@inheritdoc}
 	 */
 	public function get_id(): string {
 		return 'openai';
 	}
 
 	/**
-	 * Get the query arguments for the product feed.
-	 *
-	 * @return array The query arguments.
+	 * {@inheritdoc}
 	 */
 	public function get_product_feed_query_args(): array {
 		return [
@@ -117,18 +101,14 @@ class OpenAiIntegration implements IntegrationInterface, PushIntegrationInterfac
 	}
 
 	/**
-	 * Create a feed that is to be populated.
-	 *
-	 * @return FeedInterface The feed.
+	 * {@inheritdoc}
 	 */
 	public function create_feed(): FeedInterface {
 		return new JsonFileFeed( 'openai-feed' );
 	}
 
 	/**
-	 * Get the product mapper for the provider.
-	 *
-	 * @return ProductMapperInterface The product mapper.
+	 * {@inheritdoc}
 	 */
 	public function get_product_mapper(): ProductMapperInterface {
 		// Instantiate only when needed, meaning while generating feeds.
@@ -136,9 +116,7 @@ class OpenAiIntegration implements IntegrationInterface, PushIntegrationInterfac
 	}
 
 	/**
-	 * Get the feed validator for the provider.
-	 *
-	 * @return FeedValidatorInterface The feed validator.
+	 * {@inheritdoc}
 	 */
 	public function get_feed_validator(): FeedValidatorInterface {
 		// Instantiate only when needed, meaning while generating feeds.
@@ -146,9 +124,7 @@ class OpenAiIntegration implements IntegrationInterface, PushIntegrationInterfac
 	}
 
 	/**
-	 * Get the push delivery method for the provider.
-	 *
-	 * @return FileDeliveryInterface The push delivery method.
+	 * {@inheritdoc}
 	 */
 	public function get_push_delivery_method(): FileDeliveryInterface {
 		return new PushFile( $this->settings->get_endpoint_url() ?? '' );

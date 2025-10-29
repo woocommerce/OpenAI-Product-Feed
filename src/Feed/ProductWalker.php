@@ -25,21 +25,21 @@ class ProductWalker {
 	 *
 	 * @var ProductMapperInterface
 	 */
-	private $mapper;
+	private ProductMapperInterface $mapper;
 
 	/**
 	 * The feed.
 	 *
 	 * @var FeedInterface
 	 */
-	private $feed;
+	private FeedInterface $feed;
 
 	/**
 	 * The feed validator.
 	 *
 	 * @var FeedValidatorInterface
 	 */
-	private $validator;
+	private FeedValidatorInterface $validator;
 
 	/**
 	 * The number of products to iterate through per batch.
@@ -60,7 +60,7 @@ class ProductWalker {
 	 *
 	 * @var array
 	 */
-	private $query_args;
+	private array $query_args;
 
 	/**
 	 * Class constructor.
