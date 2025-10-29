@@ -548,7 +548,7 @@ final class ProductMapper implements ProductMapperInterface {
 			 * @param int         $quantity Default quantity (1 for in-stock products).
 			 * @param \WC_Product $product  The product object.
 			 */
-			? apply_filters( 'wpfoai_inventory_quantity_without_stock_management', 1, $product )
+			? (int) apply_filters( 'wpfoai_inventory_quantity_without_stock_management', 1, $product )
 			: 0;
 	}
 
