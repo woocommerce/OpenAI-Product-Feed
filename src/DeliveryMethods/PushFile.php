@@ -7,7 +7,7 @@
 
 namespace Automattic\WooCommerce\ProductFeedForOpenAI\DeliveryMethods;
 
-use RuntimeException;
+use Exception;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\FeedInterface;
 
 // This file uses cURL heavily. It's a requirement for the plugin.
@@ -51,8 +51,8 @@ class PushFile implements FileDeliveryInterface {
 	 * @param FeedInterface $feed The feed to deliver.
 	 * @return array The response from the remote endpoint. Structure: ['body' => string, 'response' => ['code' => int]].
 	 *               Compatible with wp_remote_retrieve_* functions.
-	 * @throws RuntimeException If the request fails.
-	 * @throws RuntimeException If the HTTP code is not between 200 and 299.
+	 * @throws Exception If the request fails.
+	 * @throws Exception If the HTTP code is not between 200 and 299.
 	 */
 	public function deliver( FeedInterface $feed ): array {
 		$path = $feed->get_file_path();
@@ -77,13 +77,13 @@ class PushFile implements FileDeliveryInterface {
 		$file = @fopen( $path, 'rb' );
 		if ( false === $file ) {
 			$error = error_get_last();
-			throw new RuntimeException( 'Unable to open feed file for reading. ' . ( esc_html( $error['message'] ) ?? 'Unknown error' ) );
+			throw new Exception( 'Unable to open feed file for reading. ' . ( esc_html( $error['message'] ) ?? 'Unknown error' ) );
 		}
 
 		$size = filesize( $path );
 		if ( false === $size ) {
 			fclose( $file );
-			throw new RuntimeException( 'Unable to determine feed file size.' );
+			throw new Exception( 'Unable to determine feed file size.' );
 		}
 
 		// To avoid timeouts, but also give the responder enough time to receive the file, calculate the timeout.
@@ -113,12 +113,12 @@ class PushFile implements FileDeliveryInterface {
 			$response = curl_exec( $curl_handle );
 			if ( false === $response ) {
 				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
-				throw new RuntimeException( 'cURL error: ' . curl_error( $curl_handle ) );
+				throw new Exception( 'cURL error: ' . curl_error( $curl_handle ) );
 			}
 
 			$http_code = curl_getinfo( $curl_handle, CURLINFO_HTTP_CODE );
 			if ( $http_code < 200 || $http_code > 299 ) {
-				throw new RuntimeException( 'Received non-2xx HTTP code: ' . $http_code );
+				throw new Exception( 'Received non-2xx HTTP code: ' . $http_code );
 			}
 		} finally {
 			if ( is_resource( $file ) ) {

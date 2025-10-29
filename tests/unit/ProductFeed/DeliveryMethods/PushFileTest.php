@@ -89,7 +89,7 @@ class PushFileTest extends WC_Unit_Test_Case {
 			->method( 'get_file_path' )
 			->willReturn( '/random/missing/file.json' ); // PushFile accepts non-JSON.
 
-		$this->expectException( RuntimeException::class );
+		$this->expectException( Exception::class );
 		$this->expectExceptionMessageMatches( '/unable to open feed file/i' );
 		$this->sut->deliver( $mock_feed );
 	}
@@ -100,7 +100,7 @@ class PushFileTest extends WC_Unit_Test_Case {
 			->method( 'get_file_path' )
 			->willReturn( __FILE__ );
 
-		$this->expectException( RuntimeException::class );
+		$this->expectException( Exception::class );
 		$this->expectExceptionMessageMatches( '/cURL error/i' );
 		$this->sut->deliver( $mock_feed );
 	}

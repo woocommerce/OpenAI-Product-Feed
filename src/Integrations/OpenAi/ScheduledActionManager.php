@@ -11,7 +11,7 @@ namespace Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAi;
 
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductWalker;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAi\OpenAiIntegration;
-use RuntimeException;
+use Exception;
 use WC_Logger_Interface;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -76,7 +76,7 @@ class ScheduledActionManager {
 
 		try {
 			$result = $delivery_method->deliver( $feed );
-		} catch ( RuntimeException $e ) {
+		} catch ( Exception $e ) {
 			$this->logger->error( 'Feed push failed: ' . $e->getMessage(), [ 'source' => 'wpfoai' ] );
 			return;
 		}
