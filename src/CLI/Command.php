@@ -12,9 +12,11 @@ namespace Automattic\WooCommerce\ProductFeedForOpenAI\CLI;
 use RuntimeException;
 use WP_CLI;
 use WP_CLI_Command;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\IntegrationRegistry;
+use Automattic\WooCommerce\ProductFeedForOpenAI\DeliveryMethods\PushFile;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductWalker;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\WalkerProgress;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\IntegrationRegistry;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\PushIntegrationInterface;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Utils\MemoryManager;
 
 // This is CLI. Non-escaped content should not break it.
@@ -36,9 +38,7 @@ class Command extends WP_CLI_Command {
 	 *
 	 * @param IntegrationRegistry $integration_registry The integration registry.
 	 */
-	public function init(
-		IntegrationRegistry $integration_registry
-	) {
+	public function init( IntegrationRegistry $integration_registry ) {
 		$this->integration_registry = $integration_registry;
 	}
 
@@ -68,8 +68,8 @@ class Command extends WP_CLI_Command {
 	 * default: false
 	 * ---
 	 *
-	 * [--send]
-	 * : Whether to send the feed to an API.
+	 * [--push]
+	 * : Whether to send/push the feed to an API.
 	 * ---
 	 * default: false
 	 * ---
@@ -87,7 +87,7 @@ class Command extends WP_CLI_Command {
 		$timeout    = (int) $assoc_args['timeout'];
 		$batch_size = (int) $assoc_args['batch-size'];
 		$silent     = (bool) \WP_CLI\Utils\get_flag_value( $assoc_args, 'silent', false );
-		$send       = (bool) \WP_CLI\Utils\get_flag_value( $assoc_args, 'send', false );
+		$push       = (bool) \WP_CLI\Utils\get_flag_value( $assoc_args, 'push', false );
 
 		if ( ! isset( $assoc_args['integration'] ) ) {
 			return WP_CLI::error( 'Please provide the required --integration=<integration> parameter' );
@@ -97,12 +97,16 @@ class Command extends WP_CLI_Command {
 			return WP_CLI::error( 'Integration not found' );
 		}
 
-		// Verify settings in advance if there is a requirement to send the feed.
-		$endpoint = null;
-		if ( $send ) {
-			$endpoint = $integration->get_push_endpoint_url();
-			if ( empty( $endpoint ) ) {
-				return WP_CLI::error( 'Endpoint URL is not configured. Aborting.' );
+		// Check the delivery method before generating the feed.
+		$delivery_method = null;
+		if ( $push ) {
+			if ( ! $integration instanceof PushIntegrationInterface ) {
+				return WP_CLI::error( 'This integration does not support push delivery.' );
+			}
+
+			$delivery_method = $integration->get_push_delivery_method();
+			if ( ! $delivery_method->check_setup() ) {
+				return WP_CLI::error( 'Push delivery method for this integration is not configured.' );
 			}
 		}
 
@@ -138,7 +142,7 @@ class Command extends WP_CLI_Command {
 		);
 
 		$path = $feed->get_file_path();
-		if ( $silent && ! $send ) {
+		if ( $silent && null === $delivery_method ) {
 			WP_CLI::out( $path );
 			return;
 		}
@@ -148,27 +152,23 @@ class Command extends WP_CLI_Command {
 			WP_CLI::log( "Path: $path" );
 			WP_CLI::log( 'Time taken: ' . intval( ( microtime( true ) - $total_time ) ) . ' seconds' );
 
-			if ( ! $send ) {
-				WP_CLI::log( 'The --send option was not provided, the feed has not been sent.' );
+			if ( null === $delivery_method ) {
+				// Only log that the feed was not pushed if the integration supports push.
+				if ( $integration instanceof PushIntegrationInterface ) {
+					WP_CLI::log( 'The --push option was not provided, the feed has not been pushed.' );
+				}
 				return;
 			}
 
 			WP_CLI::log( 'Sending feed to API...' );
 		}
 
-		// Add the needed additional headers.
-		$headers = [];
-
-		$response = wp_remote_post(
-			$endpoint,
-			[
-				'headers' => $headers,
-				'timeout' => 30,
-				'body'    => file_get_contents( $feed->get_file_path() ), // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
-			]
-		);
+		$result = $delivery_method->deliver( $feed );
 
 		// No need to do wonders with the response, just print it.
-		WP_CLI::print_value( json_decode( $response['body'] ), [ 'format' => 'json' ] );
+		if ( ! $silent ) {
+			WP_CLI::success( 'Received a successful response from the API:' );
+		}
+		WP_CLI::print_value( $result, [ 'format' => 'json' ] );
 	}
 }

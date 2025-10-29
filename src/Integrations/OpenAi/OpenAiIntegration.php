@@ -10,10 +10,13 @@ declare(strict_types=1);
 namespace Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAi;
 
 use Automattic\WooCommerce\ProductFeedForOpenAI\Core\DependencyManagement\Container;
+use Automattic\WooCommerce\ProductFeedForOpenAI\DeliveryMethods\FileDeliveryInterface;
+use Automattic\WooCommerce\ProductFeedForOpenAI\DeliveryMethods\PushFile;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\FeedInterface;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\FeedValidatorInterface;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductMapperInterface;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\IntegrationInterface;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\PushIntegrationInterface;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Storage\JsonFileFeed;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -23,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * OpenAI Provider
  */
-class OpenAiIntegration implements IntegrationInterface {
+class OpenAiIntegration implements IntegrationInterface, PushIntegrationInterface {
 	/**
 	 * Container instance.
 	 *
@@ -132,14 +135,11 @@ class OpenAiIntegration implements IntegrationInterface {
 	}
 
 	/**
-	 * Get the endpoint URL for pushing feeds.
+	 * Get the push delivery method for the provider.
 	 *
-	 * As one of the next steps, rather than returning the URL from
-	 * the integration, the integration should set up the push mechanism.
-	 *
-	 * @return string|null The endpoint URL.
+	 * @return FileDeliveryInterface The push delivery method.
 	 */
-	public function get_push_endpoint_url(): ?string {
-		return $this->settings->get_endpoint_url();
+	public function get_push_delivery_method(): FileDeliveryInterface {
+		return new PushFile( $this->settings->get_endpoint_url() ?? '' );
 	}
 }
