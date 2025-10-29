@@ -105,6 +105,24 @@ final class AsyncGenerator {
 				$status
 			);
 
+			/**
+			 * Trick ActionScheduler to immediately spawn an async request to handle the action.
+			 *
+			 * This is a hack, as in order to AS to immediately trigger the action on shutdown,
+			 * it requires the current request to be `is_admin()`, which this one typically is not.
+			 *
+			 * This should be safe, as we are at the end of the request, and it can affect only
+			 * actions that are attached to the `shutdown` hook.
+			 *
+			 * If something had already defined the constant, that's alright. We'll just wait.
+			 */
+			if ( ! defined( 'WP_ADMIN' ) ) {
+				define( 'WP_ADMIN', true );
+			}
+
+			// Also remove the lock in case there was an async action less than 60 seconds ago.
+			delete_option( 'action_scheduler_lock_async-request-runner' );
+
 			// Start an immediate async action to generate the feed.
 			as_enqueue_async_action(
 				self::FEED_GENERATION_ACTION,
