@@ -90,18 +90,9 @@ final class AsyncGenerator {
 
 		if ( false === $status ) {
 			// Clear all previous actions to avoid race conditions.
-			as_unschedule_all_actions( self::FEED_GENERATION_ACTION, [ 'option_key' => $option_key ] );
-
-			// Add a bit of delay to avoid race conditions.
-			$delay     = 10;
-			$action_id = as_schedule_single_action(
-				time() + $delay,
-				self::FEED_GENERATION_ACTION,
-				[ 'option_key' => $option_key ]
-			);
+			as_unschedule_all_actions( self::FEED_GENERATION_ACTION, [ $option_key ], 'wpfoai' );
 
 			$status = [
-				'action_id' => $action_id,
 				'state'     => self::STATE_SCHEDULED,
 				'progress'  => 0,
 				'processed' => 0,
@@ -112,6 +103,15 @@ final class AsyncGenerator {
 			update_option(
 				$option_key,
 				$status
+			);
+
+			// Start an immediate async action to generate the feed.
+			as_enqueue_async_action(
+				self::FEED_GENERATION_ACTION,
+				[ $option_key ],
+				'wpfoai',
+				true,
+				1
 			);
 		}
 
@@ -158,7 +158,9 @@ final class AsyncGenerator {
 			[
 				$option_key,
 				$feed->get_file_path(),
-			]
+			],
+			'wpfoai',
+			true
 		);
 	}
 
@@ -217,7 +219,7 @@ final class AsyncGenerator {
 	 * @return string          The option key.
 	 */
 	private function get_option_key( ?array $args = null ): string {
-		return 'pos_feed_status_' . md5(
+		return 'feed_status_' . md5(
 			// WPCS dislikes serialize for security reasons, but it will be hashed immediately.
 			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize
 			serialize(
