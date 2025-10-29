@@ -49,11 +49,11 @@ class ScheduledActionManagerTest extends \WC_Unit_Test_Case {
 
 		// Add an image that will be used for the product.
 		$image_id = wp_insert_attachment(
-			array(
+			[
 				'post_title'     => 'Main Product Image',
 				'post_type'      => 'attachment',
 				'post_mime_type' => 'image/jpeg',
-			)
+			]
 		);
 
 		// Add the minimum viable fields for a product to appear in the feed.

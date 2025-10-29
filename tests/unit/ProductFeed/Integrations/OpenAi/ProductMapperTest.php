@@ -36,13 +36,13 @@ class ProductMapperTest extends \WC_Unit_Test_Case {
 		// Set up default settings mock behavior.
 		$this->mock_settings->method( 'get' )
 			->willReturnCallback(
-				function ( $key, $default = '' ) {
+				function ( $key, $default_value = '' ) {
 					$defaults = [
 						'enable_products_default' => 'true',
 						'seller_name'             => 'Test Store',
 						'seller_url'              => 'https://teststore.com',
 					];
-					return $defaults[ $key ] ?? $default;
+					return $defaults[ $key ] ?? $default_value;
 				}
 			);
 	}
@@ -246,7 +246,7 @@ class ProductMapperTest extends \WC_Unit_Test_Case {
 		$product->save();
 
 		$filter_applied  = false;
-		$filter_callback = function ( $row, $prod, $parent ) use ( &$filter_applied ) {
+		$filter_callback = function ( $row ) use ( &$filter_applied ) {
 			$filter_applied      = true;
 			$row['custom_field'] = 'custom_value';
 			return $row;
@@ -603,13 +603,13 @@ class ProductMapperTest extends \WC_Unit_Test_Case {
 		$mock_settings = $this->createMock( Settings::class );
 		$mock_settings->method( 'get' )
 			->willReturnCallback(
-				function ( $key, $default = '' ) {
+				function ( $key, $default_value = '' ) {
 					$values = [
 						'seller_name'             => 'My Test Store',
 						'seller_url'              => 'https://myteststore.com',
 						'enable_products_default' => 'true',
 					];
-					return $values[ $key ] ?? $default;
+					return $values[ $key ] ?? $default_value;
 				}
 			);
 
