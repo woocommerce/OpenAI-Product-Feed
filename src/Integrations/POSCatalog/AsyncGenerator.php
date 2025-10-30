@@ -90,38 +90,46 @@ final class AsyncGenerator {
 
 		$status = get_option( $option_key );
 
-		if ( false === $status ) {
-			// Clear all previous actions to avoid race conditions.
-			as_unschedule_all_actions( self::FEED_GENERATION_ACTION, [ $option_key ], 'wpfoai' );
+		// For completed jobs, make sure the file still exists. Regenerate otherwise.
+		if ( self::STATE_COMPLETED === $status['state'] && ! file_exists( $status['path'] ) ) {
+			$status = false;
+		}
 
-			$status = [
-				'state'     => self::STATE_SCHEDULED,
-				'progress'  => 0,
-				'processed' => 0,
-				'total'     => -1,
-				'args'      => $args ?? [],
-			];
+		// If the status is an array, it means that there is nothing to schedule in this method.
+		if ( false !== $status ) {
+			return $status;
+		}
 
-			update_option(
-				$option_key,
-				$status
-			);
+		// Clear all previous actions to avoid race conditions.
+		as_unschedule_all_actions( self::FEED_GENERATION_ACTION, [ $option_key ], 'wpfoai' );
 
-			// Start an immediate async action to generate the feed.
-			as_enqueue_async_action(
-				self::FEED_GENERATION_ACTION,
-				[ $option_key ],
-				'wpfoai',
-				true,
-				1
-			);
+		$status = [
+			'state'     => self::STATE_SCHEDULED,
+			'progress'  => 0,
+			'processed' => 0,
+			'total'     => -1,
+			'args'      => $args ?? [],
+		];
 
-			// Manually force an async request to be dispatched to process the action immediately.
-			if ( class_exists( ActionScheduler_AsyncRequest_QueueRunner::class ) && class_exists( ActionScheduler_Store::class ) ) {
-				$store         = ActionScheduler_Store::instance();
-				$async_request = new ActionScheduler_AsyncRequest_QueueRunner( $store );
-				$async_request->dispatch();
-			}
+		update_option(
+			$option_key,
+			$status
+		);
+
+		// Start an immediate async action to generate the feed.
+		as_enqueue_async_action(
+			self::FEED_GENERATION_ACTION,
+			[ $option_key ],
+			'wpfoai',
+			true,
+			1
+		);
+
+		// Manually force an async request to be dispatched to process the action immediately.
+		if ( class_exists( ActionScheduler_AsyncRequest_QueueRunner::class ) && class_exists( ActionScheduler_Store::class ) ) {
+			$store         = ActionScheduler_Store::instance();
+			$async_request = new ActionScheduler_AsyncRequest_QueueRunner( $store );
+			$async_request->dispatch();
 		}
 
 		return $status;
