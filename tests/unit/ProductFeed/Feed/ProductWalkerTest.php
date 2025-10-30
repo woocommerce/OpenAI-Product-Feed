@@ -7,6 +7,7 @@ use WC_Helper_Product;
 use WC_Product;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\IntegrationInterface;
 use Automattic\WooCommerce\ProductFeedForOpenAI\ProductFeedTestCase;
+use Automattic\WooCommerce\ProductFeedForOpenAI\Utils\MemoryManager;
 
 /**
  * ProductWalkerTest class.
@@ -17,24 +18,7 @@ class ProductWalkerTest extends ProductFeedTestCase {
 		remove_all_filters( 'wpfoai_product_feed_args' );
 	}
 
-	public function test_from_integration() {
-		$mock_integration = $this->createMock( IntegrationInterface::class );
-		$mock_feed        = $this->createMock( FeedInterface::class );
-
-		$mock_integration->expects( $this->once() )
-			->method( 'get_product_feed_query_args' )
-			->willReturn( [] );
-		$mock_integration->expects( $this->once() )
-			->method( 'get_product_mapper' )
-			->willReturn( $this->createMock( ProductMapperInterface::class ) );
-		$mock_integration->expects( $this->once() )
-			->method( 'get_feed_validator' )
-			->willReturn( $this->createMock( FeedValidatorInterface::class ) );
-
-		ProductWalker::from_integration( $mock_integration, $mock_feed );
-	}
-
-	public function provider_optimal_path(): array {
+	public function provider_walker(): array {
 		return [
 			'No Results'                        => [
 				'number_of_products' => 0,
@@ -56,19 +40,24 @@ class ProductWalkerTest extends ProductFeedTestCase {
 				'batch_size'         => 13,
 				'add_args_filter'    => false,
 			],
+			'High number of batches, proper memory management' => [
+				'number_of_products' => 15 * 2,
+				'batch_size'         => 2,
+				'add_args_filter'    => false,
+			],
 		];
 	}
 
 	/**
-	 * Test the optimal path for the product walker with varying results..
+	 * Test the product walker with varying input and results.
 	 *
 	 * @param int  $number_of_products The number of products to generate.
 	 * @param int  $batch_size         The batch size to use.
 	 * @param bool $add_args_filter    Whether the args filter is present.
 	 *
-	 * @dataProvider provider_optimal_path
+	 * @dataProvider provider_walker
 	 */
-	public function test_optimal_path( int $number_of_products, int $batch_size, bool $add_args_filter ) {
+	public function test_walker( int $number_of_products, int $batch_size, bool $add_args_filter ) {
 		/**
 		 * Prepare all mocked data.
 		 */
@@ -108,6 +97,9 @@ class ProductWalkerTest extends ProductFeedTestCase {
 		$mock_loader = $this->createMock( ProductLoader::class );
 		$this->test_container->replace_with_concrete( ProductLoader::class, $mock_loader );
 
+		$mock_memory_manager = $this->createMock( MemoryManager::class );
+		$this->test_container->replace_with_concrete( MemoryManager::class, $mock_memory_manager );
+
 		$mock_feed = $this->createMock( FeedInterface::class );
 
 		// Setup everything that comes from the integration, and the integration itself.
@@ -116,20 +108,6 @@ class ProductWalkerTest extends ProductFeedTestCase {
 		$mock_integration = $this->createMock( IntegrationInterface::class );
 		$mock_integration->expects( $this->once() )->method( 'get_product_mapper' )->willReturn( $mock_mapper );
 		$mock_integration->expects( $this->once() )->method( 'get_feed_validator' )->willReturn( $mock_validator );
-
-		if ( $add_args_filter ) {
-			// Add a filter that unsets the category query arg.
-			add_filter(
-				'wpfoai_product_feed_args',
-				function ( $args, $integration ) use ( $mock_integration ) {
-					$this->assertSame( $mock_integration, $integration );
-					unset( $args['category'] );
-					return $args;
-				},
-				10,
-				2
-			);
-		}
 
 		/**
 		 * Set up data & expectations.
@@ -219,6 +197,41 @@ class ProductWalkerTest extends ProductFeedTestCase {
 			$this->assertEquals( ++$processed_iterations, $progress->processed_batches );
 			$this->assertEquals( min( $processed_iterations * $batch_size, $number_of_products ), $progress->processed_items );
 		};
+
+		if ( $add_args_filter ) {
+			// Add a filter that unsets the category query arg.
+			add_filter(
+				'wpfoai_product_feed_args',
+				function ( $args, $integration ) use ( $mock_integration ) {
+					$this->assertSame( $mock_integration, $integration );
+					unset( $args['category'] );
+					return $args;
+				},
+				10,
+				2
+			);
+		}
+
+		// Memory management: Always start with 90%. Eatch batch takes up 20%.
+		$available_memory = 90;
+		$mock_memory_manager->expects( $this->exactly( $expected_iterations + 1 ) )
+			->method( 'get_available_memory' )
+			->willReturnCallback(
+				function () use ( &$available_memory ) {
+					$available_memory -= 20;
+					return $available_memory;
+				}
+			);
+		// Flushing cashes frees up memory up to 46% (just a bit over half).
+		// So once memory gets low, it remains just above the threshold (half of 90% or 45%).
+		$flushes = max( 0, $expected_iterations - 1 );
+		$mock_memory_manager->expects( $this->exactly( $flushes ) )
+			->method( 'flush_caches' )
+			->willReturnCallback(
+				function () use ( &$available_memory ) {
+					$available_memory = 46;
+				}
+			);
 
 		/**
 		 * Finally, get the walker and go!
