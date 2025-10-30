@@ -33,12 +33,24 @@ class Command extends WP_CLI_Command {
 	private IntegrationRegistry $integration_registry;
 
 	/**
+	 * Memory manager instance.
+	 *
+	 * @var MemoryManager
+	 */
+	private MemoryManager $memory_manager;
+
+	/**
 	 * Dependency injector.
 	 *
 	 * @param IntegrationRegistry $integration_registry The integration registry.
+	 * @param MemoryManager       $memory_manager The memory manager.
 	 */
-	public function init( IntegrationRegistry $integration_registry ) {
+	public function init(
+		IntegrationRegistry $integration_registry,
+		MemoryManager $memory_manager
+	) {
 		$this->integration_registry = $integration_registry;
+		$this->memory_manager       = $memory_manager;
 	}
 
 	/**
@@ -136,7 +148,7 @@ class Command extends WP_CLI_Command {
 
 				$per_item = round( ( $duration / $items_count ) * 1000, 2 );
 
-				WP_CLI::log( "Batch $progress->processed_batches/$progress->total_batch_count: Processed $progress->processed_items/$progress->total_count products. Available memory: " . MemoryManager::get_available_memory() . "%. Time per item: $per_item ms" );
+				WP_CLI::log( "Batch $progress->processed_batches/$progress->total_batch_count: Processed $progress->processed_items/$progress->total_count products. Available memory: " . $this->memory_manager->get_available_memory() . "%. Time per item: $per_item ms" );
 			}
 		);
 

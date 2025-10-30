@@ -21,6 +21,13 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class ProductWalker {
 	/**
+	 * The product loader.
+	 *
+	 * @var ProductLoader
+	 */
+	private ProductLoader $product_loader;
+
+	/**
 	 * The product mapper.
 	 *
 	 * @var ProductMapperInterface
@@ -77,6 +84,7 @@ class ProductWalker {
 	 * @param ProductMapperInterface $mapper The product mapper.
 	 * @param FeedValidatorInterface $validator The feed validator.
 	 * @param FeedInterface          $feed The feed.
+	 * @param ProductLoader          $product_loader The product loader.
 	 * @param MemoryManager          $memory_manager The memory manager.
 	 * @param array                  $query_args The query arguments.
 	 */
@@ -84,12 +92,14 @@ class ProductWalker {
 		ProductMapperInterface $mapper,
 		FeedValidatorInterface $validator,
 		FeedInterface $feed,
+		ProductLoader $product_loader,
 		MemoryManager $memory_manager,
 		array $query_args
 	) {
 		$this->mapper         = $mapper;
 		$this->validator      = $validator;
 		$this->feed           = $feed;
+		$this->product_loader = $product_loader;
 		$this->memory_manager = $memory_manager;
 		$this->query_args     = $query_args;
 	}
@@ -137,6 +147,7 @@ class ProductWalker {
 			$integration->get_product_mapper(),
 			$integration->get_feed_validator(),
 			$feed,
+			wpfoai_get_service( ProductLoader::class ),
 			wpfoai_get_service( MemoryManager::class ),
 			$query_args
 		);
@@ -205,7 +216,13 @@ class ProductWalker {
 			if ( $initial_available_memory - $current_memory >= $initial_available_memory / 2 ) {
 				$this->memory_manager->flush_caches();
 			}
-		} while ( $iterated === $this->per_page );
+		} while (
+			// If `wc_get_products()` returns less than the batch size, it was the last page.
+			$iterated === $this->per_page
+
+			// For the cases where the above is true, make sure that we do not exceed the total number of pages.
+			&& $progress->processed_batches < $progress->total_batch_count
+		);
 
 		// Instruct the feed to end.
 		$this->feed->end();
@@ -222,7 +239,7 @@ class ProductWalker {
 	 * @return object The result of the query.
 	 */
 	private function iterate( array $args = [], int $page = 1, int $limit = 100 ): object {
-		$result = wc_get_products(
+		$result = $this->product_loader->get_products(
 			array_merge(
 				$args,
 				[
