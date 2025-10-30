@@ -869,7 +869,7 @@ final class ProductMapper implements ProductMapperInterface {
 	 *
 	 * If sale_price exists but dates are missing, defaults are applied:
 	 * - Missing start date: today
-	 * - Missing end date: today + 1 month
+	 * - Missing end date: (sale_from > today ? sale_from : today) + 30 days
 	 *
 	 * @param \WC_Product $product Product object.
 	 * @return string|null Sale date range or null.
@@ -883,15 +883,15 @@ final class ProductMapper implements ProductMapperInterface {
 		$sale_from = $product->get_date_on_sale_from();
 		$sale_to   = $product->get_date_on_sale_to();
 
-		// If sale_from is missing, use today's date.
 		if ( ! $sale_from ) {
 			$sale_from = new \WC_DateTime();
 		}
 
-		// If sale_to is missing, use today + 1 month.
 		if ( ! $sale_to ) {
-			$sale_to = new \WC_DateTime();
-			$sale_to->modify( '+1 month' );
+			$now       = new \WC_DateTime();
+			$base_date = max( $sale_from, $now );
+			$sale_to   = clone $base_date;
+			$sale_to->modify( '+30 days' );
 		}
 
 		return $sale_from->date_i18n( 'Y-m-d' ) . ' / ' . $sale_to->date_i18n( 'Y-m-d' );
