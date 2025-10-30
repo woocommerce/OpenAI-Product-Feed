@@ -545,7 +545,7 @@ class FeedValidatorTest extends \WC_Unit_Test_Case {
 	 * Test sale_price_effective_date with various invalid formats
 	 *
 	 * @dataProvider invalid_sale_date_formats_provider
-	 * @param string $invalid_date Invalidate date string.
+	 * @param string $invalid_date Invalid date string.
 	 */
 	public function test_sale_dates_invalid_formats( string $invalid_date ): void {
 		$entry = [
