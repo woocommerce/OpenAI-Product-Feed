@@ -104,3 +104,6 @@ function initialize_dependency_injection() {
 	$GLOBALS['wc_container'] = $inner_container;
 }
 initialize_dependency_injection();
+
+// Include ProductFeed core test files.
+require_once __DIR__ . '/ProductFeed/ProductFeedTestCase.php';
