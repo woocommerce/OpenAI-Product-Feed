@@ -172,8 +172,18 @@ final class FeedValidator implements FeedValidatorInterface {
 	 * @param array $issues Reference to issues array.
 	 */
 	private function validate_sale_dates( array $row, array &$issues ): void {
-		if ( ! empty( $row['sale_price_effective_date'] ) && strpos( $row['sale_price_effective_date'], '/' ) !== false ) {
-			[$start, $end] = array_map( 'trim', explode( '/', $row['sale_price_effective_date'] ) );
+		$sale_dates = $row['sale_price_effective_date'] ?? null;
+		if ( ! empty( $row['sale_price'] ) && empty( $sale_dates ) ) {
+			$issues[] = 'sale_price_effective_date required if sale_price provided';
+		}
+
+		if ( ! empty( $sale_dates ) ) {
+			if ( ! preg_match( '/^\d{4}-\d{2}-\d{2} \/ \d{4}-\d{2}-\d{2}$/', $sale_dates ) ) {
+				$issues[] = 'sale_price_effective_date must be in format YYYY-MM-DD / YYYY-MM-DD';
+				return;
+			}
+
+			[$start, $end] = array_map( 'trim', explode( '/', $sale_dates ) );
 
 			if ( $start && $end && $start > $end ) {
 				$issues[] = 'sale window start must precede end';
