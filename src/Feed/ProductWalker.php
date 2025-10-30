@@ -42,6 +42,13 @@ class ProductWalker {
 	private FeedValidatorInterface $validator;
 
 	/**
+	 * The memory manager.
+	 *
+	 * @var MemoryManager
+	 */
+	private MemoryManager $memory_manager;
+
+	/**
 	 * The number of products to iterate through per batch.
 	 *
 	 * @var int
@@ -70,18 +77,21 @@ class ProductWalker {
 	 * @param ProductMapperInterface $mapper The product mapper.
 	 * @param FeedValidatorInterface $validator The feed validator.
 	 * @param FeedInterface          $feed The feed.
+	 * @param MemoryManager          $memory_manager The memory manager.
 	 * @param array                  $query_args The query arguments.
 	 */
 	private function __construct(
 		ProductMapperInterface $mapper,
 		FeedValidatorInterface $validator,
 		FeedInterface $feed,
+		MemoryManager $memory_manager,
 		array $query_args
 	) {
-		$this->mapper     = $mapper;
-		$this->validator  = $validator;
-		$this->feed       = $feed;
-		$this->query_args = $query_args;
+		$this->mapper         = $mapper;
+		$this->validator      = $validator;
+		$this->feed           = $feed;
+		$this->memory_manager = $memory_manager;
+		$this->query_args     = $query_args;
 	}
 
 	/**
@@ -127,6 +137,7 @@ class ProductWalker {
 			$integration->get_product_mapper(),
 			$integration->get_feed_validator(),
 			$feed,
+			wpfoai_get_service( MemoryManager::class ),
 			$query_args
 		);
 
@@ -168,7 +179,7 @@ class ProductWalker {
 		$this->feed->start();
 
 		// Check how much memory is available at first.
-		$initial_available_memory = MemoryManager::get_available_memory();
+		$initial_available_memory = $this->memory_manager->get_available_memory();
 
 		do {
 			$result   = $this->iterate( $this->query_args, $progress ? $progress->processed_batches + 1 : 1, $this->per_page );
@@ -190,8 +201,9 @@ class ProductWalker {
 			}
 
 			// We don't want to use more than half of the available memory at the beginning of the script.
-			if ( $initial_available_memory - MemoryManager::get_available_memory() >= $initial_available_memory / 2 ) {
-				MemoryManager::flush_caches();
+			$current_memory = $this->memory_manager->get_available_memory();
+			if ( $initial_available_memory - $current_memory >= $initial_available_memory / 2 ) {
+				$this->memory_manager->flush_caches();
 			}
 		} while ( $iterated === $this->per_page );
 
