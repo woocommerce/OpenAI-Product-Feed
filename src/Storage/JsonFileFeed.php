@@ -111,8 +111,9 @@ class JsonFileFeed implements FeedInterface {
 		$hash_data = $this->base_name . gmdate( 'r' );
 		$file_name = $this->base_name . '-' . time() . '-' . wp_hash( $hash_data ) . '.json';
 
-		$this->file_path   = $directory . $file_name;
-		$this->file_url    = $upload_dir['baseurl'] . '/product-feeds/' . $file_name;
+		$this->file_path = $directory . $file_name;
+		$this->file_url  = $upload_dir['baseurl'] . '/product-feeds/' . $file_name;
+
 		$this->file_handle = fopen( $this->file_path, 'w' );
 
 		if ( false === $this->file_handle ) {
