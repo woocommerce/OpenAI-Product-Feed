@@ -623,4 +623,205 @@ class ProductMapperTest extends \WC_Unit_Test_Case {
 
 		$product->delete( true );
 	}
+
+	/**
+	 * Test sale_price_effective_date with both dates set
+	 */
+	public function test_map_product_sale_price_effective_date_with_both_dates(): void {
+		$product = WC_Helper_Product::create_simple_product();
+		$product->set_regular_price( '99.99' );
+		$product->set_sale_price( '79.99' );
+
+		$sale_from = new \WC_DateTime( '2025-11-01' );
+		$sale_to   = new \WC_DateTime( '2025-11-30' );
+
+		$product->set_date_on_sale_from( $sale_from );
+		$product->set_date_on_sale_to( $sale_to );
+		$product->save();
+
+		$result = $this->sut->map_product( $product );
+
+		$this->assertArrayHasKey( 'sale_price_effective_date', $result );
+		$this->assertEquals( '2025-11-01 / 2025-11-30', $result['sale_price_effective_date'] );
+
+		$product->delete( true );
+	}
+
+	/**
+	 * Test sale_price_effective_date with only sale_from date (end date should default to today + 1 month)
+	 */
+	public function test_map_product_sale_price_effective_date_with_only_start_date(): void {
+		$product = WC_Helper_Product::create_simple_product();
+		$product->set_regular_price( '99.99' );
+		$product->set_sale_price( '79.99' );
+
+		$sale_from = new \WC_DateTime( '2025-11-01' );
+		$product->set_date_on_sale_from( $sale_from );
+		$product->save();
+
+		$result = $this->sut->map_product( $product );
+
+		$this->assertArrayHasKey( 'sale_price_effective_date', $result );
+		$this->assertStringStartsWith( '2025-11-01 / ', $result['sale_price_effective_date'] );
+
+		// Verify format is correct (YYYY-MM-DD / YYYY-MM-DD).
+		$this->assertMatchesRegularExpression( '/^\d{4}-\d{2}-\d{2} \/ \d{4}-\d{2}-\d{2}$/', $result['sale_price_effective_date'] );
+
+		$product->delete( true );
+	}
+
+	/**
+	 * Test sale_price_effective_date with only sale_to date (start date should default to today)
+	 */
+	public function test_map_product_sale_price_effective_date_with_only_end_date(): void {
+		$product = WC_Helper_Product::create_simple_product();
+		$product->set_regular_price( '99.99' );
+		$product->set_sale_price( '79.99' );
+
+		$sale_to = new \WC_DateTime( '2025-12-31' );
+		$product->set_date_on_sale_to( $sale_to );
+		$product->save();
+
+		$result = $this->sut->map_product( $product );
+
+		$this->assertArrayHasKey( 'sale_price_effective_date', $result );
+		$this->assertStringEndsWith( ' / 2025-12-31', $result['sale_price_effective_date'] );
+
+		// Verify format is correct (YYYY-MM-DD / YYYY-MM-DD).
+		$this->assertMatchesRegularExpression( '/^\d{4}-\d{2}-\d{2} \/ \d{4}-\d{2}-\d{2}$/', $result['sale_price_effective_date'] );
+
+		$product->delete( true );
+	}
+
+	/**
+	 * Test sale_price_effective_date with no dates set (should use today and today + 1 month)
+	 */
+	public function test_map_product_sale_price_effective_date_with_no_dates(): void {
+		$product = WC_Helper_Product::create_simple_product();
+		$product->set_regular_price( '99.99' );
+		$product->set_sale_price( '79.99' );
+		$product->save();
+
+		$result = $this->sut->map_product( $product );
+
+		$this->assertArrayHasKey( 'sale_price_effective_date', $result );
+
+		// Verify format is correct (YYYY-MM-DD / YYYY-MM-DD).
+		$this->assertMatchesRegularExpression( '/^\d{4}-\d{2}-\d{2} \/ \d{4}-\d{2}-\d{2}$/', $result['sale_price_effective_date'] );
+
+		// Parse dates and verify end is after start.
+		$dates = explode( ' / ', $result['sale_price_effective_date'] );
+		$this->assertCount( 2, $dates );
+		$this->assertLessThan( $dates[1], $dates[0], 'End date should be after start date' );
+
+		$product->delete( true );
+	}
+
+	/**
+	 * Test sale_price_effective_date is null when no sale_price
+	 */
+	public function test_map_product_sale_price_effective_date_null_without_sale_price(): void {
+		$product = WC_Helper_Product::create_simple_product();
+		$product->set_regular_price( '99.99' );
+		// Don't set sale_price.
+		$product->save();
+
+		$result = $this->sut->map_product( $product );
+
+		// sale_price_effective_date should not be in result when there's no sale_price.
+		$this->assertArrayNotHasKey( 'sale_price_effective_date', $result );
+
+		$product->delete( true );
+	}
+
+	/**
+	 * Test wpfoai_sale_price_effective_date filter is applied
+	 */
+	public function test_map_product_sale_price_effective_date_filter(): void {
+		$product = WC_Helper_Product::create_simple_product();
+		$product->set_regular_price( '99.99' );
+		$product->set_sale_price( '79.99' );
+
+		$sale_from = new \WC_DateTime( '2025-11-01' );
+		$sale_to   = new \WC_DateTime( '2025-11-30' );
+
+		$product->set_date_on_sale_from( $sale_from );
+		$product->set_date_on_sale_to( $sale_to );
+		$product->save();
+
+		// phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable
+		$filter_callback = function ( $date_range, $product, $sale_from, $sale_to ) {
+			// Override with custom dates for testing.
+			return '2025-12-01 / 2025-12-31';
+		};
+
+		add_filter( 'wpfoai_sale_price_effective_date', $filter_callback, 10, 4 );
+
+		$result = $this->sut->map_product( $product );
+
+		$this->assertArrayHasKey( 'sale_price_effective_date', $result );
+		$this->assertEquals( '2025-12-01 / 2025-12-31', $result['sale_price_effective_date'] );
+
+		remove_filter( 'wpfoai_sale_price_effective_date', $filter_callback, 10 );
+
+		$product->delete( true );
+	}
+
+	/**
+	 * Test wpfoai_sale_price_default_start_date filter is applied
+	 */
+	public function test_map_product_sale_price_default_start_date_filter(): void {
+		$product = WC_Helper_Product::create_simple_product();
+		$product->set_regular_price( '99.99' );
+		$product->set_sale_price( '79.99' );
+		// Don't set sale dates, so defaults will be used.
+		$product->save();
+
+		// phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable
+		$filter_callback = function ( $date, $product ) {
+			// Override with custom start date for testing.
+			$custom_date = new \WC_DateTime( '2025-10-01' );
+			return $custom_date;
+		};
+
+		add_filter( 'wpfoai_sale_price_default_start_date', $filter_callback, 10, 2 );
+
+		$result = $this->sut->map_product( $product );
+
+		$this->assertArrayHasKey( 'sale_price_effective_date', $result );
+		$this->assertStringStartsWith( '2025-10-01 / ', $result['sale_price_effective_date'] );
+
+		remove_filter( 'wpfoai_sale_price_default_start_date', $filter_callback, 10 );
+
+		$product->delete( true );
+	}
+
+	/**
+	 * Test wpfoai_sale_price_default_end_date filter is applied
+	 */
+	public function test_map_product_sale_price_default_end_date_filter(): void {
+		$product = WC_Helper_Product::create_simple_product();
+		$product->set_regular_price( '99.99' );
+		$product->set_sale_price( '79.99' );
+		// Don't set sale dates, so defaults will be used.
+		$product->save();
+
+		// phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable
+		$filter_callback = function ( $date, $product ) {
+			// Override with custom end date for testing.
+			$custom_date = new \WC_DateTime( '2026-01-01' );
+			return $custom_date;
+		};
+
+		add_filter( 'wpfoai_sale_price_default_end_date', $filter_callback, 10, 2 );
+
+		$result = $this->sut->map_product( $product );
+
+		$this->assertArrayHasKey( 'sale_price_effective_date', $result );
+		$this->assertStringEndsWith( ' / 2026-01-01', $result['sale_price_effective_date'] );
+
+		remove_filter( 'wpfoai_sale_price_default_end_date', $filter_callback, 10 );
+
+		$product->delete( true );
+	}
 }

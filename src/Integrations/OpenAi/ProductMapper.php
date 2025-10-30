@@ -867,6 +867,10 @@ final class ProductMapper implements ProductMapperInterface {
 	/**
 	 * Get sale date range.
 	 *
+	 * If sale_price exists but dates are missing, defaults are applied:
+	 * - Missing start date: today
+	 * - Missing end date: today + 1 month
+	 *
 	 * @param \WC_Product $product Product object.
 	 * @return string|null Sale date range or null.
 	 */
@@ -879,11 +883,48 @@ final class ProductMapper implements ProductMapperInterface {
 		$sale_from = $product->get_date_on_sale_from();
 		$sale_to   = $product->get_date_on_sale_to();
 
-		if ( $sale_from && $sale_to ) {
-			return $sale_from->date_i18n( 'Y-m-d' ) . ' / ' . $sale_to->date_i18n( 'Y-m-d' );
+		// If sale_from is missing, use today's date.
+		if ( ! $sale_from ) {
+			$sale_from = new \WC_DateTime();
+			/**
+			 * Filter the default start date when sale_from is not set.
+			 *
+			 * @since 0.1.0
+			 *
+			 * @param \WC_DateTime $sale_from Default start date (today).
+			 * @param \WC_Product  $product   Product object.
+			 */
+			$sale_from = apply_filters( 'wpfoai_sale_price_default_start_date', $sale_from, $product );
 		}
 
-		return null;
+		// If sale_to is missing, use today + 1 month.
+		if ( ! $sale_to ) {
+			$sale_to = new \WC_DateTime();
+			$sale_to->modify( '+1 month' );
+			/**
+			 * Filter the default end date when sale_to is not set.
+			 *
+			 * @since 0.1.0
+			 *
+			 * @param \WC_DateTime $sale_to Default end date (today + 1 month).
+			 * @param \WC_Product  $product Product object.
+			 */
+			$sale_to = apply_filters( 'wpfoai_sale_price_default_end_date', $sale_to, $product );
+		}
+
+		$date_range = $sale_from->date_i18n( 'Y-m-d' ) . ' / ' . $sale_to->date_i18n( 'Y-m-d' );
+
+		/**
+		 * Filter the complete sale price effective date range.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param string       $date_range Formatted date range (YYYY-MM-DD / YYYY-MM-DD).
+		 * @param \WC_Product  $product    Product object.
+		 * @param \WC_DateTime $sale_from  Start date object.
+		 * @param \WC_DateTime $sale_to    End date object.
+		 */
+		return apply_filters( 'wpfoai_sale_price_effective_date', $date_range, $product, $sale_from, $sale_to );
 	}
 
 	/**
