@@ -236,13 +236,18 @@ final class AsyncGenerator {
 	 * @return string          The option key.
 	 */
 	private function get_option_key( ?array $args = null ): string {
+		$normalized_args = $args ?? [];
+		if ( ! empty( $normalized_args ) ) {
+			ksort( $normalized_args );
+		}
+
 		return 'feed_status_' . md5(
 			// WPCS dislikes serialize for security reasons, but it will be hashed immediately.
 			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize
 			serialize(
 				[
 					'integration' => $this->integration->get_id(),
-					'args'        => $args ?? [],
+					'args'        => $normalized_args,
 				]
 			)
 		);
