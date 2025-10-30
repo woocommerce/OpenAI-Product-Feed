@@ -107,3 +107,4 @@ initialize_dependency_injection();
 
 // Include ProductFeed core test files.
 require_once __DIR__ . '/ProductFeed/ProductFeedTestCase.php';
+require_once __DIR__ . '/ProductFeed/TestContainer.php';
