@@ -520,6 +520,94 @@ class FeedValidatorTest extends \WC_Unit_Test_Case {
 	}
 
 	/**
+	 * Data provider for invalid sale_price_effective_date formats
+	 *
+	 * @return array
+	 */
+	public function invalid_sale_date_formats_provider(): array {
+		return [
+			'missing space around separator' => [ '2024-01-01/2024-12-31' ],
+			'wrong date separator'           => [ '2024/01/01 / 2024/12/31' ],
+			'incomplete start date'          => [ '2024-01 / 2024-12-31' ],
+			'incomplete end date'            => [ '2024-01-01 / 2024-12' ],
+			'missing range separator'        => [ '2024-01-01' ],
+			'extra spaces around separator'  => [ '2024-01-01  /  2024-12-31' ],
+			'only separator with spaces'     => [ ' / ' ],
+			'empty start date'               => [ ' / 2024-12-31' ],
+			'empty end date'                 => [ '2024-01-01 / ' ],
+			'wrong separator character'      => [ '2024-01-01 - 2024-12-31' ],
+			'text instead of dates'          => [ 'start / end' ],
+			'single digit month and day'     => [ '2024-1-1 / 2024-12-31' ],
+		];
+	}
+
+	/**
+	 * Test sale_price_effective_date with various invalid formats
+	 *
+	 * @dataProvider invalid_sale_date_formats_provider
+	 * @param string $invalid_date Invalidate date string.
+	 */
+	public function test_sale_dates_invalid_formats( string $invalid_date ): void {
+		$entry = [
+			'id'                        => '123',
+			'title'                     => 'Test Product',
+			'description'               => 'Test Description',
+			'link'                      => 'https://example.com/product',
+			'enable_search'             => 'true',
+			'enable_checkout'           => 'false',
+			'product_category'          => 'Electronics',
+			'brand'                     => 'TestBrand',
+			'sale_price_effective_date' => $invalid_date,
+		];
+
+		$issues = $this->validator->validate_entry( $entry, $this->mock_product );
+
+		$this->assertNotEmpty( $issues, "Expected validation issues for invalid date format: {$invalid_date}" );
+		$this->assertCount(
+			1,
+			array_filter(
+				$issues,
+				function ( $issue ) {
+					return false !== strpos( $issue, 'sale_price_effective_date' ) && false !== strpos( $issue, 'YYYY-MM-DD / YYYY-MM-DD' );
+				}
+			),
+			"Should have issue about invalid sale_price_effective_date format for: {$invalid_date}"
+		);
+	}
+
+	/**
+	 * Test sale_price_effective_date required when sale_price is provided
+	 */
+	public function test_sale_price_effective_date_required_with_sale_price(): void {
+		$entry = [
+			'id'               => '123',
+			'title'            => 'Test Product',
+			'description'      => 'Test Description',
+			'link'             => 'https://example.com/product',
+			'enable_search'    => 'true',
+			'enable_checkout'  => 'false',
+			'product_category' => 'Electronics',
+			'brand'            => 'TestBrand',
+			'sale_price'       => '79.99 USD', // sale_price provided.
+			// sale_price_effective_date is missing.
+		];
+
+		$issues = $this->validator->validate_entry( $entry, $this->mock_product );
+
+		$this->assertNotEmpty( $issues );
+		$this->assertCount(
+			1,
+			array_filter(
+				$issues,
+				function ( $issue ) {
+					return false !== strpos( $issue, 'sale_price_effective_date' ) && false !== strpos( $issue, 'required' );
+				}
+			),
+			'Should have issue about sale_price_effective_date being required when sale_price is provided'
+		);
+	}
+
+	/**
 	 * Test validation allows '0' as a valid non-empty value
 	 */
 	public function test_zero_string_treated_as_non_empty(): void {
