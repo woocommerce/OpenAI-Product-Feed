@@ -57,7 +57,7 @@ class ProductFeedTestCase extends WC_Unit_Test_Case {
 	 * @return TestContainer The replacement container.
 	 */
 	private function get_replacement_container( ?TestContainer $current_container = null ): TestContainer {
-		// The same instance will be shared accross all tests.
+		// The same instance will be shared across all tests.
 		static $test_container;
 
 		// Just return the test container if it already set.

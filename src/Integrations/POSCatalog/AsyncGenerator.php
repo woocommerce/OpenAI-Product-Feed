@@ -242,7 +242,7 @@ final class AsyncGenerator {
 			serialize(
 				[
 					'integration' => $this->integration->get_id(),
-					'args'        => $args,
+					'args'        => $args ?? [],
 				]
 			)
 		);
