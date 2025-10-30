@@ -339,8 +339,9 @@ final class ProductMapper implements ProductMapperInterface {
 	 */
 	protected function get_product_category( \WC_Product $product ): ?string {
 		// Find the deepest category by counting ancestors.
-		$category_deepest_id = null;
-		$max_depth           = -1;
+		$category_deepest_id  = null;
+		$ancestor_deepest_ids = [];
+		$max_depth            = -1;
 
 		foreach ( $product->get_category_ids() as $category_id ) {
 			$ancestor_ids = get_ancestors( $category_id, 'product_cat', 'taxonomy' );
