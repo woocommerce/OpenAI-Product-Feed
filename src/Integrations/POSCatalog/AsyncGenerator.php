@@ -42,7 +42,7 @@ final class AsyncGenerator {
 	 *
 	 * @var int
 	 */
-	const FEED_EXPIRY = 20 * MINUTE_IN_SECONDS;
+	const FEED_EXPIRY = 24 * HOUR_IN_SECONDS;
 
 	/**
 	 * Possible states of generation.
