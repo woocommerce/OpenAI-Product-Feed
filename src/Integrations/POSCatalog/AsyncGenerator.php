@@ -187,7 +187,7 @@ final class AsyncGenerator {
 
 		// If there is no option, there is nothing to force.
 		if ( false === $status ) {
-			return $this->get_status();
+			return $this->get_status( $args );
 		}
 
 		switch ( $status['state'] ?? '' ) {
@@ -203,7 +203,7 @@ final class AsyncGenerator {
 				// Delete the existing file, clear the option and let generation start again.
 				wp_delete_file( $status['path'] );
 				delete_option( $option_key );
-				return $this->get_status();
+				return $this->get_status( $args );
 
 			default:
 				throw new \Exception( 'Unknown feed generation state.' );
