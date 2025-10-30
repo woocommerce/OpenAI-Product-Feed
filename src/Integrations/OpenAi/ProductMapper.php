@@ -330,21 +330,43 @@ final class ProductMapper implements ProductMapperInterface {
 	/**
 	 * Get product category path.
 	 *
+	 * Returns the deepest (most specific) category path with hierarchical structure using " > " separator.
+	 * When a product has multiple categories, selects the one with the most levels.
+	 * Example: "Apparel & Accessories > Shoes > Running Shoes"
+	 *
 	 * @param \WC_Product $product Product object.
 	 * @return string|null Product category path or null.
 	 */
 	protected function get_product_category( \WC_Product $product ): ?string {
-		$terms = get_the_terms( $product->get_id(), 'product_cat' );
-		if ( ! $terms || is_wp_error( $terms ) ) {
-			return null;
+		// Find the deepest category by counting ancestors.
+		$category_deepest_id = null;
+		$max_depth           = -1;
+
+		foreach ( $product->get_category_ids() as $category_id ) {
+			$ancestor_ids = get_ancestors( $category_id, 'product_cat', 'taxonomy' );
+			$depth        = count( $ancestor_ids );
+
+			if ( $depth > $max_depth ) {
+				$max_depth            = $depth;
+				$category_deepest_id  = $category_id;
+				$ancestor_deepest_ids = $ancestor_ids;
+			}
 		}
 
-		$names = [];
-		foreach ( $terms as $term ) {
-			$names[] = $term->name;
-		}
+		$ids_to_build   = array_reverse( $ancestor_deepest_ids );
+		$ids_to_build[] = $category_deepest_id;
 
-		return empty( $names ) ? null : implode( ', ', $names );
+		$category_names = get_terms(
+			[
+				'include'  => $ids_to_build,
+				'fields'   => 'id=>name',
+				'taxonomy' => 'product_cat',
+			]
+		);
+
+		return empty( $category_names )
+			? null
+			: implode( ' > ', $category_names );
 	}
 
 	/**
