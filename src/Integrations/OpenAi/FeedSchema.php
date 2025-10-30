@@ -187,10 +187,9 @@ class FeedSchema {
 				'validation'  => 'validateSalePrice',
 			],
 			'sale_price_effective_date' => [
-				'required'      => false,
-				'required_when' => [ 'sale_price' => 'present' ],
-				'type'          => 'date_range',
-				'description'   => 'Sale window (YYYY-MM-DD / YYYY-MM-DD)',
+				'required'    => false,
+				'type'        => 'string',
+				'description' => 'Sale window. Format: YYYY-MM-DD / YYYY-MM-DD. Required if sale_price provided.',
 			],
 			'unit_pricing_measure'      => [
 				'required'    => false,

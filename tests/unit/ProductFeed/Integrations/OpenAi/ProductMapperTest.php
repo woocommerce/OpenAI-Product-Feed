@@ -623,4 +623,179 @@ class ProductMapperTest extends \WC_Unit_Test_Case {
 
 		$product->delete( true );
 	}
+
+	/**
+	 * Test sale_price_effective_date with both dates set
+	 */
+	public function test_map_product_sale_price_effective_date_with_both_dates(): void {
+		$product = WC_Helper_Product::create_simple_product();
+		$product->set_regular_price( '99.99' );
+		$product->set_sale_price( '79.99' );
+
+		$sale_from = new \WC_DateTime( '2025-11-01' );
+		$sale_to   = new \WC_DateTime( '2025-11-30' );
+
+		$product->set_date_on_sale_from( $sale_from );
+		$product->set_date_on_sale_to( $sale_to );
+		$product->save();
+
+		$result = $this->sut->map_product( $product );
+
+		$this->assertArrayHasKey( 'sale_price_effective_date', $result );
+		$this->assertEquals( '2025-11-01 / 2025-11-30', $result['sale_price_effective_date'] );
+
+		$product->delete( true );
+	}
+
+	/**
+	 * Test sale_price_effective_date with only sale_from date (verifies format)
+	 */
+	public function test_map_product_sale_price_effective_date_with_only_start_date(): void {
+		$product = WC_Helper_Product::create_simple_product();
+		$product->set_regular_price( '99.99' );
+		$product->set_sale_price( '79.99' );
+
+		$sale_from = new \WC_DateTime( '2025-11-01' );
+		$product->set_date_on_sale_from( $sale_from );
+		$product->save();
+
+		$result = $this->sut->map_product( $product );
+
+		$this->assertArrayHasKey( 'sale_price_effective_date', $result );
+		$this->assertStringStartsWith( '2025-11-01 / ', $result['sale_price_effective_date'] );
+
+		// Verify format is correct (YYYY-MM-DD / YYYY-MM-DD).
+		$this->assertMatchesRegularExpression( '/^\d{4}-\d{2}-\d{2} \/ \d{4}-\d{2}-\d{2}$/', $result['sale_price_effective_date'] );
+
+		$product->delete( true );
+	}
+
+	/**
+	 * Test sale_price_effective_date with future sale_from (end date should be sale_from + 30 days)
+	 */
+	public function test_map_product_sale_price_effective_date_with_only_start_date_in_far_future(): void {
+		$product = WC_Helper_Product::create_simple_product();
+		$product->set_regular_price( '99.99' );
+		$product->set_sale_price( '79.99' );
+
+		// Set sale to start 2 months in the future.
+		$sale_from = new \WC_DateTime( '+2 months' );
+		$product->set_date_on_sale_from( $sale_from );
+		$product->save();
+
+		$result = $this->sut->map_product( $product );
+
+		$this->assertArrayHasKey( 'sale_price_effective_date', $result );
+
+		// Parse the dates.
+		$dates = explode( ' / ', $result['sale_price_effective_date'] );
+		$this->assertCount( 2, $dates );
+
+		$start_date = new \DateTime( $dates[0] );
+		$end_date   = new \DateTime( $dates[1] );
+
+		// Verify end date is exactly 30 days after start date.
+		$expected_end = clone $start_date;
+		$expected_end->modify( '+30 days' );
+		$this->assertEquals( $expected_end->format( 'Y-m-d' ), $end_date->format( 'Y-m-d' ), 'End date should be exactly 30 days after start date' );
+
+		$product->delete( true );
+	}
+
+	/**
+	 * Test sale_price_effective_date with past sale_from (end date should be today + 30 days)
+	 */
+	public function test_map_product_sale_price_effective_date_with_past_start_date(): void {
+		$product = WC_Helper_Product::create_simple_product();
+		$product->set_regular_price( '99.99' );
+		$product->set_sale_price( '79.99' );
+
+		// Set sale to have started 3 months ago.
+		$sale_from = new \WC_DateTime( '-3 months' );
+		$product->set_date_on_sale_from( $sale_from );
+		$product->save();
+
+		$result = $this->sut->map_product( $product );
+
+		$this->assertArrayHasKey( 'sale_price_effective_date', $result );
+
+		// Parse the dates.
+		$dates = explode( ' / ', $result['sale_price_effective_date'] );
+		$this->assertCount( 2, $dates );
+
+		$end_date = new \DateTime( $dates[1] );
+		$now      = new \DateTime();
+
+		// Verify end date is approximately 30 days from now (allow 1 day margin for execution time).
+		$expected_end = clone $now;
+		$expected_end->modify( '+30 days' );
+		$diff = abs( $end_date->getTimestamp() - $expected_end->getTimestamp() );
+		$this->assertLessThanOrEqual( DAY_IN_SECONDS, $diff, 'End date should be approximately 30 days from today' );
+
+		$product->delete( true );
+	}
+
+	/**
+	 * Test sale_price_effective_date with only sale_to date (start date should default to today)
+	 */
+	public function test_map_product_sale_price_effective_date_with_only_end_date(): void {
+		$product = WC_Helper_Product::create_simple_product();
+		$product->set_regular_price( '99.99' );
+		$product->set_sale_price( '79.99' );
+
+		$sale_to = new \WC_DateTime( '2025-12-31' );
+		$product->set_date_on_sale_to( $sale_to );
+		$product->save();
+
+		$result = $this->sut->map_product( $product );
+
+		$this->assertArrayHasKey( 'sale_price_effective_date', $result );
+		$this->assertStringEndsWith( ' / 2025-12-31', $result['sale_price_effective_date'] );
+
+		// Verify format is correct (YYYY-MM-DD / YYYY-MM-DD).
+		$this->assertMatchesRegularExpression( '/^\d{4}-\d{2}-\d{2} \/ \d{4}-\d{2}-\d{2}$/', $result['sale_price_effective_date'] );
+
+		$product->delete( true );
+	}
+
+	/**
+	 * Test sale_price_effective_date with no dates set (should use today and today + 30 days)
+	 */
+	public function test_map_product_sale_price_effective_date_with_no_dates(): void {
+		$product = WC_Helper_Product::create_simple_product();
+		$product->set_regular_price( '99.99' );
+		$product->set_sale_price( '79.99' );
+		$product->save();
+
+		$result = $this->sut->map_product( $product );
+
+		$this->assertArrayHasKey( 'sale_price_effective_date', $result );
+
+		// Verify format is correct (YYYY-MM-DD / YYYY-MM-DD).
+		$this->assertMatchesRegularExpression( '/^\d{4}-\d{2}-\d{2} \/ \d{4}-\d{2}-\d{2}$/', $result['sale_price_effective_date'] );
+
+		// Parse dates and verify end is after start.
+		$dates = explode( ' / ', $result['sale_price_effective_date'] );
+		$this->assertCount( 2, $dates );
+		$this->assertLessThan( $dates[1], $dates[0], 'End date should be after start date' );
+
+		$product->delete( true );
+	}
+
+	/**
+	 * Test sale_price_effective_date is null when no sale_price
+	 */
+	public function test_map_product_sale_price_effective_date_null_without_sale_price(): void {
+		$product = WC_Helper_Product::create_simple_product();
+		$product->set_regular_price( '99.99' );
+		// Don't set sale_price.
+		$product->save();
+
+		$result = $this->sut->map_product( $product );
+
+		// sale_price_effective_date should not be in result when there's no sale_price.
+		$this->assertArrayNotHasKey( 'sale_price_effective_date', $result );
+
+		$product->delete( true );
+	}
 }
