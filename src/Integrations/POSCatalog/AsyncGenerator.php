@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Async Generator for the POS catalog.
+ * Async Generator for feeds.
  */
 final class AsyncGenerator {
 	/**
@@ -27,14 +27,14 @@ final class AsyncGenerator {
 	 *
 	 * @var string
 	 */
-	const FEED_GENERATION_ACTION = 'wpfoai_pos_catalog_feed_generation';
+	const FEED_GENERATION_ACTION = 'wpfoai_feed_generation';
 
 	/**
 	 * The Action Scheduler action hook for the feed deletion.
 	 *
 	 * @var string
 	 */
-	const FEED_DELETION_ACTION = 'wpfoai_pos_catalog_feed_deletion';
+	const FEED_DELETION_ACTION = 'wpfoai_feed_deletion';
 
 	/**
 	 * Feed expiry time, once completed.
