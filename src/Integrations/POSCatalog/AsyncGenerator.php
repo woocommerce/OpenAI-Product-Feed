@@ -87,11 +87,10 @@ final class AsyncGenerator {
 	public function get_status( ?array $args = null ): array {
 		// Determine the option key based on the integration ID and arguments.
 		$option_key = $this->get_option_key( $args );
+		$status     = get_option( $option_key );
 
-		$status = get_option( $option_key );
-
-		// For completed jobs, make sure the file still exists. Regenerate otherwise.
-		if ( self::STATE_COMPLETED === $status['state'] && ! file_exists( $status['path'] ) ) {
+		// For existing jobs, make sure that everything in the status makes sense.
+		if ( false !== $status && ! $this->validate_status( $status ) ) {
 			$status = false;
 		}
 
@@ -104,11 +103,12 @@ final class AsyncGenerator {
 		as_unschedule_all_actions( self::FEED_GENERATION_ACTION, [ $option_key ], 'wpfoai' );
 
 		$status = [
-			'state'     => self::STATE_SCHEDULED,
-			'progress'  => 0,
-			'processed' => 0,
-			'total'     => -1,
-			'args'      => $args ?? [],
+			'scheduled_at' => time(),
+			'state'        => self::STATE_SCHEDULED,
+			'progress'     => 0,
+			'processed'    => 0,
+			'total'        => -1,
+			'args'         => $args ?? [],
 		];
 
 		update_option(
@@ -148,7 +148,6 @@ final class AsyncGenerator {
 			wc_get_logger()->error( 'Invalid feed generation status', [ 'status' => $status ] );
 			return;
 		}
-		wc_get_logger()->debug( 'Valid feed generation status', [ 'status' => $status ] );
 
 		$status['state'] = self::STATE_IN_PROGRESS;
 		update_option( $option_key, $status );
@@ -193,8 +192,8 @@ final class AsyncGenerator {
 		$option_key = $this->get_option_key( $args );
 		$status     = get_option( $option_key );
 
-		// If there is no option, there is nothing to force.
-		if ( false === $status ) {
+		// If there is no option, there is nothing to force. If the option is invalid, we can restart.
+		if ( false === $status || ! $this->validate_status( $status ) ) {
 			return $this->get_status( $args );
 		}
 
@@ -263,5 +262,44 @@ final class AsyncGenerator {
 		$status['processed'] = $progress->processed_items;
 		$status['total']     = $progress->total_count;
 		return $status;
+	}
+
+	/**
+	 * Validates the status of the feed generation.
+	 *
+	 * Makes sure that the file exists for completed jobs,
+	 * that scheduled jobs are not stuck, etc.
+	 *
+	 * @param array $status The status of the feed generation.
+	 * @return bool         True if the status is valid, false otherwise.
+	 */
+	private function validate_status( array $status ): bool {
+		// Validate the state.
+		/**
+		 * For completed jobs, make sure the file still exists. Regenerate otherwise.
+		 *
+		 * The file should typically get deleted at the same time as the status is cleared.
+		 * However, something else could cause the file to disappear in the meantime (ex. manual delete).
+		 */
+		if ( self::STATE_COMPLETED === $status['state'] && ! file_exists( $status['path'] ) ) {
+			return false;
+		}
+
+		/**
+		 * If the job has been scheduled more than 10 minutes ago but has not
+		 * transitioned to IN_PROGRESS yet, ActionScheduler is typically stuck.
+		 */
+		if (
+			self::STATE_SCHEDULED === $status['state']
+			&& (
+				! isset( $status['scheduled_at'] )
+				|| time() - $status['scheduled_at'] > 10 * MINUTE_IN_SECONDS
+			)
+		) {
+			return false;
+		}
+
+		// All good.
+		return true;
 	}
 }
