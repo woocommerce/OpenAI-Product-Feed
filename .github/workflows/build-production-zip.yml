@@ -40,7 +40,7 @@ jobs:
       - name: Upload production zip artifact
         uses: actions/upload-artifact@v4
         with:
-          name: openai-product-feed-production
-          path: build/OpenAI-Product-Feed.zip
+          name: OpenAI-Product-Feed
+          path: build/OpenAI-Product-Feed
           if-no-files-found: error
           retention-days: 7
