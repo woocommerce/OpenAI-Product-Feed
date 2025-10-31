@@ -1,8 +1,7 @@
 name: Build Production Zip
 
 on:
-  # workflow_dispatch: # Disable temporarily to trigger in the current PR. 
-  pull_request:
+  workflow_dispatch:
 
 jobs:
   build:

@@ -20,7 +20,9 @@ A WooCommerce plugin that automatically generates and delivers product feeds to 
 
 ### Installation
 
-1. **Build and get zip file** from the latest `trunk` branch by running: `npm run build`
+1. **Build and get zip file** from the latest `trunk` branch by either:
+   - Running `npm run build` in your local env
+   - Running [Build Production Zip](https://github.com/woocommerce/OpenAI-Product-Feed/actions/workflows/build-production-zip.yml) workflow manually for your selected branch
 2. **Upload** the zip file via WordPress admin (Plugins > Add New > Upload Plugin) or extract to `/wp-content/plugins/`
 3. **Activate** the plugin through WordPress admin
 4. Go to **WooCommerce > Settings > Integrations > OpenAI** for OpenAI Product feed.
