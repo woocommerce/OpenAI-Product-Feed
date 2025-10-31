@@ -334,7 +334,8 @@ final class ProductMapper implements ProductMapperInterface {
 	 * When a product has multiple categories, selects the one with the most levels.
 	 * Example: "Apparel & Accessories > Shoes > Running Shoes"
 	 *
-	 * @param \WC_Product $product Product object.
+	 * @param \WC_Product      $product Product object.
+	 * @param \WC_Product|null $parent_product Parent product for variations.
 	 * @return string|null Product category path or null.
 	 */
 	protected function get_product_category( \WC_Product $product, ?\WC_Product $parent_product ): ?string {
