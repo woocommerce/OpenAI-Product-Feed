@@ -8,29 +8,23 @@ echo "======================================"
 echo "Building Production Zip"
 echo "======================================"
 
-# Step 1: Run composer install
 echo ""
 echo "Step 1: Installing production dependencies..."
 composer install --no-dev --optimize-autoloader
 
-
-# Step 2: Create build directory if it doesn't exist
 echo ""
 echo "Step 2: Creating build directory..."
 mkdir -p ./build
 
-# Step 3: Clean up any existing OpenAI-Product-Feed directory in build
 if [ -d "./build/OpenAI-Product-Feed" ]; then
     echo "Removing existing OpenAI-Product-Feed directory..."
     rm -rf ./build/OpenAI-Product-Feed
 fi
 
-# Step 4: Create fresh OpenAI-Product-Feed directory
 echo ""
-echo "Step 3: Creating OpenAI-Product-Feed directory..."
+echo "Step 3: Creating OpenAI-Product-Feed fresh directory..."
 mkdir -p ./build/OpenAI-Product-Feed
 
-# Step 5: Copy files and folders
 echo ""
 echo "Step 4: Copying files and folders..."
 
@@ -46,7 +40,6 @@ for file in "${FILES_TO_COPY[@]}"; do
     cp -r "$file" ./build/OpenAI-Product-Feed/
 done
 
-# Step 6: Create zip file
 echo ""
 echo "Step 5: Creating zip file..."
 cd ./build
