@@ -28,3 +28,5 @@ vendor/
 # Core test files
 tests/unit/woo
 
+# Build folder
+build/
