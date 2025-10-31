@@ -370,30 +370,13 @@ final class ProductMapper implements ProductMapperInterface {
 		$ordered_ids[] = $category_deepest_id;
 
 		/**
-		 * Get category names.
-		 *
-		 * @param array<int, string> $category_names Arrays with key is category_id, value is category name.
-		 */
-		$category_names = get_terms(
-			[
-				'include'  => $ordered_ids,
-				'fields'   => 'id=>name',
-				'taxonomy' => 'product_cat',
-			]
-		);
-
-		if ( empty( $category_names ) || is_wp_error( $category_names ) ) {
-			return null;
-		}
-
-		/**
-		 * Step 3: Build the path in the correct hierarchical order. Because there is
-		 * no guarantee that category_names above have been in the correct order.
+		 * Step 3: Get all ordered category names, and concatenate them.
 		 */
 		$ordered_names = [];
 		foreach ( $ordered_ids as $term_id ) {
-			if ( isset( $category_names[ $term_id ] ) ) {
-				$ordered_names[] = $category_names[ $term_id ];
+			$term = get_term( $term_id, 'product_cat' );
+			if ( $term && ! is_wp_error( $term ) ) {
+				$ordered_names[ $term_id ] = $term->name;
 			}
 		}
 
