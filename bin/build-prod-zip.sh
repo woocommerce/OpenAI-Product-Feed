@@ -26,7 +26,8 @@ mkdir -p ./build/${PLUGIN_SLUG}
 
 echo ""
 echo "Step 3: Installing production dependencies..."
-COMPOSER_VENDOR_DIR=./build/${PLUGIN_SLUG}/vendor composer install --no-dev --optimize-autoloader
+COMPOSER_VENDOR_DIR=./vendor_prod composer install --no-dev --optimize-autoloader
+mv ./vendor_prod ./build/${PLUGIN_SLUG}/vendor
 
 echo ""
 echo "Step 4: Copying files and folders..."
