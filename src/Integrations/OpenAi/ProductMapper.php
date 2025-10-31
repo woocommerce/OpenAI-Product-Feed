@@ -218,7 +218,7 @@ final class ProductMapper implements ProductMapperInterface {
 	 */
 	protected function get_enable_search( \WC_Product $product, ?\WC_Product $parent_product ): string {
 		// For variations, check parent product meta; for simple products, check product meta.
-		$check_product = $parent_product ? $parent_product : $product;
+		$check_product = $parent_product ?? $product;
 		$value         = $this->get_enable_with_override( $check_product, ProductFieldsController::KEY_DISABLE_SEARCH, 'enable_products_default', 'true' );
 		return StringHelper::bool_string( $value );
 	}
@@ -330,21 +330,57 @@ final class ProductMapper implements ProductMapperInterface {
 	/**
 	 * Get product category path.
 	 *
-	 * @param \WC_Product $product Product object.
+	 * Returns the deepest (most specific) category path with hierarchical structure using " > " separator.
+	 * When a product has multiple categories, selects the one with the most levels.
+	 * Example: "Apparel & Accessories > Shoes > Running Shoes"
+	 *
+	 * @param \WC_Product      $product Product object.
+	 * @param \WC_Product|null $parent_product Parent product for variations.
 	 * @return string|null Product category path or null.
 	 */
-	protected function get_product_category( \WC_Product $product ): ?string {
-		$terms = get_the_terms( $product->get_id(), 'product_cat' );
-		if ( ! $terms || is_wp_error( $terms ) ) {
+	protected function get_product_category( \WC_Product $product, ?\WC_Product $parent_product ): ?string {
+		$check_product = $parent_product ?? $product;
+
+		/**
+		 * Step 1: Find the deepest category by counting ancestors.
+		 */
+		$category_deepest_id  = null;
+		$ancestor_deepest_ids = [];
+		$max_depth            = -1;
+
+		foreach ( $check_product->get_category_ids() as $category_id ) {
+			$ancestor_ids = get_ancestors( $category_id, 'product_cat', 'taxonomy' );
+			$depth        = count( $ancestor_ids );
+
+			if ( $depth > $max_depth ) {
+				$max_depth            = $depth;
+				$category_deepest_id  = $category_id;
+				$ancestor_deepest_ids = $ancestor_ids;
+			}
+		}
+
+		if ( null === $category_deepest_id ) {
 			return null;
 		}
 
-		$names = [];
-		foreach ( $terms as $term ) {
-			$names[] = $term->name;
+		/**
+		 * Step 2: Build up the ID list with correct hierarchical order.
+		 */
+		$ordered_ids   = array_reverse( $ancestor_deepest_ids );
+		$ordered_ids[] = $category_deepest_id;
+
+		/**
+		 * Step 3: Get all ordered category names, and concatenate them.
+		 */
+		$ordered_names = [];
+		foreach ( $ordered_ids as $term_id ) {
+			$term = get_term( $term_id, 'product_cat' );
+			if ( $term && ! is_wp_error( $term ) ) {
+				$ordered_names[ $term_id ] = $term->name;
+			}
 		}
 
-		return empty( $names ) ? null : implode( ', ', $names );
+		return empty( $ordered_names ) ? null : implode( ' > ', $ordered_names );
 	}
 
 	/**
