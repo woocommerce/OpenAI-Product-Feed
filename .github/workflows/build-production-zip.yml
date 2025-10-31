@@ -1,0 +1,45 @@
+name: Build Production Zip
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Production Zip
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+          tools: composer:v2
+          coverage: none
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+
+      - name: Make build script executable
+        run: chmod +x bin/build-prod-zip.sh
+
+      - name: Build production zip
+        run: ./bin/build-prod-zip.sh
+
+      - name: Upload production zip artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: openai-product-feed-production
+          path: build/OpenAI-Product-Feed.zip
+          if-no-files-found: error
+          retention-days: 30
