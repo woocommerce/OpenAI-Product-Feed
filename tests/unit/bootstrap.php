@@ -3,6 +3,9 @@
 ini_set( 'display_errors', '1' );
 error_reporting( E_ALL );
 
+// Define a constnat to use in tests.
+define( 'PRODUCT_FEED_UNIT_TESTS', true );
+
 // Let wp-phpunit tell us where the WP test suite lives.
 $_tests_dir = getenv( 'WP_TESTS_DIR' );
 if ( ! $_tests_dir ) {
