@@ -1,12 +1,10 @@
 <?php
-declare( strict_types = 1 );
+declare(strict_types=1);
 
 namespace Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAi;
 
 use Automattic\WooCommerce\ProductFeedForOpenAI\ProductFeedTestCase;
-use PHPUnit\Framework\MockObject\MockObject;
 use WC_Helper_Product;
-use WP_CLI\Context\Admin;
 
 /**
  * Settings test class.
@@ -175,12 +173,6 @@ class SettingsTest extends ProductFeedTestCase {
 				'return_window' => 30,
 			],
 		];
-
-// 		$user_id = self::factory()->user->create( ['role' => 'administrator'] );
-// wp_set_current_user( $user_id );
-
-		$_SERVER['HTTP_REFERER'] = admin_url( '/' );
-		$_POST['_wpnonce'] = wp_create_nonce( 'woocommerce-settings' );
 
 		$_POST['woocommerce_agentic_openai_feed_url']      = 'https://example.com/updated/';
 		$_POST['woocommerce_agentic_openai_return_window'] = '60';
