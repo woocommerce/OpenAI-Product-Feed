@@ -218,7 +218,7 @@ final class ProductMapper implements ProductMapperInterface {
 	 */
 	protected function get_enable_search( \WC_Product $product, ?\WC_Product $parent_product ): string {
 		// For variations, check parent product meta; for simple products, check product meta.
-		$check_product = $parent_product ? $parent_product : $product;
+		$check_product = $parent_product ?? $product;
 		$value         = $this->get_enable_with_override( $check_product, ProductFieldsController::KEY_DISABLE_SEARCH, 'enable_products_default', 'true' );
 		return StringHelper::bool_string( $value );
 	}
@@ -337,13 +337,17 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @param \WC_Product $product Product object.
 	 * @return string|null Product category path or null.
 	 */
-	protected function get_product_category( \WC_Product $product ): ?string {
-		// Find the deepest category by counting ancestors.
+	protected function get_product_category( \WC_Product $product, ?\WC_Product $parent_product ): ?string {
+		$check_product = $parent_product ?? $product;
+
+		/**
+		 * Step 1: Find the deepest category by counting ancestors.
+		 */
 		$category_deepest_id  = null;
 		$ancestor_deepest_ids = [];
 		$max_depth            = -1;
 
-		foreach ( $product->get_category_ids() as $category_id ) {
+		foreach ( $check_product->get_category_ids() as $category_id ) {
 			$ancestor_ids = get_ancestors( $category_id, 'product_cat', 'taxonomy' );
 			$depth        = count( $ancestor_ids );
 
@@ -354,20 +358,45 @@ final class ProductMapper implements ProductMapperInterface {
 			}
 		}
 
-		$ids_to_build   = array_reverse( $ancestor_deepest_ids );
-		$ids_to_build[] = $category_deepest_id;
+		if ( null === $category_deepest_id ) {
+			return null;
+		}
 
+		/**
+		 * Step 2: Build up the ID list with correct hierarchical order.
+		 */
+		$ordered_ids   = array_reverse( $ancestor_deepest_ids );
+		$ordered_ids[] = $category_deepest_id;
+
+		/**
+		 * Get category names.
+		 *
+		 * @param array<int, string> $category_names Arrays with key is category_id, value is category name.
+		 */
 		$category_names = get_terms(
 			[
-				'include'  => $ids_to_build,
+				'include'  => $ordered_ids,
 				'fields'   => 'id=>name',
 				'taxonomy' => 'product_cat',
 			]
 		);
 
-		return empty( $category_names )
-			? null
-			: implode( ' > ', $category_names );
+		if ( empty( $category_names ) || is_wp_error( $category_names ) ) {
+			return null;
+		}
+
+		/**
+		 * Step 3: Build the path in the correct hierarchical order. Because there is
+		 * no guarantee that category_names above have been in the correct order.
+		 */
+		$ordered_names = [];
+		foreach ( $ordered_ids as $term_id ) {
+			if ( isset( $category_names[ $term_id ] ) ) {
+				$ordered_names[] = $category_names[ $term_id ];
+			}
+		}
+
+		return empty( $ordered_names ) ? null : implode( ' > ', $ordered_names );
 	}
 
 	/**
