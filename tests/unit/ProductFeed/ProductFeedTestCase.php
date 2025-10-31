@@ -60,7 +60,7 @@ class ProductFeedTestCase extends WC_Unit_Test_Case {
 		// The same instance will be shared across all tests.
 		static $test_container;
 
-		// Just return the test container if it already set.
+		// Just return the test container if it is already set.
 		if ( isset( $test_container ) && $test_container === $current_container ) {
 			return $current_container;
 		}
