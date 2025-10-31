@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Build production zip file for OpenAI-Product-Feed
+# Build production zip file for woocommerce-product-feed-for-openai
 # Exit on any error
 set -e
 
@@ -9,45 +9,41 @@ echo "Building Production Zip"
 echo "======================================"
 
 echo ""
-echo "Step 1: Installing production dependencies..."
-composer install --no-dev --optimize-autoloader
-
-echo ""
-echo "Step 2: Creating build directory..."
+echo "Step 1: Creating build directory..."
 mkdir -p ./build
 
-if [ -d "./build/OpenAI-Product-Feed" ]; then
-    echo "Removing existing OpenAI-Product-Feed directory..."
-    rm -rf ./build/OpenAI-Product-Feed
+if [ -d "./build/woocommerce-product-feed-for-openai" ]; then
+    echo "Removing existing woocommerce-product-feed-for-openai directory..."
+    rm -rf ./build/woocommerce-product-feed-for-openai
 fi
 
 echo ""
-echo "Step 3: Creating OpenAI-Product-Feed fresh directory..."
-mkdir -p ./build/OpenAI-Product-Feed
+echo "Step 2: Creating woocommerce-product-feed-for-openai fresh directory..."
+mkdir -p ./build/woocommerce-product-feed-for-openai
+
+echo ""
+echo "Step 3: Installing production dependencies..."
+COMPOSER_VENDOR_DIR=./build/woocommerce-product-feed-for-openai/vendor composer install --no-dev --optimize-autoloader
 
 echo ""
 echo "Step 4: Copying files and folders..."
-
-# Array of files/directories to copy
 FILES_TO_COPY=(
     "./src"
-    "./vendor"
     "./openai-product-feed-for-woo.php"
-    "./README.md"
 )
 
 for file in "${FILES_TO_COPY[@]}"; do
-    cp -r "$file" ./build/OpenAI-Product-Feed/
+    cp -r "$file" ./build/woocommerce-product-feed-for-openai
 done
 
 echo ""
 echo "Step 5: Creating zip file..."
 cd ./build
-if [ -f "OpenAI-Product-Feed.zip" ]; then
+if [ -f "woocommerce-product-feed-for-openai.zip" ]; then
     echo "Removing existing zip file..."
-    rm OpenAI-Product-Feed.zip
+    rm woocommerce-product-feed-for-openai.zip
 fi
-zip -r OpenAI-Product-Feed.zip OpenAI-Product-Feed
+zip -r woocommerce-product-feed-for-openai.zip woocommerce-product-feed-for-openai
 cd ..
 
 # Success message
@@ -56,6 +52,13 @@ echo "======================================"
 echo "✓ SUCCESS!"
 echo "======================================"
 echo "Production zip file created successfully!"
-echo "Location: ./build/OpenAI-Product-Feed.zip"
-echo "Size: $(du -h ./build/OpenAI-Product-Feed.zip | awk '{print $1}')"
-echo ""
+echo "Location: ./build/woocommerce-product-feed-for-openai.zip"
+echo "Size: $(du -h ./build/woocommerce-product-feed-for-openai.zip | awk '{print $1}')"
+
+# Cleanup build directory when not in CI environment
+if [ -z "$CI" ]; then
+    echo "Removing ./build/woocommerce-product-feed-for-openai directory"
+    rm -rf ./build/woocommerce-product-feed-for-openai
+fi
+
+echo "Done!"
