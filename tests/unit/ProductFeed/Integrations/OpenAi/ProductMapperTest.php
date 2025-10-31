@@ -299,6 +299,52 @@ class ProductMapperTest extends \WC_Unit_Test_Case {
 	}
 
 	/**
+	 * Test enable_search for variation uses parent product meta
+	 */
+	public function test_map_product_enable_search_variation_uses_parent_meta(): void {
+		$variable_product = WC_Helper_Product::create_variation_product();
+		$variable_product->update_meta_data( ProductFieldsController::KEY_DISABLE_SEARCH, 'yes' );
+		$variable_product->save();
+
+		$variations = $variable_product->get_children();
+		$this->assertNotEmpty( $variations );
+
+		$variation = wc_get_product( $variations[0] );
+		$this->assertNotNull( $variation );
+
+		$result = $this->sut->map_product( $variation );
+
+		$this->assertArrayHasKey( 'enable_search', $result );
+		// Should use parent's disable setting.
+		$this->assertEquals( 'false', $result['enable_search'] );
+
+		$variable_product->delete( true );
+	}
+
+	/**
+	 * Test enable_checkout for variation uses parent product meta
+	 */
+	public function test_map_product_enable_checkout_variation_uses_parent_meta(): void {
+		$variable_product = WC_Helper_Product::create_variation_product();
+		$variable_product->update_meta_data( ProductFieldsController::KEY_DISABLE_CHECKOUT, 'yes' );
+		$variable_product->save();
+
+		$variations = $variable_product->get_children();
+		$this->assertNotEmpty( $variations );
+
+		$variation = wc_get_product( $variations[0] );
+		$this->assertNotNull( $variation );
+
+		$result = $this->sut->map_product( $variation );
+
+		$this->assertArrayHasKey( 'enable_checkout', $result );
+		// Should use parent's disable setting.
+		$this->assertEquals( 'false', $result['enable_checkout'] );
+
+		$variable_product->delete( true );
+	}
+
+	/**
 	 * Test price formatting with currency
 	 */
 	public function test_map_product_price_includes_currency(): void {
@@ -797,5 +843,203 @@ class ProductMapperTest extends \WC_Unit_Test_Case {
 		$this->assertArrayNotHasKey( 'sale_price_effective_date', $result );
 
 		$product->delete( true );
+	}
+
+	/**
+	 * Test product_category returns hierarchical path with separator
+	 */
+	public function test_map_product_category_hierarchical_path(): void {
+		// Create category hierarchy: Root > Child > Grandchild.
+		$root_cat = wp_insert_term( 'Root Category', 'product_cat' );
+		$this->assertIsArray( $root_cat );
+
+		$child_cat = wp_insert_term(
+			'Child Category',
+			'product_cat',
+			[ 'parent' => $root_cat['term_id'] ]
+		);
+		$this->assertIsArray( $child_cat );
+
+		$grandchild_cat = wp_insert_term(
+			'Grandchild Category',
+			'product_cat',
+			[ 'parent' => $child_cat['term_id'] ]
+		);
+		$this->assertIsArray( $grandchild_cat );
+
+		$product = WC_Helper_Product::create_simple_product();
+		$product->set_category_ids( [ $grandchild_cat['term_id'] ] );
+		$product->save();
+
+		$result = $this->sut->map_product( $product );
+
+		$this->assertArrayHasKey( 'product_category', $result );
+		$this->assertEquals( 'Root Category > Child Category > Grandchild Category', $result['product_category'] );
+
+		$product->delete( true );
+		wp_delete_term( $grandchild_cat['term_id'], 'product_cat' );
+		wp_delete_term( $child_cat['term_id'], 'product_cat' );
+		wp_delete_term( $root_cat['term_id'], 'product_cat' );
+	}
+
+	/**
+	 * Test product_category selects deepest category when product has multiple categories
+	 */
+	public function test_map_product_category_selects_deepest(): void {
+		// Create two category hierarchies with different depths.
+		$shallow_cat = wp_insert_term( 'Shallow Category', 'product_cat' );
+		$this->assertIsArray( $shallow_cat );
+
+		$deep_root = wp_insert_term( 'Deep Root', 'product_cat' );
+		$this->assertIsArray( $deep_root );
+
+		$deep_child = wp_insert_term(
+			'Deep Child',
+			'product_cat',
+			[ 'parent' => $deep_root['term_id'] ]
+		);
+		$this->assertIsArray( $deep_child );
+
+		$deep_grandchild = wp_insert_term(
+			'Deep Grandchild',
+			'product_cat',
+			[ 'parent' => $deep_child['term_id'] ]
+		);
+		$this->assertIsArray( $deep_grandchild );
+
+		$product = WC_Helper_Product::create_simple_product();
+		$product->set_category_ids( [ $shallow_cat['term_id'], $deep_grandchild['term_id'] ] );
+		$product->save();
+
+		$result = $this->sut->map_product( $product );
+
+		$this->assertArrayHasKey( 'product_category', $result );
+		// Should select the deepest hierarchy.
+		$this->assertEquals( 'Deep Root > Deep Child > Deep Grandchild', $result['product_category'] );
+
+		$product->delete( true );
+		wp_delete_term( $deep_grandchild['term_id'], 'product_cat' );
+		wp_delete_term( $deep_child['term_id'], 'product_cat' );
+		wp_delete_term( $deep_root['term_id'], 'product_cat' );
+		wp_delete_term( $shallow_cat['term_id'], 'product_cat' );
+	}
+
+	/**
+	 * Test product_category returns null when product has no categories
+	 */
+	public function test_map_product_category_null_when_no_categories(): void {
+		$product = WC_Helper_Product::create_simple_product();
+
+		// Remove all categories including default 'Uncategorized'.
+		$category_ids = $product->get_category_ids();
+		if ( ! empty( $category_ids ) ) {
+			wp_remove_object_terms( $product->get_id(), $category_ids, 'product_cat' );
+		}
+
+		// Reload the product to ensure categories are cleared.
+		$product = wc_get_product( $product->get_id() );
+		$this->assertEmpty( $product->get_category_ids(), 'Product should have no categories' );
+
+		$result = $this->sut->map_product( $product );
+
+		// When no categories, product_category should not be in result.
+		$this->assertArrayNotHasKey( 'product_category', $result );
+
+		$product->delete( true );
+	}
+
+	/**
+	 * Test product_category for variation uses parent product categories
+	 */
+	public function test_map_product_category_variation_uses_parent_categories(): void {
+		// Create category for parent product.
+		$parent_cat = wp_insert_term( 'Parent Category', 'product_cat' );
+		$this->assertIsArray( $parent_cat );
+
+		$child_cat = wp_insert_term(
+			'Child Category',
+			'product_cat',
+			[ 'parent' => $parent_cat['term_id'] ]
+		);
+		$this->assertIsArray( $child_cat );
+
+		// Create a different category for variation (should not be used).
+		$variation_cat = wp_insert_term( 'Variation Category', 'product_cat' );
+		$this->assertIsArray( $variation_cat );
+
+		// Create variable product with categories.
+		$variable_product = WC_Helper_Product::create_variation_product();
+		$variable_product->set_category_ids( [ $child_cat['term_id'] ] );
+		$variable_product->save();
+
+		$variations = $variable_product->get_children();
+		$this->assertNotEmpty( $variations );
+
+		$variation = wc_get_product( $variations[0] );
+		$this->assertNotNull( $variation );
+
+		// Set different category on variation (should be ignored).
+		$variation->set_category_ids( [ $variation_cat['term_id'] ] );
+		$variation->save();
+
+		$result = $this->sut->map_product( $variation );
+
+		$this->assertArrayHasKey( 'product_category', $result );
+		// Should use parent's categories, not variation's own categories.
+		$this->assertEquals( 'Parent Category > Child Category', $result['product_category'] );
+
+		$variable_product->delete( true );
+		wp_delete_term( $child_cat['term_id'], 'product_cat' );
+		wp_delete_term( $parent_cat['term_id'], 'product_cat' );
+		wp_delete_term( $variation_cat['term_id'], 'product_cat' );
+	}
+
+	/**
+	 * Test product_category for simple product uses its own categories
+	 */
+	public function test_map_product_category_simple_product_uses_own_categories(): void {
+		// Create category hierarchy.
+		$root_cat = wp_insert_term( 'Electronics', 'product_cat' );
+		$this->assertIsArray( $root_cat );
+
+		$child_cat = wp_insert_term(
+			'Laptops',
+			'product_cat',
+			[ 'parent' => $root_cat['term_id'] ]
+		);
+		$this->assertIsArray( $child_cat );
+
+		$product = WC_Helper_Product::create_simple_product();
+		$product->set_category_ids( [ $child_cat['term_id'] ] );
+		$product->save();
+
+		$result = $this->sut->map_product( $product );
+
+		$this->assertArrayHasKey( 'product_category', $result );
+		$this->assertEquals( 'Electronics > Laptops', $result['product_category'] );
+
+		$product->delete( true );
+		wp_delete_term( $child_cat['term_id'], 'product_cat' );
+		wp_delete_term( $root_cat['term_id'], 'product_cat' );
+	}
+
+	/**
+	 * Test product_category with single level category (no parent)
+	 */
+	public function test_map_product_category_single_level(): void {
+		$category = wp_insert_term( 'Books', 'product_cat' );
+		$this->assertIsArray( $category );
+
+		$product = WC_Helper_Product::create_simple_product();
+		$product->set_category_ids( [ $category['term_id'] ] );
+		$product->save();
+
+		$result = $this->sut->map_product( $product );
+
+		$this->assertArrayHasKey( 'product_category', $result );
+		$this->assertEquals( 'Books', $result['product_category'] );
+
+		$product->delete( true );
+		wp_delete_term( $category['term_id'], 'product_cat' );
 	}
 }
