@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAi;
 
+use Automattic\WooCommerce\Enums\ProductStatus;
 use WP_Post;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -151,7 +152,7 @@ class DevHelpers {
 		$mapped_data = $this->mapper->map_product( $product );
 		$errors      = $this->validator->validate_entry( $mapped_data, $product );
 
-		if ( 'false' === $mapped_data['enable_search'] ) {
+		if ( 'false' === $mapped_data['enable_search'] || ProductStatus::PRIVATE === $product->get_status() ) {
 			echo '<span class="dashicons dashicons-no-alt" title="Hidden from search"></span>';
 			return;
 		}
