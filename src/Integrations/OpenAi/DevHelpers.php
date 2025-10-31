@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAi;
 
+use Automattic\WooCommerce\Enums\ProductType;
 use WP_Post;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -108,7 +109,11 @@ class DevHelpers {
 		}
 
 		// phpcs:disable VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable
-		$product     = wc_get_product( $post->ID );
+		$product = wc_get_product( $post->ID );
+		if ( $product->is_type( ProductType::VARIABLE ) ) {
+			$variations = $product->get_available_variations( 'object' );
+			$product    = $variations[0];
+		}
 		$mapped_data = $this->mapper->map_product( $product );
 		$errors      = $this->validator->validate_entry( $mapped_data, $product );
 
@@ -146,8 +151,13 @@ class DevHelpers {
 		if ( self::COLUMN_ID !== $column ) {
 			return;
 		}
+		$product = wc_get_product( $post_id );
+		if ( $product->is_type( ProductType::VARIABLE ) ) {
+			// Get the first product variation to server the metabox.
+			$variations = $product->get_available_variations();
+			$product    = $variations[0];
+		}
 
-		$product     = wc_get_product( $post_id );
 		$mapped_data = $this->mapper->map_product( $product );
 		$errors      = $this->validator->validate_entry( $mapped_data, $product );
 
