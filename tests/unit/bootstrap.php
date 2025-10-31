@@ -27,7 +27,7 @@ tests_add_filter( 'muplugins_loaded', function () {
 	require_once WP_PLUGIN_DIR . '/woocommerce/woocommerce.php';
 
 	// If your plugin main file is your-plugin.php at repo root:
-	require dirname( __DIR__, 2 ) . '/openai-product-feed-for-woo.php';
+	require dirname( __DIR__, 2 ) . '/woocommerce-product-feed-for-openai.php';
 } );
 
 // Boot the WordPress testing environment.

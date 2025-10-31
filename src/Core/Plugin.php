@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Main plugin class - refactored to use dependency injection
+ * Main plugin class.
  */
 final class Plugin {
 	/**

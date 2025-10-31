@@ -1,12 +1,12 @@
 {
-	"name": "@woocommerce/OpenAI-Product-Feed",
+	"name": "@woocommerce/Product-Feed-for-OpenAI",
 	"private": true,
-	"title": "OpenAI-Product-Feed",
+	"title": "Product-Feed-for-OpenAI",
 	"version": "0.1.0",
 	"homepage": "https://woocommerce.com/",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/woocommerce/OpenAI-Product-Feed.git"
+		"url": "https://github.com/woocommerce/WooCommerce-Product-Feed.git"
 	},
 	"license": "GPL-2.0-or-later",
 	"scripts": {
