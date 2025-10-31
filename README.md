@@ -19,4 +19,5 @@ A WooCommerce plugin that automatically generates and delivers product feeds to 
    - Running [Build Production Zip](https://github.com/woocommerce/OpenAI-Product-Feed/actions/workflows/build-production-zip.yml) workflow manually for your selected branch
 2. **Upload** the zip file via WordPress admin (Plugins > Add New > Upload Plugin) or extract to `/wp-content/plugins/`
 3. **Activate** the plugin through WordPress admin
-4. Go to **WooCommerce > Settings > Integrations > OpenAI** for OpenAI Product feed.
+4. Go to **WooCommerce > Settings > Integrations > Agentic Commerce** for OpenAI Product feed. 
+  - This settings requires the hidden Woo core feature flag `agentic_checkout` enabled. Enable it by CLI command: `wp option update woocommerce_feature_agentic_checkout_enabled 'yes'` 
