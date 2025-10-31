@@ -30,16 +30,13 @@ jobs:
           key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
           restore-keys: ${{ runner.os }}-composer-
 
-      - name: Make build script executable
-        run: chmod +x bin/build-prod-zip.sh
-
       - name: Build production zip
         run: ./bin/build-prod-zip.sh
 
       - name: Upload production zip artifact
         uses: actions/upload-artifact@v4
         with:
-          name: OpenAI-Product-Feed
-          path: build/OpenAI-Product-Feed
+          name: woocommerce-product-feed-for-openai
+          path: build/woocommerce-product-feed-for-openai
           if-no-files-found: error
           retention-days: 7
