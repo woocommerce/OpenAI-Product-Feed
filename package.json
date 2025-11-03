@@ -1,7 +1,7 @@
 {
 	"name": "@woocommerce/Product-Feed-for-OpenAI",
 	"private": true,
-	"title": "WOoCommerce Product Feed for OpenAI",
+	"title": "WooCommerce Product Feed for OpenAI",
 	"version": "0.1.0",
 	"homepage": "https://woocommerce.com/",
 	"repository": {
