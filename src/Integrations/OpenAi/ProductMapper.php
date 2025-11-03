@@ -14,6 +14,7 @@ use Automattic\WooCommerce\Enums\ProductType;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductMapperInterface;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Utils\StringHelper;
 use RuntimeException;
+use WC_Shipping_Zones;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -943,11 +944,6 @@ final class ProductMapper implements ProductMapperInterface {
 			return self::$cached_shipping_data;
 		}
 
-		if ( ! class_exists( 'WC_Shipping_Zones' ) ) {
-			self::$cached_shipping_data = '';
-			return self::$cached_shipping_data;
-		}
-
 		$shipping_data = [];
 		$zones         = $this->get_cached_shipping_zones();
 
@@ -979,9 +975,20 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @return array Shipping zones.
 	 */
 	private function get_cached_shipping_zones(): array {
-		if ( null === self::$cached_shipping_zones ) {
-			self::$cached_shipping_zones = \WC_Shipping_Zones::get_zones();
+		if ( null !== self::$cached_shipping_zones ) {
+			return self::$cached_shipping_zones;
 		}
+
+		// Get the main zones.
+		self::$cached_shipping_zones = \WC_Shipping_Zones::get_zones();
+
+		// There is the "Locations not covered by other zones" zone.
+		if ( empty( self::$cached_shipping_zones ) ) {
+			self::$cached_shipping_zones = [
+				WC_Shipping_Zones::get_zone( 0 )->get_shipping_methods(),
+			];
+		}
+
 		return self::$cached_shipping_zones;
 	}
 
@@ -1005,6 +1012,11 @@ final class ProductMapper implements ProductMapperInterface {
 
 	/**
 	 * Build shipping string for location.
+	 *
+	 * Format: country:region:service_class:price
+	 * Example: US:CA:Overnight:16.00 USD
+	 * Note: All 4 parts are required, even if region is empty (e.g., US::Flat rate:10.00 USD)
+	 * Note: Colons in service_class are escaped with backslash (e.g., Express\: Next Day)
 	 *
 	 * @param mixed  $location Location object.
 	 * @param string $method_title Method title.
@@ -1030,21 +1042,24 @@ final class ProductMapper implements ProductMapperInterface {
 				return null;
 		}
 
-		$parts = array_filter( [ $country, $region, $method_title ] );
-
-		if ( '' !== $price ) {
-			$parts[] = sprintf( '%s %s', $price, $currency );
+		// Skip if we don't have a price - can't provide meaningful shipping info without cost.
+		if ( '' === $price ) {
+			return null;
 		}
 
-		return implode(
-			':',
-			array_map(
-				function ( $part ) {
-					return trim( $part, ':' );
-				},
-				$parts
-			)
-		);
+		// Escape colons in method title to prevent breaking the delimiter structure.
+		$escaped_method_title = str_replace( ':', '\:', $method_title );
+
+		// OpenAI spec requires format: country:region:service_class:price
+		// All 4 parts must be present, even if region is empty.
+		$parts = [
+			trim( $country, ':' ),
+			trim( $region, ':' ),
+			trim( $escaped_method_title, ':' ),
+			sprintf( '%s %s', $price, $currency ),
+		];
+
+		return implode( ':', $parts );
 	}
 
 	/**
