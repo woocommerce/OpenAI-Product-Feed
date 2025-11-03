@@ -152,12 +152,36 @@ class JsonFileFeed implements FeedInterface {
 	 * End the feed.
 	 *
 	 * @return void
-	 * @throws Exception If the feed file cannot be moved to the upload directory.
 	 */
 	public function end(): void {
 		// Close the array and the file.
 		fwrite( $this->file_handle, ']' );
 		fclose( $this->file_handle );
+
+		// Indicate that we have a complete file.
+		$this->file_completed = true;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public function get_file_path(): ?string {
+		if ( ! $this->file_completed ) {
+			return null;
+		}
+
+		return $this->file_path;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @throws Exception If the feed file cannot be moved to the upload directory.
+	 */
+	public function get_file_url(): ?string {
+		if ( ! $this->file_completed ) {
+			return null;
+		}
 
 		$upload_dir = $this->get_upload_dir();
 
@@ -180,29 +204,6 @@ class JsonFileFeed implements FeedInterface {
 
 		// Generate the URL.
 		$this->file_url = $upload_dir['url'] . $this->file_name;
-
-		// Indicate that we have a complete file.
-		$this->file_completed = true;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	public function get_file_path(): ?string {
-		if ( ! $this->file_completed ) {
-			return null;
-		}
-
-		return $this->file_path;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	public function get_file_url(): ?string {
-		if ( ! $this->file_completed ) {
-			return null;
-		}
 
 		return $this->file_url;
 	}
