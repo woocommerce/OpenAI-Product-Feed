@@ -106,7 +106,7 @@ class JsonFileFeed implements FeedInterface {
 			wp_hash( $hash_data )
 		);
 
-		// Start by trying to use a temp direcotry to generate the feed.
+		// Start by trying to use a temp directory to generate the feed.
 		$this->file_path   = get_temp_dir() . DIRECTORY_SEPARATOR . $this->file_name;
 		$this->file_handle = fopen( $this->file_path, 'w' );
 		if ( false === $this->file_handle ) {
@@ -162,7 +162,7 @@ class JsonFileFeed implements FeedInterface {
 		$upload_dir = $this->get_upload_dir();
 
 		// Move the file to the upload directory if it is in temp.
-		if ( str_starts_with( $this->file_path, get_temp_dir() ) ) {
+		if ( 0 === strpos( $this->file_path, get_temp_dir() ) ) {
 			$tmp_path        = $this->file_path;
 			$this->file_path = $upload_dir['path'] . $this->file_name;
 			if ( ! rename( $tmp_path, $this->file_path ) ) {
@@ -211,7 +211,7 @@ class JsonFileFeed implements FeedInterface {
 	 * Get the upload directory for the feed.
 	 *
 	 * @return array {
-	 *     The upload directory for the feed.
+	 *     The upload directory for the feed. Both fields end with the right trailing slash.
 	 *
 	 *     @type string $path The path to the upload directory.
 	 *     @type string $url The URL to the upload directory.
