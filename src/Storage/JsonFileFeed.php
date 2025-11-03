@@ -22,12 +22,28 @@ use Exception;
  * This class writes JSON directly to a file, entry by entry, without keeping everything in memory.
  */
 class JsonFileFeed implements FeedInterface {
+	public const UPLOAD_DIR = 'product-feeds';
+
 	/**
 	 * Indicates if there are previous entries in the feed.
 	 *
 	 * @var bool
 	 */
 	private $has_entries = false;
+
+	/**
+	 * The base name of the feed file.
+	 *
+	 * @var string
+	 */
+	private $base_name;
+
+	/**
+	 * The name of the feed file, no directory.
+	 *
+	 * @var string
+	 */
+	private $file_name;
 
 	/**
 	 * The path to the feed file.
@@ -42,13 +58,6 @@ class JsonFileFeed implements FeedInterface {
 	 * @var resource|null
 	 */
 	private $file_handle = null;
-
-	/**
-	 * The base name of the feed file.
-	 *
-	 * @var string
-	 */
-	private $base_name;
 
 	/**
 	 * Indicates if the feed file has been completed.
@@ -80,27 +89,6 @@ class JsonFileFeed implements FeedInterface {
 	 * @throws Exception If the feed directory cannot be created.
 	 */
 	public function start(): void {
-		$upload_dir = wp_upload_dir( null, true );
-		$directory  = $upload_dir['basedir'] . DIRECTORY_SEPARATOR . 'product-feeds' . DIRECTORY_SEPARATOR;
-
-		// Try to create the directory if it does not exist.
-		if ( ! is_dir( $directory ) ) {
-			FileSystemUtil::mkdir_p_not_indexable( $directory );
-		}
-
-		// `mkdir_p_not_indexable()` returns `void`, so we need to check again.
-		if ( ! is_dir( $directory ) ) {
-			throw new Exception(
-				esc_html(
-					sprintf(
-						/* translators: %s: directory path */
-						__( 'Unable to create feed directory: %s', 'woocommerce-product-feed-openai' ),
-						$directory
-					)
-				)
-			);
-		}
-
 		/**
 		 * Allows the current time to be overridden before a feed is stored.
 		 *
@@ -109,19 +97,24 @@ class JsonFileFeed implements FeedInterface {
 		 * @return int The current time.
 		 * @since 0.1.0
 		 */
-		$current_time = apply_filters( 'wpfoai_feed_time', time(), $this );
-		$hash_data    = $this->base_name . gmdate( 'r', $current_time );
-		$file_name    = sprintf(
+		$current_time    = apply_filters( 'wpfoai_feed_time', time(), $this );
+		$hash_data       = $this->base_name . gmdate( 'r', $current_time );
+		$this->file_name = sprintf(
 			'%s-%s-%s.json',
 			$this->base_name,
 			gmdate( 'Y-m-d', $current_time ),
 			wp_hash( $hash_data )
 		);
 
-		$this->file_path = $directory . $file_name;
-		$this->file_url  = $upload_dir['baseurl'] . '/product-feeds/' . $file_name;
-
+		// Start by trying to use a temp direcotry to generate the feed.
+		$this->file_path   = get_temp_dir() . DIRECTORY_SEPARATOR . $this->file_name;
 		$this->file_handle = fopen( $this->file_path, 'w' );
+		if ( false === $this->file_handle ) {
+			// Fall back to immediately using the upload directory for generation.
+			$upload_dir        = $this->get_upload_dir();
+			$this->file_path   = $upload_dir['path'] . $this->file_name;
+			$this->file_handle = fopen( $this->file_path, 'w' );
+		}
 
 		if ( false === $this->file_handle ) {
 			throw new Exception(
@@ -159,29 +152,52 @@ class JsonFileFeed implements FeedInterface {
 	 * End the feed.
 	 *
 	 * @return void
+	 * @throws Exception If the feed file cannot be moved to the upload directory.
 	 */
 	public function end(): void {
 		// Close the array and the file.
 		fwrite( $this->file_handle, ']' );
 		fclose( $this->file_handle );
 
+		$upload_dir = $this->get_upload_dir();
+
+		// Move the file to the upload directory if it is in temp.
+		if ( str_starts_with( $this->file_path, get_temp_dir() ) ) {
+			$tmp_path        = $this->file_path;
+			$this->file_path = $upload_dir['path'] . $this->file_name;
+			if ( ! rename( $tmp_path, $this->file_path ) ) {
+				throw new Exception(
+					esc_html(
+						sprintf(
+							/* translators: %s: directory path */
+							__( 'Unable to move feed file to upload directory: %s', 'woocommerce-product-feed-openai' ),
+							$this->file_path
+						)
+					)
+				);
+			}
+		}
+
+		// Generate the URL.
+		$this->file_url = $upload_dir['url'] . $this->file_name;
+
 		// Indicate that we have a complete file.
 		$this->file_completed = true;
 	}
 
 	/**
-	 * Get the path to the feed file.
-	 *
-	 * @return string The path to the feed file.
+	 * {@inheritDoc}
 	 */
-	public function get_file_path(): string {
+	public function get_file_path(): ?string {
+		if ( ! $this->file_completed ) {
+			return null;
+		}
+
 		return $this->file_path;
 	}
 
 	/**
-	 * Get the URL of the feed file.
-	 *
-	 * @return string|null The URL of the feed file, null if not completed.
+	 * {@inheritDoc}
 	 */
 	public function get_file_url(): ?string {
 		if ( ! $this->file_completed ) {
@@ -189,5 +205,54 @@ class JsonFileFeed implements FeedInterface {
 		}
 
 		return $this->file_url;
+	}
+
+	/**
+	 * Get the upload directory for the feed.
+	 *
+	 * @return array {
+	 *     The upload directory for the feed.
+	 *
+	 *     @type string $path The path to the upload directory.
+	 *     @type string $url The URL to the upload directory.
+	 * }
+	 * @throws Exception If the upload directory cannot be created.
+	 */
+	private function get_upload_dir(): array {
+		// Only generate everything once.
+		static $prepared;
+		if ( isset( $prepared ) ) {
+			return $prepared;
+		}
+
+		$upload_dir     = wp_upload_dir( null, true );
+		$directory_path = $upload_dir['basedir'] . DIRECTORY_SEPARATOR . self::UPLOAD_DIR . DIRECTORY_SEPARATOR;
+
+		// Try to create the directory if it does not exist.
+		if ( ! is_dir( $directory_path ) ) {
+			FileSystemUtil::mkdir_p_not_indexable( $directory_path );
+		}
+
+		// `mkdir_p_not_indexable()` returns `void`, we have to check again.
+		if ( ! is_dir( $directory_path ) ) {
+			throw new Exception(
+				esc_html(
+					sprintf(
+						/* translators: %s: directory path */
+						__( 'Unable to create feed directory: %s', 'woocommerce-product-feed-openai' ),
+						$directory_path
+					)
+				)
+			);
+		}
+
+		$directory_url = $upload_dir['baseurl'] . '/' . self::UPLOAD_DIR . '/';
+
+		// Follow the format, returned by `wp_upload_dir()`.
+		$prepared = [
+			'path' => $directory_path,
+			'url'  => $directory_url,
+		];
+		return $prepared;
 	}
 }
