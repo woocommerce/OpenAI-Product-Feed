@@ -294,11 +294,20 @@ final class AsyncGenerator {
 		 * If the job has been scheduled more than 10 minutes ago but has not
 		 * transitioned to IN_PROGRESS yet, ActionScheduler is typically stuck.
 		 */
+
+		/**
+		 * Allows the timeout for a feed to remain in `scheduled` state to be changed.
+		 *
+		 * @param int $stuck_time The stuck time in seconds.
+		 * @return int The stuck time in seconds.
+		 * @since 0.1.0
+		 */
+		$scheduled_timeut = apply_filters( 'wpfoai_scheduled_timeout', 10 * MINUTE_IN_SECONDS );
 		if (
 			self::STATE_SCHEDULED === $status['state']
 			&& (
 				! isset( $status['scheduled_at'] )
-				|| time() - $status['scheduled_at'] > 10 * MINUTE_IN_SECONDS
+				|| time() - $status['scheduled_at'] > $scheduled_timeut
 			)
 		) {
 			return false;

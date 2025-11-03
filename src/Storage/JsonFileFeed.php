@@ -102,14 +102,21 @@ class JsonFileFeed implements FeedInterface {
 		}
 
 		/**
-		 * Generate a unique and private file name.
+		 * Allows the current time to be overridden before a feed is stored.
 		 *
-		 * @see https://github.com/woocommerce/woocommerce/pull/61332#discussion_r2431786208.
-		 *
-		 * Unlike that discussion, we are keeping track of the file name, so we can use the current date.
+		 * @param int           $time The current time.
+		 * @param FeedInterface $feed The feed instance.
+		 * @return int The current time.
+		 * @since 0.1.0
 		 */
-		$hash_data = $this->base_name . gmdate( 'r' );
-		$file_name = $this->base_name . '-' . time() . '-' . wp_hash( $hash_data ) . '.json';
+		$current_time = apply_filters( 'wpfoai_feed_time', time(), $this );
+		$hash_data    = $this->base_name . gmdate( 'r', $current_time );
+		$file_name    = sprintf(
+			'%s-%s-%s.json',
+			$this->base_name,
+			gmdate( 'Y-m-d', $current_time ),
+			wp_hash( $hash_data )
+		);
 
 		$this->file_path = $directory . $file_name;
 		$this->file_url  = $upload_dir['baseurl'] . '/product-feeds/' . $file_name;

@@ -17,7 +17,16 @@ if ( ! function_exists( 'WP_Filesystem' ) ) {
  * JsonFileFeedTest class.
  */
 class JsonFileFeedTest extends ProductFeedTestCase {
+	public function tearDown(): void {
+		parent::tearDown();
+		remove_all_filters( 'wpfoai_feed_time' );
+	}
+
 	public function test_feed_file_is_created() {
+		// Use the current itme for the test as the time in the SUT to avoid flakiness.
+		$current_time = time();
+		add_filter( 'wpfoai_feed_time', fn() => $current_time );
+
 		// Make sure there is no directory and that it will be created.
 		$directory = $this->get_and_delete_dir();
 
@@ -28,6 +37,8 @@ class JsonFileFeedTest extends ProductFeedTestCase {
 		$path = $feed->get_file_path();
 		$this->assertStringContainsString( 'product-feeds', $path );
 		$this->assertStringContainsString( $directory, $path );
+		$this->assertStringContainsString( gmdate( 'Y-m-d', $current_time ), $path );
+		$this->assertStringContainsString( wp_hash( 'test-feed' . gmdate( 'r', $current_time ) ), $path );
 		$this->assertTrue( file_exists( $path ) );
 		$this->assertEquals( '[]', file_get_contents( $path ) );
 
