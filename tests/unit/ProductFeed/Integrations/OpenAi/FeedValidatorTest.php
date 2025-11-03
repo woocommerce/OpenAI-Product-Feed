@@ -3,6 +3,7 @@ declare( strict_types = 1 );
 
 namespace Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAi;
 
+use Automattic\WooCommerce\Enums\ProductStatus;
 use PHPUnit\Framework\MockObject\MockObject;
 
 
@@ -63,6 +64,20 @@ class FeedValidatorTest extends \WC_Unit_Test_Case {
 		$issues = $this->validator->validate_entry( $entry, $this->mock_product );
 
 		$this->assertEmpty( $issues, 'Valid entry should not have validation issues' );
+	}
+
+	public function test_validate_entry_with_private_product(): void {
+		$this->mock_product->method( 'get_status' )->willReturn( ProductStatus::PRIVATE );
+		$entry = [
+			'id'          => '123',
+			'title'       => 'Test Product',
+			'description' => 'Test Description',
+		];
+
+		$issues = $this->validator->validate_entry( $entry, $this->mock_product );
+
+		$this->assertNotEmpty( $issues );
+		$this->assertContains( 'Private products will not appear in search results', $issues );
 	}
 
 	/**

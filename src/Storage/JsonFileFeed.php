@@ -101,9 +101,26 @@ class JsonFileFeed implements FeedInterface {
 			);
 		}
 
-		$file_name         = wp_unique_filename( $directory, $this->base_name . '.json' );
-		$this->file_path   = $directory . $file_name;
-		$this->file_url    = $upload_dir['baseurl'] . '/product-feeds/' . $file_name;
+		/**
+		 * Allows the current time to be overridden before a feed is stored.
+		 *
+		 * @param int           $time The current time.
+		 * @param FeedInterface $feed The feed instance.
+		 * @return int The current time.
+		 * @since 0.1.0
+		 */
+		$current_time = apply_filters( 'wpfoai_feed_time', time(), $this );
+		$hash_data    = $this->base_name . gmdate( 'r', $current_time );
+		$file_name    = sprintf(
+			'%s-%s-%s.json',
+			$this->base_name,
+			gmdate( 'Y-m-d', $current_time ),
+			wp_hash( $hash_data )
+		);
+
+		$this->file_path = $directory . $file_name;
+		$this->file_url  = $upload_dir['baseurl'] . '/product-feeds/' . $file_name;
+
 		$this->file_handle = fopen( $this->file_path, 'w' );
 
 		if ( false === $this->file_handle ) {

@@ -67,11 +67,7 @@ class ScheduledActionManager {
 		}
 
 		$feed   = $this->openai_integration->create_feed();
-		$walker = new ProductWalker(
-			$this->openai_integration->get_product_mapper(),
-			$this->openai_integration->get_feed_validator(),
-			$feed
-		);
+		$walker = ProductWalker::from_integration( $this->openai_integration, $feed );
 		$walker->walk();
 
 		try {

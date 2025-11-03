@@ -28,7 +28,7 @@ final class Plugin {
 	 *
 	 * @var Container
 	 */
-	private Container $container;
+	private $container;
 
 	/**
 	 * Integration registry.

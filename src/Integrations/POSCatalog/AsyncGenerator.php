@@ -9,6 +9,8 @@ declare(strict_types=1);
 
 namespace Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\POSCatalog;
 
+use ActionScheduler_AsyncRequest_QueueRunner;
+use ActionScheduler_Store;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductWalker;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\WalkerProgress;
 
@@ -17,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Async Generator for the POS catalog.
+ * Async Generator for feeds.
  */
 final class AsyncGenerator {
 	/**
@@ -25,21 +27,14 @@ final class AsyncGenerator {
 	 *
 	 * @var string
 	 */
-	const FEED_GENERATION_ACTION = 'wpfoai_pos_catalog_feed_generation';
+	const FEED_GENERATION_ACTION = 'wpfoai_feed_generation';
 
 	/**
 	 * The Action Scheduler action hook for the feed deletion.
 	 *
 	 * @var string
 	 */
-	const FEED_DELETION_ACTION = 'wpfoai_pos_catalog_feed_deletion';
-
-	/**
-	 * The option key for the feed generation status.
-	 *
-	 * @var string
-	 */
-	const OPTION_KEY = 'pos_feed_status';
+	const FEED_DELETION_ACTION = 'wpfoai_feed_deletion';
 
 	/**
 	 * Feed expiry time, once completed.
@@ -47,7 +42,7 @@ final class AsyncGenerator {
 	 *
 	 * @var int
 	 */
-	const FEED_EXPIRY = 20 * MINUTE_IN_SECONDS;
+	const FEED_EXPIRY = 24 * HOUR_IN_SECONDS;
 
 	/**
 	 * Possible states of generation.
@@ -79,38 +74,62 @@ final class AsyncGenerator {
 	 */
 	public function register_hooks(): void {
 		add_action( self::FEED_GENERATION_ACTION, [ $this, 'feed_generation_action' ] );
-		add_action( self::FEED_DELETION_ACTION, [ $this, 'feed_deletion_action' ] );
+		add_action( self::FEED_DELETION_ACTION, [ $this, 'feed_deletion_action' ], 10, 2 );
 	}
 
 	/**
 	 * Returns the current feed generation status.
 	 * Initiates one if not already running.
 	 *
-	 * @return array The feed generation status.
+	 * @param array|null $args The arguments to pass to the action.
+	 * @return array           The feed generation status.
 	 */
-	public function get_status(): array {
-		$status = get_option( self::OPTION_KEY );
+	public function get_status( ?array $args = null ): array {
+		// Determine the option key based on the integration ID and arguments.
+		$option_key = $this->get_option_key( $args );
+		$status     = get_option( $option_key );
 
-		if ( false === $status ) {
-			// Clear all previous actions to avoid race conditions.
-			as_unschedule_all_actions( self::FEED_GENERATION_ACTION );
+		// For existing jobs, make sure that everything in the status makes sense.
+		if ( false !== $status && ! $this->validate_status( $status ) ) {
+			$status = false;
+		}
 
-			// Add a bit of delay to avoid race conditions.
-			$delay     = 10;
-			$action_id = as_schedule_single_action( time() + $delay, self::FEED_GENERATION_ACTION, [] );
+		// If the status is an array, it means that there is nothing to schedule in this method.
+		if ( false !== $status ) {
+			return $status;
+		}
 
-			$status = [
-				'action_id' => $action_id,
-				'state'     => self::STATE_SCHEDULED,
-				'progress'  => 0,
-				'processed' => 0,
-				'total'     => -1,
-			];
+		// Clear all previous actions to avoid race conditions.
+		as_unschedule_all_actions( self::FEED_GENERATION_ACTION, [ $option_key ], 'wpfoai' );
 
-			update_option(
-				self::OPTION_KEY,
-				$status
-			);
+		$status = [
+			'scheduled_at' => time(),
+			'state'        => self::STATE_SCHEDULED,
+			'progress'     => 0,
+			'processed'    => 0,
+			'total'        => -1,
+			'args'         => $args ?? [],
+		];
+
+		update_option(
+			$option_key,
+			$status
+		);
+
+		// Start an immediate async action to generate the feed.
+		as_enqueue_async_action(
+			self::FEED_GENERATION_ACTION,
+			[ $option_key ],
+			'wpfoai',
+			true,
+			1
+		);
+
+		// Manually force an async request to be dispatched to process the action immediately.
+		if ( class_exists( ActionScheduler_AsyncRequest_QueueRunner::class ) && class_exists( ActionScheduler_Store::class ) ) {
+			$store         = ActionScheduler_Store::instance();
+			$async_request = new ActionScheduler_AsyncRequest_QueueRunner( $store );
+			$async_request->dispatch();
 		}
 
 		return $status;
@@ -119,10 +138,11 @@ final class AsyncGenerator {
 	/**
 	 * Action scheduler callback for the feed generation.
 	 *
+	 * @param string $option_key The option key for the feed generation status.
 	 * @return void
 	 */
-	public function feed_generation_action() {
-		$status = get_option( self::OPTION_KEY );
+	public function feed_generation_action( string $option_key ) {
+		$status = get_option( $option_key );
 
 		if ( ! is_array( $status ) || ! isset( $status['state'] ) || self::STATE_SCHEDULED !== $status['state'] ) {
 			wc_get_logger()->error( 'Invalid feed generation status', [ 'status' => $status ] );
@@ -130,19 +150,15 @@ final class AsyncGenerator {
 		}
 
 		$status['state'] = self::STATE_IN_PROGRESS;
-		update_option( self::OPTION_KEY, $status );
+		update_option( $option_key, $status );
 
 		$feed   = $this->integration->create_feed();
-		$walker = new ProductWalker(
-			$this->integration->get_product_mapper(),
-			$this->integration->get_feed_validator(),
-			$feed
-		);
+		$walker = ProductWalker::from_integration( $this->integration, $feed );
 
 		$walker->walk(
-			function ( WalkerProgress $progress ) use ( &$status ) {
+			function ( WalkerProgress $progress ) use ( &$status, $option_key ) {
 				$status = $this->update_feed_progress( $status, $progress );
-				update_option( self::OPTION_KEY, $status );
+				update_option( $option_key, $status );
 			}
 		);
 
@@ -150,28 +166,35 @@ final class AsyncGenerator {
 		$status['state'] = self::STATE_COMPLETED;
 		$status['url']   = $feed->get_file_url();
 		$status['path']  = $feed->get_file_path();
-		update_option( self::OPTION_KEY, $status );
+		update_option( $option_key, $status );
 
 		// Schedule another action to delete the file after the expiry time.
 		as_schedule_single_action(
 			time() + self::FEED_EXPIRY,
 			self::FEED_DELETION_ACTION,
-			[ 'path' => $feed->get_file_path() ]
+			[
+				$option_key,
+				$feed->get_file_path(),
+			],
+			'wpfoai',
+			true
 		);
 	}
 
 	/**
 	 * Forces a regeneration of the feed.
 	 *
+	 * @param array|null $args The arguments to pass to the action.
 	 * @return array The feed generation status.
 	 * @throws \Exception When there is a reason why the regeneration cannot be forced.
 	 */
-	public function force_regeneration(): array {
-		$status = get_option( self::OPTION_KEY );
+	public function force_regeneration( ?array $args = null ): array {
+		$option_key = $this->get_option_key( $args );
+		$status     = get_option( $option_key );
 
-		// If there is no option, there is nothing to force.
-		if ( false === $status ) {
-			return $this->get_status();
+		// If there is no option, there is nothing to force. If the option is invalid, we can restart.
+		if ( false === $status || ! $this->validate_status( $status ) ) {
+			return $this->get_status( $args );
 		}
 
 		switch ( $status['state'] ?? '' ) {
@@ -186,8 +209,8 @@ final class AsyncGenerator {
 			case self::STATE_COMPLETED:
 				// Delete the existing file, clear the option and let generation start again.
 				wp_delete_file( $status['path'] );
-				delete_option( self::OPTION_KEY );
-				return $this->get_status();
+				delete_option( $option_key );
+				return $this->get_status( $args );
 
 			default:
 				throw new \Exception( 'Unknown feed generation state.' );
@@ -197,13 +220,37 @@ final class AsyncGenerator {
 	/**
 	 * Action scheduler callback for the feed deletion after expiry.
 	 *
-	 * @param array $args The arguments passed to the action.
+	 * @param string $option_key The option key for the feed generation status.
+	 * @param string $path       The path to the feed file.
 	 * @return void
 	 */
-	public function feed_deletion_action( array $args ) {
-		$path = $args['path'];
+	public function feed_deletion_action( string $option_key, string $path ) {
+		delete_option( $option_key );
 		wp_delete_file( $path );
-		delete_option( self::OPTION_KEY );
+	}
+
+	/**
+	 * Returns the option key for the feed generation status.
+	 *
+	 * @param array|null $args The arguments to pass to the action.
+	 * @return string          The option key.
+	 */
+	private function get_option_key( ?array $args = null ): string {
+		$normalized_args = $args ?? [];
+		if ( ! empty( $normalized_args ) ) {
+			ksort( $normalized_args );
+		}
+
+		return 'feed_status_' . md5(
+			// WPCS dislikes serialize for security reasons, but it will be hashed immediately.
+			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize
+			serialize(
+				[
+					'integration' => $this->integration->get_id(),
+					'args'        => $normalized_args,
+				]
+			)
+		);
 	}
 
 	/**
@@ -220,5 +267,53 @@ final class AsyncGenerator {
 		$status['processed'] = $progress->processed_items;
 		$status['total']     = $progress->total_count;
 		return $status;
+	}
+
+	/**
+	 * Validates the status of the feed generation.
+	 *
+	 * Makes sure that the file exists for completed jobs,
+	 * that scheduled jobs are not stuck, etc.
+	 *
+	 * @param array $status The status of the feed generation.
+	 * @return bool         True if the status is valid, false otherwise.
+	 */
+	private function validate_status( array $status ): bool {
+		// Validate the state.
+		/**
+		 * For completed jobs, make sure the file still exists. Regenerate otherwise.
+		 *
+		 * The file should typically get deleted at the same time as the status is cleared.
+		 * However, something else could cause the file to disappear in the meantime (ex. manual delete).
+		 */
+		if ( self::STATE_COMPLETED === $status['state'] && ! file_exists( $status['path'] ) ) {
+			return false;
+		}
+
+		/**
+		 * If the job has been scheduled more than 10 minutes ago but has not
+		 * transitioned to IN_PROGRESS yet, ActionScheduler is typically stuck.
+		 */
+
+		/**
+		 * Allows the timeout for a feed to remain in `scheduled` state to be changed.
+		 *
+		 * @param int $stuck_time The stuck time in seconds.
+		 * @return int The stuck time in seconds.
+		 * @since 0.1.0
+		 */
+		$scheduled_timeout = apply_filters( 'wpfoai_scheduled_timeout', 10 * MINUTE_IN_SECONDS );
+		if (
+			self::STATE_SCHEDULED === $status['state']
+			&& (
+				! isset( $status['scheduled_at'] )
+				|| time() - $status['scheduled_at'] > $scheduled_timeout
+			)
+		) {
+			return false;
+		}
+
+		// All good.
+		return true;
 	}
 }
