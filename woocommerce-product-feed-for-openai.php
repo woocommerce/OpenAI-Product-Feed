@@ -6,7 +6,7 @@
  *
  * Plugin Name:          WooCommerce Product Feed for OpenAI
  * Plugin URI:           https://automattic.ai
- * Description:          Generate and manage AI-optimized product feeds for WooCommerce.
+ * Description:          Generate and manage product feeds for WooCommerce.
  * Version:              0.1.0
  * Author:               WooCommerce
  * Author URI:           https://woocommerce.org
