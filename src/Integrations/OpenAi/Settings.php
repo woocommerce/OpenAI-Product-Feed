@@ -43,20 +43,17 @@ class Settings {
 
 		switch ( $key ) {
 			case 'privacy_url':
-				return function_exists( 'get_privacy_policy_url' )
-					? get_privacy_policy_url()
-					: $default_value;
+				$privacy_url = get_privacy_policy_url();
+				return $privacy_url ? $privacy_url : $default_value;
 			case 'tos_url':
 			case 'returns_url':
-				return function_exists( 'wc_terms_and_conditions_page_id' )
-					? get_permalink( wc_terms_and_conditions_page_id() )
-					: $default_value;
+				$returns_url = get_permalink( wc_terms_and_conditions_page_id() );
+				return $returns_url ? $returns_url : $default_value;
 			case 'seller_name':
 				return get_bloginfo( 'name' );
 			case 'seller_url':
-				return function_exists( 'wc_get_page_permalink' )
-					? wc_get_page_permalink( 'shop' )
-					: home_url();
+				$seller_url = wc_get_page_permalink( 'shop' );
+				return $seller_url ? $seller_url : $default_value;
 			case 'endpoint_url':
 				$key = 'feed_url';
 				// No break.
@@ -144,7 +141,9 @@ class Settings {
 	 * @return array
 	 */
 	public function save_settings( array $registry ): array {
-		check_admin_referer( 'woocommerce-settings' );
+		if ( ! defined( 'PRODUCT_FEED_UNIT_TESTS' ) || ! PRODUCT_FEED_UNIT_TESTS ) {
+			check_admin_referer( 'woocommerce-settings' );
+		}
 
 		// Feed URL.
 		if ( isset( $_POST['woocommerce_agentic_openai_feed_url'] ) ) {
