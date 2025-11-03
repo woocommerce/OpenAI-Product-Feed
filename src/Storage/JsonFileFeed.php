@@ -189,7 +189,8 @@ class JsonFileFeed implements FeedInterface {
 		if ( 0 === strpos( $this->file_path, get_temp_dir() ) ) {
 			$tmp_path        = $this->file_path;
 			$this->file_path = $upload_dir['path'] . $this->file_name;
-			if ( ! rename( $tmp_path, $this->file_path ) ) {
+			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+			if ( ! @rename( $tmp_path, $this->file_path ) ) {
 				throw new Exception(
 					esc_html(
 						sprintf(

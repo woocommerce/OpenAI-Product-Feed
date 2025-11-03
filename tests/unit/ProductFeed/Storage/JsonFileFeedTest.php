@@ -27,21 +27,19 @@ class JsonFileFeedTest extends ProductFeedTestCase {
 		$current_time = time();
 		add_filter( 'wpfoai_feed_time', fn() => $current_time );
 
-		// Make sure there is no directory and that it will be created.
-		$directory = $this->get_and_delete_dir();
-
 		$feed = new JsonFileFeed( 'test-feed' );
 		$feed->start();
 		$feed->end();
 
+		// The file should be in `/tmp` at first.
 		$path = $feed->get_file_path();
-		$this->assertStringContainsString( 'product-feeds', $path );
-		$this->assertStringContainsString( $directory, $path );
+		$this->assertStringContainsString( 'tmp', $path );
 		$this->assertStringContainsString( gmdate( 'Y-m-d', $current_time ), $path );
 		$this->assertStringContainsString( wp_hash( 'test-feed' . gmdate( 'r', $current_time ) ), $path );
 		$this->assertTrue( file_exists( $path ) );
 		$this->assertEquals( '[]', file_get_contents( $path ) );
 
+		// Once a URL is retrieved, the file will be moved to the uploads dir.
 		$url = $feed->get_file_url();
 		$this->assertNotNull( $url );
 		$this->assertStringEndsWith( '.json', (string) $url );
@@ -80,13 +78,6 @@ class JsonFileFeedTest extends ProductFeedTestCase {
 		$feed->end();
 	}
 
-	public function test_get_file_path_before_start_throws_type_error() {
-		$feed = new JsonFileFeed( 'test-feed' );
-		$this->expectException( \TypeError::class );
-		// Property is unset until start(); return type is string → TypeError.
-		$feed->get_file_path();
-	}
-
 	public function test_add_entry_before_start_throws_type_error() {
 		$feed = new JsonFileFeed( 'test-feed' );
 		$this->expectException( \TypeError::class );
@@ -99,7 +90,7 @@ class JsonFileFeedTest extends ProductFeedTestCase {
 		$feed->end();
 	}
 
-	public function test_start_throws_when_directory_cannot_be_created() {
+	public function test_get_file_url_throws_when_directory_cannot_be_created() {
 		// Ensure clean state then create a FILE where the directory should be.
 		$this->get_and_delete_dir();
 		$uploads_dir = wp_upload_dir()['basedir'];
@@ -110,8 +101,10 @@ class JsonFileFeedTest extends ProductFeedTestCase {
 
 		try {
 			$feed = new JsonFileFeed( 'test-feed' );
-			$this->expectException( \Exception::class );
 			$feed->start();
+			$feed->end();
+			$this->expectException( \Exception::class );
+			$feed->get_file_url();
 		} finally {
 			// Cleanup: remove blocking file.
 			if ( file_exists( $block_path ) && is_file( $block_path ) ) {
