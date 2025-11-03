@@ -230,7 +230,7 @@ class JsonFileFeed implements FeedInterface {
 
 		// Try to create the directory if it does not exist.
 		if ( ! is_dir( $directory_path ) ) {
-			FileSystemUtil::mkdir_p_not_indexable( $directory_path );
+			FilesystemUtil::mkdir_p_not_indexable( $directory_path );
 		}
 
 		// `mkdir_p_not_indexable()` returns `void`, we have to check again.
