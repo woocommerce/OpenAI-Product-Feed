@@ -23,7 +23,7 @@ class JsonFileFeedTest extends ProductFeedTestCase {
 	}
 
 	public function test_feed_file_is_created() {
-		// Use the current itme for the test as the time in the SUT to avoid flakiness.
+		// Use the current time for the test as the time in the SUT to avoid flakiness.
 		$current_time = time();
 		add_filter( 'wpfoai_feed_time', fn() => $current_time );
 

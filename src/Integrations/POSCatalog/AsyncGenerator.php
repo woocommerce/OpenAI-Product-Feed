@@ -302,12 +302,12 @@ final class AsyncGenerator {
 		 * @return int The stuck time in seconds.
 		 * @since 0.1.0
 		 */
-		$scheduled_timeut = apply_filters( 'wpfoai_scheduled_timeout', 10 * MINUTE_IN_SECONDS );
+		$scheduled_timeout = apply_filters( 'wpfoai_scheduled_timeout', 10 * MINUTE_IN_SECONDS );
 		if (
 			self::STATE_SCHEDULED === $status['state']
 			&& (
 				! isset( $status['scheduled_at'] )
-				|| time() - $status['scheduled_at'] > $scheduled_timeut
+				|| time() - $status['scheduled_at'] > $scheduled_timeout
 			)
 		) {
 			return false;
