@@ -73,15 +73,6 @@ final class ProductMapper implements ProductMapperInterface {
 	}
 
 	/**
-	 * Resets data that is cached accross products.
-	 */
-	public function reset_cache() {
-		$this->cached_shipping_data    = null;
-		$this->cached_shipping_zones   = null;
-		$this->cached_has_local_pickup = null;
-	}
-
-	/**
 	 * Map WooCommerce product to feed row
 	 *
 	 * Main entry point for converting a WooCommerce product into OpenAI feed format.

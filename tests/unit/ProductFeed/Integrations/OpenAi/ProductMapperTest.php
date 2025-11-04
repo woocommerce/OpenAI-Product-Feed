@@ -1149,7 +1149,7 @@ class ProductMapperTest extends ProductFeedTestCase {
 			$zone = WC_Shipping_Zones::get_zone( 0 );
 		} else {
 			$zone = new WC_Shipping_Zone();
-			$zone->set_zone_name( 'California' );
+			$zone->set_zone_name( $name );
 		}
 
 		// Add locations based on string types.
