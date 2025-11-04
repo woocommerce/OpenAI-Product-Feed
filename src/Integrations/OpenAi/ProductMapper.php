@@ -46,21 +46,21 @@ final class ProductMapper implements ProductMapperInterface {
 	 *
 	 * @var string|null
 	 */
-	private static ?string $cached_shipping_data = null;
+	private ?string $cached_shipping_data = null;
 
 	/**
 	 * Cached shipping zones to prevent repeated API calls.
 	 *
 	 * @var array|null
 	 */
-	private static ?array $cached_shipping_zones = null;
+	private ?array $cached_shipping_zones = null;
 
 	/**
 	 * Cached local pickup availability flag.
 	 *
 	 * @var bool|null
 	 */
-	private static ?bool $cached_has_local_pickup = null;
+	private ?bool $cached_has_local_pickup = null;
 
 	/**
 	 * Dependency injector.
@@ -70,6 +70,15 @@ final class ProductMapper implements ProductMapperInterface {
 	public function init( Settings $settings ) {
 		$this->settings = $settings;
 		$this->schema   = FeedSchema::get_schema();
+	}
+
+	/**
+	 * Resets data that is cached accross products.
+	 */
+	public function reset_cache() {
+		$this->cached_shipping_data    = null;
+		$this->cached_shipping_zones   = null;
+		$this->cached_has_local_pickup = null;
 	}
 
 	/**
@@ -940,22 +949,22 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @return bool True if local pickup is available.
 	 */
 	private function has_local_pickup(): bool {
-		if ( null !== self::$cached_has_local_pickup ) {
-			return self::$cached_has_local_pickup;
+		if ( null !== $this->cached_has_local_pickup ) {
+			return $this->cached_has_local_pickup;
 		}
 
 		$zones = $this->get_cached_shipping_zones();
 		foreach ( $zones as $zone ) {
 			foreach ( $zone['shipping_methods'] as $method ) {
 				if ( 'local_pickup' === $method->id ) {
-					self::$cached_has_local_pickup = true;
-					return self::$cached_has_local_pickup;
+					$this->cached_has_local_pickup = true;
+					return $this->cached_has_local_pickup;
 				}
 			}
 		}
 
-		self::$cached_has_local_pickup = false;
-		return self::$cached_has_local_pickup;
+		$this->cached_has_local_pickup = false;
+		return $this->cached_has_local_pickup;
 	}
 
 	/**
@@ -964,19 +973,19 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @return array Shipping zones.
 	 */
 	private function get_cached_shipping_zones(): array {
-		if ( null !== self::$cached_shipping_zones ) {
-			return self::$cached_shipping_zones;
+		if ( null !== $this->cached_shipping_zones ) {
+			return $this->cached_shipping_zones;
 		}
 
 		// Get the main zones.
-		self::$cached_shipping_zones = \WC_Shipping_Zones::get_zones();
+		$this->cached_shipping_zones = \WC_Shipping_Zones::get_zones();
 
-		if ( ! empty( self::$cached_shipping_zones ) ) {
-			return self::$cached_shipping_zones;
+		if ( ! empty( $this->cached_shipping_zones ) ) {
+			return $this->cached_shipping_zones;
 		}
 
 		// There is the "Locations not covered by other zones" zone.
-		self::$cached_shipping_zones = [
+		$this->cached_shipping_zones = [
 			[
 				'zone_locations'   => [
 					(object) [
@@ -987,7 +996,7 @@ final class ProductMapper implements ProductMapperInterface {
 				'shipping_methods' => WC_Shipping_Zones::get_zone( 0 )->get_shipping_methods(),
 			],
 		];
-		return self::$cached_shipping_zones;
+		return $this->cached_shipping_zones;
 	}
 
 	/**
@@ -1003,8 +1012,8 @@ final class ProductMapper implements ProductMapperInterface {
 	 * @return string Shipping data string.
 	 */
 	private function get_shipping(): string {
-		if ( null !== self::$cached_shipping_data ) {
-			return self::$cached_shipping_data;
+		if ( null !== $this->cached_shipping_data ) {
+			return $this->cached_shipping_data;
 		}
 
 		$shipping_data = [];
@@ -1067,8 +1076,8 @@ final class ProductMapper implements ProductMapperInterface {
 		}
 
 		$shipping_data              = array_values( array_unique( $shipping_data ) );
-		self::$cached_shipping_data = empty( $shipping_data ) ? '' : implode( '; ', $shipping_data );
+		$this->cached_shipping_data = empty( $shipping_data ) ? '' : implode( '; ', $shipping_data );
 
-		return self::$cached_shipping_data;
+		return $this->cached_shipping_data;
 	}
 }
