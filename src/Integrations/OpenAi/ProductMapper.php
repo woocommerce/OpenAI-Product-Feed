@@ -976,6 +976,12 @@ final class ProductMapper implements ProductMapperInterface {
 		}
 
 		// There is the "Locations not covered by other zones" zone.
+		$generic_zone = WC_Shipping_Zones::get_zone( 0 );
+		if ( ! $generic_zone || is_wp_error( $generic_zone ) ) {
+			$this->cached_shipping_zones = [];
+			return $this->cached_shipping_zones;
+		}
+
 		$this->cached_shipping_zones = [
 			[
 				'zone_locations'   => [
@@ -984,7 +990,7 @@ final class ProductMapper implements ProductMapperInterface {
 						'code' => '',
 					],
 				],
-				'shipping_methods' => WC_Shipping_Zones::get_zone( 0 )->get_shipping_methods(),
+				'shipping_methods' => $generic_zone->get_shipping_methods(),
 			],
 		];
 		return $this->cached_shipping_zones;
