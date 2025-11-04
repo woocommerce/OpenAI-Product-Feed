@@ -1034,7 +1034,7 @@ final class ProductMapper implements ProductMapperInterface {
 				} elseif ( isset( $method->cost ) && is_numeric( $method->cost ) ) {
 					$price = $method->cost;
 				}
-				if ( empty( $price ) ) {
+				if ( '' === $price ) {
 					continue;
 				}
 
