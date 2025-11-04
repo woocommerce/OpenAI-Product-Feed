@@ -935,38 +935,27 @@ final class ProductMapper implements ProductMapperInterface {
 	}
 
 	/**
-	 * Get shipping data from WooCommerce zones (cached globally to prevent repeated queries)
+	 * Check if local pickup is available (cached to prevent repeated zone queries)
 	 *
-	 * @return string Shipping data string.
+	 * @return bool True if local pickup is available.
 	 */
-	private function get_shipping(): string {
-		if ( null !== self::$cached_shipping_data ) {
-			return self::$cached_shipping_data;
+	private function has_local_pickup(): bool {
+		if ( null !== self::$cached_has_local_pickup ) {
+			return self::$cached_has_local_pickup;
 		}
 
-		$shipping_data = [];
-		$zones         = $this->get_cached_shipping_zones();
-
+		$zones = $this->get_cached_shipping_zones();
 		foreach ( $zones as $zone ) {
-			$locations = $zone['zone_locations'];
-
 			foreach ( $zone['shipping_methods'] as $method ) {
-				$method_title = $method->get_method_title();
-				$price        = $this->get_shipping_price( $method );
-
-				foreach ( $locations as $location ) {
-					$shipping_string = $this->build_shipping_string( $location, $method_title, $price, $this->get_currency_code() );
-					if ( $shipping_string ) {
-						$shipping_data[] = $shipping_string;
-					}
+				if ( 'local_pickup' === $method->id ) {
+					self::$cached_has_local_pickup = true;
+					return self::$cached_has_local_pickup;
 				}
 			}
 		}
 
-		$shipping_data              = array_values( array_unique( $shipping_data ) );
-		self::$cached_shipping_data = empty( $shipping_data ) ? '' : implode( '; ', $shipping_data );
-
-		return self::$cached_shipping_data;
+		self::$cached_has_local_pickup = false;
+		return self::$cached_has_local_pickup;
 	}
 
 	/**
@@ -982,113 +971,104 @@ final class ProductMapper implements ProductMapperInterface {
 		// Get the main zones.
 		self::$cached_shipping_zones = \WC_Shipping_Zones::get_zones();
 
-		// There is the "Locations not covered by other zones" zone.
-		if ( empty( self::$cached_shipping_zones ) ) {
-			self::$cached_shipping_zones = [
-				WC_Shipping_Zones::get_zone( 0 )->get_shipping_methods(),
-			];
+		if ( ! empty( self::$cached_shipping_zones ) ) {
+			return self::$cached_shipping_zones;
 		}
 
+		// There is the "Locations not covered by other zones" zone.
+		self::$cached_shipping_zones = [
+			[
+				'zone_locations'   => [
+					(object) [
+						'type' => 'not_covered',
+						'code' => '',
+					],
+				],
+				'shipping_methods' => WC_Shipping_Zones::get_zone( 0 )->get_shipping_methods(),
+			],
+		];
 		return self::$cached_shipping_zones;
 	}
 
 	/**
-	 * Get shipping price from method.
-	 *
-	 * @param mixed $method Shipping method object.
-	 * @return string Shipping price.
-	 */
-	private function get_shipping_price( $method ): string {
-		if ( 'free_shipping' === $method->id ) {
-			return '0.00';
-		}
-
-		if ( isset( $method->settings['cost'] ) && is_numeric( $method->settings['cost'] ) ) {
-			return $method->settings['cost'];
-		}
-
-		return '';
-	}
-
-	/**
-	 * Build shipping string for location.
+	 * Get shipping data from WooCommerce zones (cached globally to prevent repeated queries).
 	 *
 	 * Format: country:region:service_class:price
-	 * Example: US:CA:Overnight:16.00 USD
-	 * Note: All 4 parts are required, even if region is empty (e.g., US::Flat rate:10.00 USD)
-	 * Note: Colons in service_class are escaped with backslash (e.g., Express\: Next Day)
+	 * Example: US:CA:Overnight:16.00 USD:BG:VAR:Flat rate:10.00 USD
+	 * Note: All 4 parts are required, even if region is empty (e.g., US::Flat rate:10.00 USD).
+	 * Note: Colons in service_class are escaped with backslash (e.g., Express\: Next Day).
+	 * Important: We are assuming that an empty string can be used for both country and region.
+	 *            This assumption might be completely wrong.
 	 *
-	 * @param mixed  $location Location object.
-	 * @param string $method_title Method title.
-	 * @param string $price Price value.
-	 * @param string $currency Currency code.
-	 * @return string|null Shipping string or null.
+	 * @return string Shipping data string.
 	 */
-	private function build_shipping_string( $location, string $method_title, string $price, string $currency ): ?string {
-		$country = '';
-		$region  = '';
-
-		switch ( $location->type ) {
-			case 'country':
-				$country = $location->code;
-				break;
-			case 'state':
-				list($country, $region) = array_pad( explode( ':', $location->code ), 2, '' );
-				break;
-			case 'continent':
-				$country = $location->code;
-				break;
-			default:
-				return null;
+	private function get_shipping(): string {
+		if ( null !== self::$cached_shipping_data ) {
+			return self::$cached_shipping_data;
 		}
 
-		// Skip if we don't have a price - can't provide meaningful shipping info without cost.
-		if ( '' === $price ) {
-			return null;
-		}
-
-		// Escape colons in method title to prevent breaking the delimiter structure.
-		$escaped_method_title = str_replace( ':', '\:', $method_title );
-
-		// OpenAI spec requires format: country:region:service_class:price
-		// All 4 parts must be present, even if region is empty.
-		$parts = [
-			trim( $country, ':' ),
-			trim( $region, ':' ),
-			trim( $escaped_method_title, ':' ),
-			sprintf( '%s %s', $price, $currency ),
-		];
-
-		return implode( ':', $parts );
-	}
-
-	/**
-	 * Check if local pickup is available (cached to prevent repeated zone queries)
-	 *
-	 * @return bool True if local pickup is available.
-	 */
-	private function has_local_pickup(): bool {
-		if ( null !== self::$cached_has_local_pickup ) {
-			return self::$cached_has_local_pickup;
-		}
-
-		if ( ! class_exists( 'WC_Shipping_Zones' ) ) {
-			self::$cached_has_local_pickup = false;
-			return self::$cached_has_local_pickup;
-		}
-
-		$zones = $this->get_cached_shipping_zones();
+		$shipping_data = [];
+		$zones         = $this->get_cached_shipping_zones();
+		$currency      = $this->get_currency_code();
 
 		foreach ( $zones as $zone ) {
+			$locations = $zone['zone_locations'];
+
 			foreach ( $zone['shipping_methods'] as $method ) {
-				if ( 'local_pickup' === $method->id ) {
-					self::$cached_has_local_pickup = true;
-					return self::$cached_has_local_pickup;
+				// Escape colons in method title.
+				$method_title = trim( str_replace( ':', '\:', $method->get_method_title() ), ':' );
+
+				// Generate the price. Skip if none is found, even free.
+				$price = '';
+				if ( 'free_shipping' === $method->id ) {
+					$price = '0.00';
+				} elseif ( isset( $method->cost ) && is_numeric( $method->cost ) ) {
+					$price = $method->cost;
+				}
+				if ( empty( $price ) ) {
+					continue;
+				}
+
+				foreach ( $locations as $location ) {
+					$country = null;
+					$region  = null;
+
+					switch ( $location->type ) {
+						case 'country':
+							$country = $location->code;
+							break;
+						case 'state':
+							list( $country, $region ) = array_pad( explode( ':', $location->code ), 2, '' );
+							break;
+						case 'continent':
+							$country = $location->code;
+							break;
+						case 'not_covered':
+							$country = '';
+							break;
+					}
+
+					if ( null === $country ) {
+						continue;
+					}
+
+					// OpenAI spec requires format: country:region:service_class:price
+					// All 4 parts must be present, even if region is empty.
+					$parts = [
+						trim( $country, ':' ),
+						trim( $region ?? '', ':' ),
+						$method_title,
+						sprintf( '%s %s', $price, $currency ),
+					];
+
+					$shipping_data[] = implode( ':', $parts );
 				}
 			}
 		}
 
-		self::$cached_has_local_pickup = false;
-		return self::$cached_has_local_pickup;
+		$shipping_data              = array_values( array_unique( $shipping_data ) );
+		self::$cached_shipping_data = empty( $shipping_data ) ? '' : implode( '; ', $shipping_data );
+
+		return self::$cached_shipping_data;
 	}
 }
