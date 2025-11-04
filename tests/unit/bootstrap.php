@@ -3,6 +3,9 @@
 ini_set( 'display_errors', '1' );
 error_reporting( E_ALL );
 
+// Define a constnat to use in tests.
+define( 'PRODUCT_FEED_UNIT_TESTS', true );
+
 // Let wp-phpunit tell us where the WP test suite lives.
 $_tests_dir = getenv( 'WP_TESTS_DIR' );
 if ( ! $_tests_dir ) {
@@ -27,7 +30,7 @@ tests_add_filter( 'muplugins_loaded', function () {
 	require_once WP_PLUGIN_DIR . '/woocommerce/woocommerce.php';
 
 	// If your plugin main file is your-plugin.php at repo root:
-	require dirname( __DIR__, 2 ) . '/openai-product-feed-for-woo.php';
+	require dirname( __DIR__, 2 ) . '/woocommerce-product-feed-for-openai.php';
 } );
 
 // Boot the WordPress testing environment.
@@ -104,3 +107,7 @@ function initialize_dependency_injection() {
 	$GLOBALS['wc_container'] = $inner_container;
 }
 initialize_dependency_injection();
+
+// Include ProductFeed core test files.
+require_once __DIR__ . '/ProductFeed/ProductFeedTestCase.php';
+require_once __DIR__ . '/ProductFeed/TestContainer.php';

@@ -38,6 +38,10 @@ interface IntegrationInterface {
 	/**
 	 * Activate the integration.
 	 *
+	 * This method is called when the plugin is activated.
+	 * If there is ever a setting that controls active integrations,
+	 * this method might also be called when the integration is activated.
+	 *
 	 * @return void
 	 */
 	public function activate(): void;
@@ -45,9 +49,21 @@ interface IntegrationInterface {
 	/**
 	 * Deactivate the integration.
 	 *
+	 * This method is called when the plugin is deactivated.
+	 * If there is ever a setting that controls active integrations,
+	 * this method might also be called when the integration is deactivated.
+	 *
 	 * @return void
 	 */
 	public function deactivate(): void;
+
+	/**
+	 * Get the query arguments for the product feed.
+	 *
+	 * @see wc_get_products()
+	 * @return array The query arguments.
+	 */
+	public function get_product_feed_query_args(): array;
 
 	/**
 	 * Create a feed that is to be populated.

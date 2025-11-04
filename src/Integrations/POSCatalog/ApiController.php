@@ -79,7 +79,12 @@ class ApiController {
 	public function generate_feed( WP_REST_Request $request ) {
 		$generator = $this->container->get( AsyncGenerator::class );
 		try {
-			$response = $request->get_param( 'force' ) ? $generator->force_regeneration() : $generator->get_status();
+			$params   = [];
+			$response = $request->get_param( 'force' )
+				? $generator->force_regeneration( $params )
+				: $generator->get_status( $params );
+
+			// Remove sensitive data from the response.
 			if ( isset( $response['action_id'] ) ) {
 				unset( $response['action_id'] );
 			}

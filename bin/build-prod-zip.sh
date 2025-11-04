@@ -33,7 +33,7 @@ echo ""
 echo "Step 4: Copying files and folders..."
 FILES_TO_COPY=(
     "./src"
-    "./openai-product-feed-for-woo.php"
+    "./woocommerce-product-feed-for-openai.php"
 )
 
 for file in "${FILES_TO_COPY[@]}"; do

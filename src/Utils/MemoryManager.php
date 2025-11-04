@@ -22,7 +22,7 @@ class MemoryManager {
 	 *
 	 * @return int Available memory as a percentage of the total memory limit.
 	 */
-	public static function get_available_memory(): int {
+	public function get_available_memory(): int {
 		$memory_limit = wp_convert_hr_to_bytes( ini_get( 'memory_limit' ) );
 		if ( -1 === $memory_limit ) {
 			// Some systems have "unlimited" memory.
@@ -35,7 +35,7 @@ class MemoryManager {
 	/**
 	 * Flush all caches caches.
 	 */
-	public static function flush_caches() {
+	public function flush_caches() {
 		global $wpdb, $wp_object_cache;
 
 		$wpdb->queries = [];
@@ -56,13 +56,13 @@ class MemoryManager {
 			$wp_object_cache->__remoteset(); // important.
 		}
 
-		self::collect_garbage();
+		$this->collect_garbage();
 	}
 
 	/**
 	 * Collect garbage.
 	 */
-	public static function collect_garbage() {
+	private function collect_garbage() {
 		static $gc_threshold         = 5000;
 		static $gc_too_low_in_a_row  = 0;
 		static $gc_too_high_in_a_row = 0;
