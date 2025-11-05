@@ -5,14 +5,18 @@ namespace Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAi;
 
 use PHPUnit\Framework\MockObject\MockObject;
 use Automattic\WooCommerce\Enums\ProductType;
+use Automattic\WooCommerce\ProductFeedForOpenAI\ProductFeedTestCase;
 use WC_Helper_Product;
+use WC_Shipping_Flat_Rate;
+use WC_Shipping_Zone;
+use WC_Shipping_Zones;
 
 /**
  * ProductMapper test class.
  *
  * Tests mapping of WooCommerce products to OpenAI feed format.
  */
-class ProductMapperTest extends \WC_Unit_Test_Case {
+class ProductMapperTest extends ProductFeedTestCase {
 	/**
 	 * System under test.
 	 *
@@ -1041,5 +1045,164 @@ class ProductMapperTest extends \WC_Unit_Test_Case {
 
 		$product->delete( true );
 		wp_delete_term( $category['term_id'], 'product_cat' );
+	}
+
+	public function provider_get_shipping(): array {
+		return [
+			'Single zone with flat rate'                   => [
+				[
+					[
+						'name'             => 'California',
+						'location_type'    => 'state',
+						'location_code'    => 'US:CA',
+						'shipping_methods' => [ 'flat_rate' => [ 'cost' => '12' ] ],
+					],
+				],
+				'US:CA:Flat rate:12 USD',
+			],
+			'Single zone with free shipping'               => [
+				[
+					[
+						'name'             => 'California',
+						'location_type'    => 'state',
+						'location_code'    => 'US:CA',
+						'shipping_methods' => [ 'free_shipping' => [] ],
+					],
+				],
+				'US:CA:Free shipping:0.00 USD',
+			],
+			'Multiple zones with different shipping methods, also countries' => [
+				[
+					[
+						'name'             => 'California',
+						'location_type'    => 'state',
+						'location_code'    => 'US:CA',
+						'shipping_methods' => [ 'flat_rate' => [ 'cost' => '12' ] ],
+					],
+					[
+						'name'             => 'Europe',
+						'location_type'    => 'country',
+						'location_code'    => 'BG',
+						'shipping_methods' => [ 'free_shipping' => [] ],
+					],
+				],
+				'US:CA:Flat rate:12 USD; BG::Free shipping:0.00 USD',
+			],
+			'Continent zone'                               => [
+				[
+					[
+						'name'             => 'Europe',
+						'location_type'    => 'continent',
+						'location_code'    => 'EU',
+						'shipping_methods' => [ 'flat_rate' => [ 'cost' => '13' ] ],
+					],
+				],
+				'EU::Flat rate:13 USD',
+			],
+			'No specific zones'                            => [
+				[
+					[
+						'name'             => 'World',
+						'location_type'    => 'not_covered',
+						'location_code'    => '',
+						'shipping_methods' => [ 'flat_rate' => [ 'cost' => '14' ] ],
+						'id'               => 0,
+					],
+				],
+				'::Flat rate:14 USD',
+			],
+			'Single zone with semicolons in method titles' => [
+				[
+					[
+						'name'             => 'Germany',
+						'location_type'    => 'country',
+						'location_code'    => 'DE',
+						'shipping_methods' => [
+							'flat_rate' => [
+								'cost'  => '15',
+								'title' => 'Flat rate:',
+							],
+						],
+					],
+					[
+						'name'             => 'Austria',
+						'location_type'    => 'country',
+						'location_code'    => 'AT',
+						'shipping_methods' => [
+							'flat_rate' => [
+								'cost'  => '18',
+								'title' => 'Flat rate: Austria',
+							],
+						],
+					],
+				],
+				// Germany's should be trimmed, Austria's escaped.
+				'DE::Flat rate:15 USD; AT::Flat rate\: Austria:18 USD',
+			],
+		];
+	}
+
+	/**
+	 * Test get_shipping.
+	 *
+	 * @param array  $zones Array of zones to create.
+	 * @param string $expected_string Expected shipping string.
+	 *
+	 * @dataProvider provider_get_shipping
+	 */
+	public function test_get_shipping( array $zones, string $expected_string ) {
+		foreach ( $zones as $zone ) {
+			$this->create_shipping_zone(
+				$zone['name'],
+				$zone['location_type'],
+				$zone['location_code'],
+				$zone['shipping_methods'],
+				$zone['id'] ?? null
+			);
+		}
+
+		$product = WC_Helper_Product::create_simple_product();
+		$result  = $this->sut->map_product( $product );
+
+		$this->assertArrayHasKey( 'shipping', $result );
+		$shipping = $result['shipping'];
+		$this->assertEquals( $expected_string, $shipping );
+	}
+
+	private function create_shipping_zone( string $name, string $location_type, string $location_code, $shipping_methods = [], $id = null ): WC_Shipping_Zone {
+		$instance_ids = [];
+
+		// Get the global zone for ID 0, or create a new one.
+		if ( 0 === $id ) {
+			$zone = WC_Shipping_Zones::get_zone( 0 );
+		} else {
+			$zone = new WC_Shipping_Zone();
+			$zone->set_zone_name( $name );
+		}
+
+		// Add locations based on string types.
+		$zone->add_location( $location_code, $location_type );
+		foreach ( $shipping_methods as $type => $settings ) {
+			$instance_ids[ $type ] = $zone->add_shipping_method( $type );
+		}
+		$zone->save();
+
+		// Add the necessary settings to all methods.
+		$methods = $zone->get_shipping_methods();
+		foreach ( $shipping_methods as $type => $settings ) {
+			// Load the shipping method.
+			$shipping_method = $methods[ $instance_ids[ $type ] ];
+
+			// Update instance settings.
+			$shipping_method->instance_settings = array_merge( $shipping_method->instance_settings, $settings );
+
+			// Save the settings.
+			update_option( $shipping_method->get_instance_option_key(), $shipping_method->instance_settings );
+
+			// Refresh the method.
+			$shipping_method->init_settings();
+		}
+
+		return $zone;
 	}
 }
