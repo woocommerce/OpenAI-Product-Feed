@@ -1022,7 +1022,7 @@ final class ProductMapper implements ProductMapperInterface {
 
 			foreach ( $zone['shipping_methods'] as $method ) {
 				// Escape colons in method title.
-				$method_title = trim( str_replace( ':', '\:', $method->get_method_title() ), ':' );
+				$method_title = str_replace( ':', '\:', trim( $method->get_title(), ':' ) );
 
 				// Generate the price. Skip if none is found, even free.
 				$price = '';

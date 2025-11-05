@@ -1049,7 +1049,7 @@ class ProductMapperTest extends ProductFeedTestCase {
 
 	public function provider_get_shipping(): array {
 		return [
-			'Single zone with flat rate'     => [
+			'Single zone with flat rate'                   => [
 				[
 					[
 						'name'             => 'California',
@@ -1060,7 +1060,7 @@ class ProductMapperTest extends ProductFeedTestCase {
 				],
 				'US:CA:Flat rate:12 USD',
 			],
-			'Single zone with free shipping' => [
+			'Single zone with free shipping'               => [
 				[
 					[
 						'name'             => 'California',
@@ -1088,7 +1088,7 @@ class ProductMapperTest extends ProductFeedTestCase {
 				],
 				'US:CA:Flat rate:12 USD; BG::Free shipping:0.00 USD',
 			],
-			'Continent zone'                 => [
+			'Continent zone'                               => [
 				[
 					[
 						'name'             => 'Europe',
@@ -1099,7 +1099,7 @@ class ProductMapperTest extends ProductFeedTestCase {
 				],
 				'EU::Flat rate:13 USD',
 			],
-			'No specific zones'              => [
+			'No specific zones'                            => [
 				[
 					[
 						'name'             => 'World',
@@ -1110,6 +1110,34 @@ class ProductMapperTest extends ProductFeedTestCase {
 					],
 				],
 				'::Flat rate:14 USD',
+			],
+			'Single zone with semicolons in method titles' => [
+				[
+					[
+						'name'             => 'Germany',
+						'location_type'    => 'country',
+						'location_code'    => 'DE',
+						'shipping_methods' => [
+							'flat_rate' => [
+								'cost'  => '15',
+								'title' => 'Flat rate:',
+							],
+						],
+					],
+					[
+						'name'             => 'Austria',
+						'location_type'    => 'country',
+						'location_code'    => 'AT',
+						'shipping_methods' => [
+							'flat_rate' => [
+								'cost'  => '18',
+								'title' => 'Flat rate: Austria',
+							],
+						],
+					],
+				],
+				// Germany's should be trimmed, Austria's escaped.
+				'DE::Flat rate:15 USD; AT::Flat rate\: Austria:18 USD',
 			],
 		];
 	}
