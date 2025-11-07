@@ -191,13 +191,14 @@ class JsonFileFeed implements FeedInterface {
 			$this->file_path = $upload_dir['path'] . $this->file_name;
 			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 			if ( ! @copy( $tmp_path, $this->file_path ) ) {
+				$error = error_get_last();
 				throw new Exception(
 					esc_html(
 						sprintf(
 							/* translators: %1$s: file path, %2$s: error message */
 							__( 'Unable to move feed file %1$s to upload directory: %2$s', 'woocommerce-product-feed-openai' ),
 							$this->file_path,
-							error_get_last()
+							( esc_html( $error['message'] ) ?? 'Unknown error' )
 						)
 					)
 				);
