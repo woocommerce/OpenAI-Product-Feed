@@ -33,15 +33,17 @@ class JsonFileFeedTest extends ProductFeedTestCase {
 
 		// The file should be in `/tmp` at first.
 		$path = $feed->get_file_path();
-		$this->assertStringContainsString( 'tmp', $path );
+		$this->assertStringStartsWith( get_temp_dir(), $path );
 		$this->assertStringContainsString( gmdate( 'Y-m-d', $current_time ), $path );
 		$this->assertStringContainsString( wp_hash( 'test-feed' . gmdate( 'r', $current_time ) ), $path );
 		$this->assertTrue( file_exists( $path ) );
 		$this->assertEquals( '[]', file_get_contents( $path ) );
 
 		// Once a URL is retrieved, the file will be moved to the uploads dir.
-		$url = $feed->get_file_url();
+		$url   = $feed->get_file_url();
+		$path2 = $feed->get_file_path();
 		$this->assertNotNull( $url );
+		$this->assertStringContainsString( 'uploads/product-feed', $path2 );
 		$this->assertStringEndsWith( '.json', (string) $url );
 		$this->assertStringContainsString( '/product-feeds/', (string) $url );
 	}

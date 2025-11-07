@@ -74,6 +74,13 @@ class JsonFileFeed implements FeedInterface {
 	private $file_url = null;
 
 	/**
+	 * Indicates if the feed file is in a temp directory.
+	 *
+	 * @var bool
+	 */
+	private $is_temp_filepath = false;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param string $base_name The base name of the feed file.
@@ -114,6 +121,8 @@ class JsonFileFeed implements FeedInterface {
 			$upload_dir        = $this->get_upload_dir();
 			$this->file_path   = $upload_dir['path'] . $this->file_name;
 			$this->file_handle = fopen( $this->file_path, 'w' );
+		} else {
+			$this->is_temp_filepath = true;
 		}
 
 		if ( false === $this->file_handle ) {
@@ -186,7 +195,7 @@ class JsonFileFeed implements FeedInterface {
 		$upload_dir = $this->get_upload_dir();
 
 		// Move the file to the upload directory if it is in temp.
-		if ( 0 === strpos( $this->file_path, get_temp_dir() ) ) {
+		if ( $this->is_temp_filepath ) {
 			$tmp_path        = $this->file_path;
 			$this->file_path = $upload_dir['path'] . $this->file_name;
 			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
@@ -205,6 +214,8 @@ class JsonFileFeed implements FeedInterface {
 			}
 
 			unlink( $tmp_path );
+
+			$this->is_temp_filepath = false;
 		}
 
 		// Generate the URL.
