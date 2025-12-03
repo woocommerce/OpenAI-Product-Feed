@@ -62,7 +62,7 @@ class ApiControllerTest extends ProductFeedTestCase {
 
 		$this->mock_async_generator->expects( $this->once() )
 			->method( $force_regeneration ? 'force_regeneration' : 'get_status' )
-			->with( $fields ? [ '_fields' => 'id,name' ] : [] )
+			->with( $fields ? [ '_fields' => $fields ] : [] )
 			->willReturn(
 				[
 					'action_id' => 6789,
