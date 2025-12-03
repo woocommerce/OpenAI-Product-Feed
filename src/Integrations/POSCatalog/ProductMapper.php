@@ -30,10 +30,15 @@ class ProductMapper implements ProductMapperInterface {
 	/**
 	 * Set fields to include in the product mapping.
 	 *
-	 * @param string $fields _Fields to include in the product mapping.
+	 * @param string|null $fields Fields to include in the product mapping.
 	 * @return void
 	 */
-	public function set_fields( string $fields ): void {
+	public function set_fields( ?string $fields = null ): void {
+		if ( null === $fields ) {
+			$this->fields = null;
+			return;
+		}
+
 		$this->fields = array_fill_keys(
 			array_map( 'trim', explode( ',', $fields ) ),
 			1
