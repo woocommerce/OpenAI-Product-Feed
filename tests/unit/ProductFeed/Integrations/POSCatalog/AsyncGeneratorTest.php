@@ -52,7 +52,7 @@ class AsyncGeneratorTest extends ProductFeedTestCase {
 			'state' => AsyncGenerator::STATE_SCHEDULED,
 			'args'  => [
 				'_fields' => 'id,name',
-			]
+			],
 		];
 		update_option( self::OPTION_KEY, $status );
 
