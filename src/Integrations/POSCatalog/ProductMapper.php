@@ -21,6 +21,26 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class ProductMapper implements ProductMapperInterface {
 	/**
+	 * Fields to include in the product mapping.
+	 *
+	 * @var array|null Fields to include in the product mapping.
+	 */
+	private $fields = null;
+
+	/**
+	 * Set fields to include in the product mapping.
+	 *
+	 * @param string $fields _Fields to include in the product mapping.
+	 * @return void
+	 */
+	public function set_fields( string $fields ): void {
+		$this->fields = array_fill_keys(
+			array_map( 'trim', explode( ',', $fields ) ),
+			1
+		);
+	}
+
+	/**
 	 * Map WooCommerce product to catalog row
 	 *
 	 * @param WC_Product $product Product to map.
@@ -52,7 +72,12 @@ class ProductMapper implements ProductMapperInterface {
 		 * @param array      $row     Mapped product data.
 		 * @param WC_Product $product Product object.
 		 */
-		return apply_filters( 'oapfw_map_catalog_product', $row, $product );
+		$row = apply_filters( 'oapfw_map_catalog_product', $row, $product );
+
+		if ( null === $this->fields ) {
+			return $row;
+		}
+		return _rest_array_intersect_key_recursive( $row, $this->fields );
 	}
 
 	/**

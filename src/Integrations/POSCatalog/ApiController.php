@@ -79,7 +79,14 @@ class ApiController {
 	public function generate_feed( WP_REST_Request $request ) {
 		$generator = $this->container->get( AsyncGenerator::class );
 		try {
-			$params   = [];
+			$params = [];
+			if ( null !== $request['_fields'] ) {
+				$params['_fields'] = $request['_fields'];
+
+				// We're hijacking the `_fields` parameter to use for the feed. Do not use it here.
+				unset( $request['_fields'] );
+			}
+
 			$response = $request->get_param( 'force' )
 				? $generator->force_regeneration( $params )
 				: $generator->get_status( $params );
