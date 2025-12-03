@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Async Generator for feeds.
  */
-final class AsyncGenerator {
+class AsyncGenerator {
 	/**
 	 * The Action Scheduler action hook for the feed generation.
 	 *
