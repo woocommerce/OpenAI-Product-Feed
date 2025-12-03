@@ -9,7 +9,7 @@ use WC_Helper_Product;
 /**
  * Product mapper test class.
  */
-class ProductMapperTest2 extends ProductFeedTestCase {
+class ProductMapperTest extends ProductFeedTestCase {
 	/**
 	 * System under test.
 	 *
