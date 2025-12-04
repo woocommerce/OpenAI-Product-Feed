@@ -9,6 +9,7 @@ namespace Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\POSCatalog;
 
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductMapperInterface;
 use WC_Product;
+use WP_REST_Response;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -23,9 +24,9 @@ class ProductMapper implements ProductMapperInterface {
 	/**
 	 * Fields to include in the product mapping.
 	 *
-	 * @var array|null Fields to include in the product mapping.
+	 * @var string|null Fields to include in the product mapping.
 	 */
-	private $fields = null;
+	private ?string $fields = null;
 
 	/**
 	 * Set fields to include in the product mapping.
@@ -34,15 +35,7 @@ class ProductMapper implements ProductMapperInterface {
 	 * @return void
 	 */
 	public function set_fields( ?string $fields = null ): void {
-		if ( null === $fields ) {
-			$this->fields = null;
-			return;
-		}
-
-		$this->fields = array_fill_keys(
-			array_map( 'trim', explode( ',', $fields ) ),
-			1
-		);
+		$this->fields = $fields;
 	}
 
 	/**
@@ -79,10 +72,24 @@ class ProductMapper implements ProductMapperInterface {
 		 */
 		$row = apply_filters( 'oapfw_map_catalog_product', $row, $product );
 
+		return $this->filter_product_fields( $row );
+	}
+
+	/**
+	 * Filter product fields based on the fields to include.
+	 *
+	 * @param array $row Product data array.
+	 * @return array Filtered product data array.
+	 */
+	protected function filter_product_fields( array $row ): array {
 		if ( null === $this->fields ) {
 			return $row;
 		}
-		return _rest_array_intersect_key_recursive( $row, $this->fields );
+
+		// Wrap the row in a response object to use it with core functions.
+		$_response = new WP_REST_Response( $row );
+		rest_filter_response_fields( $_response, null, [ '_fields' => $this->fields ] );
+		return $_response->get_data();
 	}
 
 	/**
