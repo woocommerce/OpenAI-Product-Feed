@@ -83,7 +83,13 @@ class ApiController {
 			if ( null !== $request['_fields'] ) {
 				$params['_fields'] = $request['_fields'];
 
-				// We're hijacking the `_fields` parameter to use for the feed. Do not use it here.
+				/**
+				 * We're "hijacking" the `_fields` parameter to use for the feed.
+				 *
+				 * This endpoint does not represent the typical REST API, as it does not
+				 * return the actual feed immediately, just its status. We will use
+				 * `_fields` to generate the feed, but we do not want to filter the result here.
+				 */
 				unset( $request['_fields'] );
 			}
 
