@@ -83,8 +83,15 @@ class ProductMapper implements ProductMapperInterface {
 			? $this->variations_controller
 			: $this->products_controller;
 
-		$response = $controller->prepare_object_for_response( $product, $this->get_rest_request() );
-		$row      = $response->get_data();
+		$request  = $this->get_rest_request();
+		$response = $controller->prepare_object_for_response( $product, $request );
+
+		// Apply _fields filtering (normally done by REST server dispatch).
+		if ( null !== $this->fields ) {
+			$response = rest_filter_response_fields( $response, null, $request );
+		}
+
+		$row = $response->get_data();
 
 		/**
 		 * Filter mapped catalog product data.
