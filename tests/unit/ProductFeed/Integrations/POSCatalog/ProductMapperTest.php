@@ -21,6 +21,7 @@ class ProductMapperTest extends ProductFeedTestCase {
 		parent::setUp();
 
 		$this->sut = new ProductMapper();
+		$this->sut->init(); // Could be done through DI, but there are no parameter dependencies.
 	}
 
 	public function tearDown(): void {
