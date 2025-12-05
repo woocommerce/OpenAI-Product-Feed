@@ -104,6 +104,7 @@ class AsyncGenerator {
 
 		$status = [
 			'scheduled_at' => time(),
+			'completed_at' => null,
 			'state'        => self::STATE_SCHEDULED,
 			'progress'     => 0,
 			'processed'    => 0,
@@ -172,9 +173,10 @@ class AsyncGenerator {
 		);
 
 		// Store the final details.
-		$status['state'] = self::STATE_COMPLETED;
-		$status['url']   = $feed->get_file_url();
-		$status['path']  = $feed->get_file_path();
+		$status['state']        = self::STATE_COMPLETED;
+		$status['url']          = $feed->get_file_url();
+		$status['path']         = $feed->get_file_path();
+		$status['completed_at'] = time();
 		update_option( $option_key, $status );
 
 		// Schedule another action to delete the file after the expiry time.

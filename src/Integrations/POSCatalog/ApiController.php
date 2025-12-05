@@ -105,6 +105,14 @@ class ApiController {
 				? $generator->force_regeneration( $params )
 				: $generator->get_status( $params );
 
+			// Use the right datetime format.
+			if ( isset( $response['scheduled_at'] ) ) {
+				$response['scheduled_at'] = wc_rest_prepare_date_response( $response['scheduled_at'] );
+			}
+			if ( isset( $response['completed_at'] ) ) {
+				$response['completed_at'] = wc_rest_prepare_date_response( $response['completed_at'] );
+			}
+
 			// Remove sensitive data from the response.
 			if ( isset( $response['action_id'] ) ) {
 				unset( $response['action_id'] );
