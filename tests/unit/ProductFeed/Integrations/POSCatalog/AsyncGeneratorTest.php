@@ -51,7 +51,8 @@ class AsyncGeneratorTest extends ProductFeedTestCase {
 		$status = [
 			'state' => AsyncGenerator::STATE_SCHEDULED,
 			'args'  => [
-				'_fields' => 'id,name',
+				'_product_fields'   => 'id,name',
+				'_variation_fields' => 'id,name,url',
 			],
 		];
 		update_option( self::OPTION_KEY, $status );
@@ -61,12 +62,15 @@ class AsyncGeneratorTest extends ProductFeedTestCase {
 		$mock_mapper->expects( $this->once() )
 			->method( 'set_fields' )
 			->with( 'id,name' );
+		$mock_mapper->expects( $this->once() )
+			->method( 'set_variation_fields' )
+			->with( 'id,name,url' );
 		$mock_mapper->expects( $this->atLeast( 1 ) )
 			->method( 'map_product' )
 			->willReturn( [] );
 
 		// Replace the mapper with the integration.
-		$this->mock_integration->expects( $this->exactly( 2 ) )
+		$this->mock_integration->expects( $this->atLeast( 1 ) )
 			->method( 'get_product_mapper' )
 			->willReturn( $mock_mapper );
 

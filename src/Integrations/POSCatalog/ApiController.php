@@ -54,7 +54,7 @@ class ApiController {
 						'default'     => false,
 						'description' => 'Force regeneration of the feed. NOOP if generation is in progress.',
 					],
-					'_product_fields' => [
+					'_product_fields'   => [
 						'type'        => 'string',
 						'description' => 'Comma-separated list of fields to include for non-variable products.',
 						'required'    => false,
