@@ -91,7 +91,10 @@ class ProductMapper implements ProductMapperInterface {
 			$response = rest_filter_response_fields( $response, null, $request );
 		}
 
-		$row = $response->get_data();
+		$row = [
+			'type' => $product->get_type(),
+			'data' => $response->get_data(),
+		];
 
 		/**
 		 * Filter mapped catalog product data.
