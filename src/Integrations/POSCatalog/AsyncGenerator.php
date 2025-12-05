@@ -160,6 +160,9 @@ class AsyncGenerator {
 		if ( isset( $args['_fields'] ) && is_string( $args['_fields'] ) && ! empty( $args['_fields'] ) ) {
 			$this->integration->get_product_mapper()->set_fields( $args['_fields'] );
 		}
+		if ( isset( $args['_variation_fields'] ) && is_string( $args['_variation_fields'] ) && ! empty( $args['_variation_fields'] ) ) {
+			$this->integration->get_product_mapper()->set_variation_fields( $args['_variation_fields'] );
+		}
 
 		$walker->walk(
 			function ( WalkerProgress $progress ) use ( &$status, $option_key ) {

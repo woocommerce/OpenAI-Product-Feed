@@ -49,10 +49,15 @@ class ApiController {
 				'callback'            => [ $this, 'generate_feed' ],
 				'permission_callback' => [ $this, 'is_authorized' ],
 				'args'                => [
-					'force' => [
+					'force'             => [
 						'type'        => 'boolean',
 						'default'     => false,
 						'description' => 'Force regeneration of the feed. NOOP if generation is in progress.',
+					],
+					'_variation_fields' => [
+						'type'        => 'string',
+						'description' => 'Comma-separated list of fields to include for variations.',
+						'required'    => false,
 					],
 				],
 			]
@@ -91,6 +96,9 @@ class ApiController {
 				 * `_fields` to generate the feed, but we do not want to filter the result here.
 				 */
 				unset( $request['_fields'] );
+			}
+			if ( null !== $request['_variation_fields'] ) {
+				$params['_variation_fields'] = $request['_variation_fields'];
 			}
 
 			$response = $request->get_param( 'force' )
