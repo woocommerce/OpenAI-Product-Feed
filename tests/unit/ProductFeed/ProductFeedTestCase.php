@@ -82,6 +82,7 @@ class ProductFeedTestCase extends WC_Unit_Test_Case {
 
 		// Create a test container with the same initial cache.
 		$test_container = new TestContainer( $original_cache );
+		$container_property->setValue( $main_container, $test_container );
 		$plugin_property->setValue( $plugin_instance, $test_container );
 
 		return $test_container;

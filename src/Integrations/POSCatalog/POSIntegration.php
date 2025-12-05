@@ -10,7 +10,6 @@ namespace Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\POSCatalog;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Core\DependencyManagement\Container;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\FeedInterface;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\FeedValidatorInterface;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductMapperInterface;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\IntegrationInterface;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Storage\JsonFileFeed;
 
@@ -96,7 +95,7 @@ class POSIntegration implements IntegrationInterface {
 	/**
 	 * {@inheritdoc}
 	 */
-	public function get_product_mapper(): ProductMapperInterface {
+	public function get_product_mapper(): ProductMapper {
 		return $this->container->get( ProductMapper::class );
 	}
 

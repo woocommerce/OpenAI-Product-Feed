@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Async Generator for feeds.
  */
-final class AsyncGenerator {
+class AsyncGenerator {
 	/**
 	 * The Action Scheduler action hook for the feed generation.
 	 *
@@ -154,6 +154,12 @@ final class AsyncGenerator {
 
 		$feed   = $this->integration->create_feed();
 		$walker = ProductWalker::from_integration( $this->integration, $feed );
+
+		// Add dynamic args to the mapper.
+		$args = $status['args'] ?? [];
+		if ( isset( $args['_fields'] ) && is_string( $args['_fields'] ) && ! empty( $args['_fields'] ) ) {
+			$this->integration->get_product_mapper()->set_fields( $args['_fields'] );
+		}
 
 		$walker->walk(
 			function ( WalkerProgress $progress ) use ( &$status, $option_key ) {
