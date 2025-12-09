@@ -9,7 +9,9 @@ namespace Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\POSCatalog;
 
 use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductMapperInterface;
 use WC_Product;
-use WP_REST_Response;
+use WC_REST_Products_Controller;
+use WC_REST_Product_Variations_Controller;
+use WP_REST_Request;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -18,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Product Mapper for the POS catalog.
  *
- * WIP class, copied from the `mobile/pos-catalog` branch.
+ * Uses WooCommerce REST API controllers to map product data.
  */
 class ProductMapper implements ProductMapperInterface {
 	/**
@@ -29,13 +31,70 @@ class ProductMapper implements ProductMapperInterface {
 	private ?string $fields = null;
 
 	/**
+	 * Fields to include in the variation mapping.
+	 *
+	 * @var string|null Fields to include in the variation mapping.
+	 */
+	private ?string $variation_fields = null;
+
+	/**
+	 * REST controller instance for products.
+	 *
+	 * @var WC_REST_Products_Controller|null
+	 */
+	private ?WC_REST_Products_Controller $products_controller = null;
+
+	/**
+	 * REST controller instance for variations.
+	 *
+	 * @var WC_REST_Product_Variations_Controller|null
+	 */
+	private ?WC_REST_Product_Variations_Controller $variations_controller = null;
+
+	/**
+	 * Cached REST request instance for products.
+	 *
+	 * @var WP_REST_Request|null
+	 */
+	private ?WP_REST_Request $products_request = null;
+
+	/**
+	 * Cached REST request instance for variations.
+	 *
+	 * @var WP_REST_Request|null
+	 */
+	private ?WP_REST_Request $variations_request = null;
+
+	/**
+	 * Initialize the mapper.
+	 *
+	 * @return void
+	 */
+	public function init(): void {
+		$this->products_controller   = new WC_REST_Products_Controller();
+		$this->variations_controller = new WC_REST_Product_Variations_Controller();
+	}
+
+	/**
 	 * Set fields to include in the product mapping.
 	 *
 	 * @param string|null $fields Fields to include in the product mapping.
 	 * @return void
 	 */
 	public function set_fields( ?string $fields = null ): void {
-		$this->fields = $fields;
+		$this->fields           = $fields;
+		$this->products_request = null; // Invalidate the cached request.
+	}
+
+	/**
+	 * Set fields to include in the variation mapping.
+	 *
+	 * @param string|null $fields Fields to include in the variation mapping.
+	 * @return void
+	 */
+	public function set_variation_fields( ?string $fields = null ): void {
+		$this->variation_fields   = $fields;
+		$this->variations_request = null; // Invalidate the cached request.
 	}
 
 	/**
@@ -45,22 +104,23 @@ class ProductMapper implements ProductMapperInterface {
 	 * @return array Mapped product data array.
 	 */
 	public function map_product( WC_Product $product ): array {
+		$is_variation = $product->is_type( 'variation' );
+		$controller   = $is_variation
+			? $this->variations_controller
+			: $this->products_controller;
+
+		$request  = $is_variation ? $this->get_variations_request() : $this->get_products_request();
+		$response = $controller->prepare_object_for_response( $product, $request );
+
+		// Apply _fields filtering (normally done by REST server dispatch).
+		$fields = $is_variation ? $this->variation_fields : $this->fields;
+		if ( null !== $fields ) {
+			$response = rest_filter_response_fields( $response, null, $request );
+		}
+
 		$row = [
-			'id'                => $this->get_id( $product ),
-			'name'              => $this->get_name( $product ),
-			'type'              => $this->get_type( $product ),
-			'description'       => $this->get_description( $product ),
-			'short_description' => $this->get_short_description( $product ),
-			'sku'               => $this->get_sku( $product ),
-			'global_unique_id'  => $this->get_global_unique_id( $product ),
-			'price'             => $this->get_price( $product ),
-			'downloadable'      => $this->get_downloadable( $product ),
-			'parent_id'         => $this->get_parent_id( $product ),
-			'images'            => $this->get_images( $product ),
-			'attributes'        => $this->get_attributes( $product ),
-			'manage_stock'      => $this->get_manage_stock( $product ),
-			'stock_quantity'    => $this->get_stock_quantity( $product ),
-			'stock_status'      => $this->get_stock_status( $product ),
+			'type' => $product->get_type(),
+			'data' => $response->get_data(),
 		];
 
 		/**
@@ -70,307 +130,42 @@ class ProductMapper implements ProductMapperInterface {
 		 * @param array      $row     Mapped product data.
 		 * @param WC_Product $product Product object.
 		 */
-		$row = apply_filters( 'oapfw_map_catalog_product', $row, $product );
-
-		return $this->filter_product_fields( $row );
+		return apply_filters( 'oapfw_map_catalog_product', $row, $product );
 	}
 
 	/**
-	 * Filter product fields based on the fields to include.
+	 * Get the REST request instance for products.
 	 *
-	 * @param array $row Product data array.
-	 * @return array Filtered product data array.
+	 * @return WP_REST_Request
 	 */
-	protected function filter_product_fields( array $row ): array {
-		if ( null === $this->fields ) {
-			return $row;
-		}
+	protected function get_products_request(): WP_REST_Request {
+		if ( null === $this->products_request ) {
+			$this->products_request = new WP_REST_Request( 'GET' );
+			$this->products_request->set_param( 'context', 'view' );
 
-		// Wrap the row in a response object to use it with core functions.
-		$_response = new WP_REST_Response( $row );
-		rest_filter_response_fields( $_response, null, [ '_fields' => $this->fields ] );
-		return $_response->get_data();
-	}
-
-	/**
-	 * Get product ID
-	 *
-	 * @param WC_Product $product Product object.
-	 * @return int Product ID.
-	 */
-	protected function get_id( WC_Product $product ): int {
-		return $product->get_id();
-	}
-
-	/**
-	 * Get product name
-	 *
-	 * @param WC_Product $product Product object.
-	 * @return string Product name.
-	 */
-	protected function get_name( WC_Product $product ): string {
-		return wp_strip_all_tags( $product->get_name() );
-	}
-
-	/**
-	 * Get product type
-	 *
-	 * @param WC_Product $product Product object.
-	 * @return string Product type.
-	 */
-	protected function get_type( WC_Product $product ): string {
-		return $product->get_type();
-	}
-
-	/**
-	 * Get product description
-	 *
-	 * @param WC_Product $product Product object.
-	 * @return string Product description.
-	 */
-	protected function get_description( WC_Product $product ): string {
-		$description = $product->get_description();
-		return $description ? wp_strip_all_tags( $description ) : '';
-	}
-
-	/**
-	 * Get product short description
-	 *
-	 * @param WC_Product $product Product object.
-	 * @return string Product short description.
-	 */
-	protected function get_short_description( WC_Product $product ): string {
-		$short_description = $product->get_short_description();
-		return $short_description ? wp_strip_all_tags( $short_description ) : '';
-	}
-
-	/**
-	 * Get product SKU
-	 *
-	 * @param WC_Product $product Product object.
-	 * @return string Product SKU.
-	 */
-	protected function get_sku( WC_Product $product ): string {
-		$sku = $product->get_sku();
-		return $sku ? $sku : '';
-	}
-
-	/**
-	 * Get product global unique ID
-	 *
-	 * @param WC_Product $product Product object.
-	 * @return string Global unique ID.
-	 */
-	protected function get_global_unique_id( WC_Product $product ): string {
-		return $product->get_global_unique_id();
-	}
-
-	/**
-	 * Get product price
-	 *
-	 * @param WC_Product $product Product object.
-	 * @return float Product price.
-	 */
-	protected function get_price( WC_Product $product ): float {
-		$price = $product->get_price();
-		return $price ? (float) $price : 0.0;
-	}
-
-	/**
-	 * Get product downloadable status
-	 *
-	 * @param WC_Product $product Product object.
-	 * @return bool True if downloadable.
-	 */
-	protected function get_downloadable( WC_Product $product ): bool {
-		return $product->is_downloadable();
-	}
-
-	/**
-	 * Get parent product ID
-	 *
-	 * @param WC_Product $product Product object.
-	 * @return int Parent product ID or 0.
-	 */
-	protected function get_parent_id( WC_Product $product ): int {
-		return $product->is_type( 'variation' ) ? $product->get_parent_id() : 0;
-	}
-
-	/**
-	 * Get product images
-	 * NOTE: from WC_REST_Products_V4_Controller.get_images in core.
-	 *
-	 * @param WC_Product $product Product object.
-	 * @return array Array of image objects matching WooCommerce API schema.
-	 */
-	protected function get_images( WC_Product $product ): array {
-		$images         = [];
-		$attachment_ids = [];
-
-		// Add featured image.
-		if ( $product->get_image_id() ) {
-			$attachment_ids[] = $product->get_image_id();
-		}
-
-		// Add gallery images.
-		$attachment_ids = array_merge( $attachment_ids, $product->get_gallery_image_ids() );
-
-		// Build image data.
-		foreach ( $attachment_ids as $attachment_id ) {
-			$attachment_post = get_post( $attachment_id );
-			if ( is_null( $attachment_post ) ) {
-				continue;
-			}
-
-			$attachment = wp_get_attachment_image_src( $attachment_id, 'full' );
-
-			if ( ! is_array( $attachment ) ) {
-				continue;
-			}
-			$thumbnail = wp_get_attachment_image_src( $attachment_id, 'woocommerce_thumbnail' );
-
-			$images[] = [
-				'id'                => (int) $attachment_id,
-				'date_created'      => wc_rest_prepare_date_response( $attachment_post->post_date, false ),
-				'date_created_gmt'  => wc_rest_prepare_date_response( strtotime( $attachment_post->post_date_gmt ) ),
-				'date_modified'     => wc_rest_prepare_date_response( $attachment_post->post_modified, false ),
-				'date_modified_gmt' => wc_rest_prepare_date_response( strtotime( $attachment_post->post_modified_gmt ) ),
-				'src'               => current( $attachment ),
-				'name'              => get_the_title( $attachment_id ),
-				'alt'               => get_post_meta( $attachment_id, '_wp_attachment_image_alt', true ),
-				'srcset'            => (string) wp_get_attachment_image_srcset( $attachment_id, 'full' ),
-				'sizes'             => (string) wp_get_attachment_image_sizes( $attachment_id, 'full' ),
-				'thumbnail'         => is_array( $thumbnail ) ? current( $thumbnail ) : '',
-			];
-		}
-
-		return $images;
-	}
-
-	/**
-	 * Get product attributes
-	 * NOTE: from WC_REST_Products_V1_Controller in core.
-	 *
-	 * @param WC_Product $product Product object.
-	 * @return array Product attributes.
-	 */
-	protected function get_attributes( WC_Product $product ): array {
-		$attributes = [];
-
-		if ( $product->is_type( 'variation' ) ) {
-			// Variation attributes.
-			foreach ( $product->get_variation_attributes() as $attribute_name => $attribute ) {
-				$name = str_replace( 'attribute_', '', $attribute_name );
-
-				if ( ! $attribute ) {
-					continue;
-				}
-
-				// Taxonomy-based attributes are prefixed with `pa_`, otherwise simply `attribute_`.
-				if ( 0 === strpos( $attribute_name, 'attribute_pa_' ) ) {
-					$option_term  = get_term_by( 'slug', $attribute, $name );
-					$attributes[] = [
-						'id'     => wc_attribute_taxonomy_id_by_name( $name ),
-						'name'   => $this->get_attribute_taxonomy_label( $name ),
-						'option' => $option_term && ! is_wp_error( $option_term ) ? $option_term->name : $attribute,
-					];
-				} else {
-					$attributes[] = [
-						'id'     => 0,
-						'name'   => $name,
-						'option' => $attribute,
-					];
-				}
-			}
-		} else {
-			foreach ( $product->get_attributes() as $attribute ) {
-				if ( $attribute['is_taxonomy'] ) {
-					$attributes[] = [
-						'id'        => wc_attribute_taxonomy_id_by_name( $attribute['name'] ),
-						'name'      => $this->get_attribute_taxonomy_label( $attribute['name'] ),
-						'position'  => (int) $attribute['position'],
-						'visible'   => (bool) $attribute['is_visible'],
-						'variation' => (bool) $attribute['is_variation'],
-						'options'   => $this->get_attribute_options( $product->get_id(), $attribute ),
-					];
-				} else {
-					$attributes[] = [
-						'id'        => 0,
-						'name'      => $attribute['name'],
-						'position'  => (int) $attribute['position'],
-						'visible'   => (bool) $attribute['is_visible'],
-						'variation' => (bool) $attribute['is_variation'],
-						'options'   => $this->get_attribute_options( $product->get_id(), $attribute ),
-					];
-				}
+			if ( null !== $this->fields ) {
+				$this->products_request->set_param( '_fields', $this->fields );
 			}
 		}
 
-		return $attributes;
+		return $this->products_request;
 	}
 
 	/**
-	 * NOTE: from WC_REST_Products_V1_Controller in core.
-	 * Get attribute taxonomy label.
+	 * Get the REST request instance for variations.
 	 *
-	 * @param  string $name Taxonomy name.
-	 * @return string
+	 * @return WP_REST_Request
 	 */
-	protected function get_attribute_taxonomy_label( $name ) {
-		$tax = get_taxonomy( $name );
-		if ( ! $tax ) {
-			return '';
+	protected function get_variations_request(): WP_REST_Request {
+		if ( null === $this->variations_request ) {
+			$this->variations_request = new WP_REST_Request( 'GET' );
+			$this->variations_request->set_param( 'context', 'view' );
+
+			if ( null !== $this->variation_fields ) {
+				$this->variations_request->set_param( '_fields', $this->variation_fields );
+			}
 		}
 
-		$labels = get_taxonomy_labels( $tax );
-		return $labels->singular_name;
-	}
-
-	/**
-	 * NOTE: from WC_REST_Products_V1_Controller in core.
-	 * Get attribute options.
-	 *
-	 * @param int   $product_id Product ID.
-	 * @param array $attribute  Attribute data.
-	 * @return array
-	 */
-	protected function get_attribute_options( $product_id, $attribute ) {
-		if ( isset( $attribute['is_taxonomy'] ) && $attribute['is_taxonomy'] ) {
-			return wc_get_product_terms( $product_id, $attribute['name'], [ 'fields' => 'names' ] );
-		} elseif ( isset( $attribute['value'] ) ) {
-			return array_map( 'trim', explode( '|', $attribute['value'] ) );
-		}
-
-		return [];
-	}
-
-	/**
-	 * Get manage stock status
-	 *
-	 * @param WC_Product $product Product object.
-	 * @return bool True if managing stock.
-	 */
-	protected function get_manage_stock( WC_Product $product ): bool {
-		return $product->get_manage_stock();
-	}
-
-	/**
-	 * Get stock quantity
-	 *
-	 * @param WC_Product $product Product object.
-	 * @return int|null Stock quantity or null.
-	 */
-	protected function get_stock_quantity( WC_Product $product ): ?int {
-		return $product->get_stock_quantity();
-	}
-
-	/**
-	 * Get stock status
-	 *
-	 * @param WC_Product $product Product object.
-	 * @return string Stock status.
-	 */
-	protected function get_stock_status( WC_Product $product ): string {
-		return $product->get_stock_status();
+		return $this->variations_request;
 	}
 }

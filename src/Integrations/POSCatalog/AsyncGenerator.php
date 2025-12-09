@@ -104,6 +104,7 @@ class AsyncGenerator {
 
 		$status = [
 			'scheduled_at' => time(),
+			'completed_at' => null,
 			'state'        => self::STATE_SCHEDULED,
 			'progress'     => 0,
 			'processed'    => 0,
@@ -157,8 +158,19 @@ class AsyncGenerator {
 
 		// Add dynamic args to the mapper.
 		$args = $status['args'] ?? [];
-		if ( isset( $args['_fields'] ) && is_string( $args['_fields'] ) && ! empty( $args['_fields'] ) ) {
-			$this->integration->get_product_mapper()->set_fields( $args['_fields'] );
+		if (
+			isset( $args['_product_fields'] )
+			&& is_string( $args['_product_fields'] ) &&
+			! empty( $args['_product_fields'] )
+		) {
+			$this->integration->get_product_mapper()->set_fields( $args['_product_fields'] );
+		}
+		if (
+			isset( $args['_variation_fields'] )
+			&& is_string( $args['_variation_fields'] ) &&
+			! empty( $args['_variation_fields'] )
+		) {
+			$this->integration->get_product_mapper()->set_variation_fields( $args['_variation_fields'] );
 		}
 
 		$walker->walk(
@@ -169,9 +181,10 @@ class AsyncGenerator {
 		);
 
 		// Store the final details.
-		$status['state'] = self::STATE_COMPLETED;
-		$status['url']   = $feed->get_file_url();
-		$status['path']  = $feed->get_file_path();
+		$status['state']        = self::STATE_COMPLETED;
+		$status['url']          = $feed->get_file_url();
+		$status['path']         = $feed->get_file_path();
+		$status['completed_at'] = time();
 		update_option( $option_key, $status );
 
 		// Schedule another action to delete the file after the expiry time.

@@ -21,6 +21,7 @@ class ProductMapperTest extends ProductFeedTestCase {
 		parent::setUp();
 
 		$this->sut = new ProductMapper();
+		$this->sut->init(); // Could be done through DI, but there are no parameter dependencies.
 	}
 
 	public function tearDown(): void {
@@ -41,13 +42,15 @@ class ProductMapperTest extends ProductFeedTestCase {
 		$result = $this->sut->map_product( $product );
 
 		$this->assertIsArray( $result );
-		$this->assertArrayHasKey( 'id', $result );
-		$this->assertArrayHasKey( 'name', $result );
-		$this->assertArrayHasKey( 'description', $result );
-		$this->assertArrayHasKey( 'price', $result );
-		$this->assertArrayHasKey( 'downloadable', $result );
-		$this->assertArrayHasKey( 'parent_id', $result );
-		$this->assertArrayHasKey( 'images', $result );
+		$this->assertArrayHasKey( 'type', $result );
+		$this->assertArrayHasKey( 'data', $result );
+		$this->assertArrayHasKey( 'id', $result['data'] );
+		$this->assertArrayHasKey( 'name', $result['data'] );
+		$this->assertArrayHasKey( 'description', $result['data'] );
+		$this->assertArrayHasKey( 'price', $result['data'] );
+		$this->assertArrayHasKey( 'downloadable', $result['data'] );
+		$this->assertArrayHasKey( 'parent_id', $result['data'] );
+		$this->assertArrayHasKey( 'images', $result['data'] );
 	}
 
 	/**
@@ -64,11 +67,12 @@ class ProductMapperTest extends ProductFeedTestCase {
 		$result = $this->sut->map_product( $product );
 
 		$this->assertIsArray( $result );
-		$this->assertArrayHasKey( 'id', $result );
-		$this->assertArrayHasKey( 'name', $result );
-		$this->assertArrayHasKey( 'description', $result );
-		$this->assertArrayNotHasKey( 'price', $result );
-		$this->assertArrayNotHasKey( 'downloadable', $result );
-		$this->assertArrayNotHasKey( 'parent_id', $result );
+		$this->assertArrayHasKey( 'type', $result );
+		$this->assertArrayHasKey( 'data', $result );
+		$this->assertArrayHasKey( 'name', $result['data'] );
+		$this->assertArrayHasKey( 'description', $result['data'] );
+		$this->assertArrayNotHasKey( 'price', $result['data'] );
+		$this->assertArrayNotHasKey( 'downloadable', $result['data'] );
+		$this->assertArrayNotHasKey( 'parent_id', $result['data'] );
 	}
 }

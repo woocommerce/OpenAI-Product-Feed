@@ -57,12 +57,12 @@ class ApiControllerTest extends ProductFeedTestCase {
 			$request->set_param( 'force', true );
 		}
 		if ( $fields ) {
-			$request->set_param( '_fields', $fields );
+			$request->set_param( '_product_fields', $fields );
 		}
 
 		$this->mock_async_generator->expects( $this->once() )
 			->method( $force_regeneration ? 'force_regeneration' : 'get_status' )
-			->with( $fields ? [ '_fields' => $fields ] : [] )
+			->with( $fields ? [ '_product_fields' => $fields ] : [] )
 			->willReturn(
 				[
 					'action_id' => 6789,

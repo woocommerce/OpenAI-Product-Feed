@@ -49,10 +49,20 @@ class ApiController {
 				'callback'            => [ $this, 'generate_feed' ],
 				'permission_callback' => [ $this, 'is_authorized' ],
 				'args'                => [
-					'force' => [
+					'force'             => [
 						'type'        => 'boolean',
 						'default'     => false,
 						'description' => 'Force regeneration of the feed. NOOP if generation is in progress.',
+					],
+					'_product_fields'   => [
+						'type'        => 'string',
+						'description' => 'Comma-separated list of fields to include for non-variable products.',
+						'required'    => false,
+					],
+					'_variation_fields' => [
+						'type'        => 'string',
+						'description' => 'Comma-separated list of fields to include for variations.',
+						'required'    => false,
 					],
 				],
 			]
@@ -80,22 +90,24 @@ class ApiController {
 		$generator = $this->container->get( AsyncGenerator::class );
 		try {
 			$params = [];
-			if ( null !== $request['_fields'] ) {
-				$params['_fields'] = $request['_fields'];
-
-				/**
-				 * We're "hijacking" the `_fields` parameter to use for the feed.
-				 *
-				 * This endpoint does not represent the typical REST API, as it does not
-				 * return the actual feed immediately, just its status. We will use
-				 * `_fields` to generate the feed, but we do not want to filter the result here.
-				 */
-				unset( $request['_fields'] );
+			if ( null !== $request['_product_fields'] ) {
+				$params['_product_fields'] = $request['_product_fields'];
+			}
+			if ( null !== $request['_variation_fields'] ) {
+				$params['_variation_fields'] = $request['_variation_fields'];
 			}
 
 			$response = $request->get_param( 'force' )
 				? $generator->force_regeneration( $params )
 				: $generator->get_status( $params );
+
+			// Use the right datetime format.
+			if ( isset( $response['scheduled_at'] ) ) {
+				$response['scheduled_at'] = wc_rest_prepare_date_response( $response['scheduled_at'] );
+			}
+			if ( isset( $response['completed_at'] ) ) {
+				$response['completed_at'] = wc_rest_prepare_date_response( $response['completed_at'] );
+			}
 
 			// Remove sensitive data from the response.
 			if ( isset( $response['action_id'] ) ) {
