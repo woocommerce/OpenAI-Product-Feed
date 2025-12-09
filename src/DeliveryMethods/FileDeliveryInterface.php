@@ -7,7 +7,7 @@
 
 namespace Automattic\WooCommerce\ProductFeedForOpenAI\DeliveryMethods;
 
-use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\FeedInterface;
+use Automattic\WooCommerce\Internal\ProductFeed\Feed\FeedInterface;
 
 interface FileDeliveryInterface {
 	/**

@@ -4,6 +4,8 @@ declare( strict_types=1 );
 
 namespace Automattic\WooCommerce\ProductFeedForOpenAI\Core\DependencyManagement;
 
+use Automattic\WooCommerce\Internal\DependencyManagement\RuntimeContainer as CoreRuntimeContainer;
+
 /**
  * Dependency injection container used at runtime.
  *
@@ -91,6 +93,15 @@ class RuntimeContainer {
 		}
 
 		if ( ! $this->is_class_allowed( $class_name ) ) {
+			// Fallback for Woo core classes.
+			if ( 0 === strpos( $class_name, CoreRuntimeContainer::WOOCOMMERCE_NAMESPACE ) ) {
+				$instance = wc_get_container()->get( $class_name );
+				if ( $instance ) {
+					$this->resolved_cache[ $class_name ] = $instance;
+					return $instance;
+				}
+			}
+
 			throw new ContainerException( "Attempt to get an instance of class '$class_name', which is not in the " . self::NAMESPACE . ' namespace. Did you forget to add a namespace import?' );
 		}
 

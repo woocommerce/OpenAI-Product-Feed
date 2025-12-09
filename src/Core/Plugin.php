@@ -9,11 +9,10 @@ declare(strict_types=1);
 
 namespace Automattic\WooCommerce\ProductFeedForOpenAI\Core;
 
+use Automattic\WooCommerce\Internal\ProductFeed\ProductFeed;
 use Automattic\WooCommerce\ProductFeedForOpenAI\CLI\Command;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Core\DependencyManagement\Container;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\IntegrationRegistry;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAi\OpenAiIntegration;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\POSCatalog\POSIntegration;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -29,13 +28,6 @@ final class Plugin {
 	 * @var Container
 	 */
 	private $container;
-
-	/**
-	 * Integration registry.
-	 *
-	 * @var IntegrationRegistry
-	 */
-	private IntegrationRegistry $integration_registry;
 
 	/**
 	 * Get singleton instance.
@@ -62,22 +54,15 @@ final class Plugin {
 			return;
 		}
 
-		add_action( 'init', [ $this, 'register_hooks' ], 0 );
 		add_action( 'cli_init', [ $this, 'register_cli_commands' ] );
 
-		// Prepare all providers.
-		$this->integration_registry = $this->container->get( IntegrationRegistry::class );
-		$this->integration_registry->register_integration( $this->container->get( OpenAiIntegration::class ) );
-		$this->integration_registry->register_integration( $this->container->get( POSIntegration::class ) );
-	}
+		if ( function_exists( 'wc_get_container' ) ) {
+			$open_ai_integration = $this->container->get( OpenAiIntegration::class );
 
-	/**
-	 * Initialize plugin components
-	 */
-	public function register_hooks(): void {
-		// Let all integrations register their hooks.
-		foreach ( $this->container->get( IntegrationRegistry::class )->get_integrations() as $integration ) {
-			$integration->register_hooks();
+			$product_feed = wc_get_container()->get( ProductFeed::class );
+			$product_feed->register_integration( $open_ai_integration );
+
+			$open_ai_integration->register_hooks();
 		}
 	}
 
@@ -107,18 +92,14 @@ final class Plugin {
 			);
 		}
 
-		foreach ( $this->integration_registry->get_integrations() as $integration ) {
-			$integration->activate();
-		}
+		$this->container->get( OpenAiIntegration::class )->activate();
 	}
 
 	/**
 	 * Plugin deactivation
 	 */
 	public function deactivate(): void {
-		foreach ( $this->integration_registry->get_integrations() as $integration ) {
-			$integration->deactivate();
-		}
+		$this->container->get( OpenAiIntegration::class )->deactivate();
 	}
 
 	/**
