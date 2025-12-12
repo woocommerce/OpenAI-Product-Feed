@@ -69,8 +69,10 @@ class OpenAiIntegration implements IntegrationInterface, PushIntegrationInterfac
 	 * {@inheritdoc}
 	 */
 	public function activate(): void {
-		if ( ! as_has_scheduled_action( ScheduledActionManager::SCHEDULED_ACTION_HOOK ) ) {
-			as_schedule_recurring_action( time(), 60 * 15, ScheduledActionManager::SCHEDULED_ACTION_HOOK );
+		if ( function_exists( 'as_has_scheduled_action' ) && ! as_has_scheduled_action( ScheduledActionManager::SCHEDULED_ACTION_HOOK ) ) {
+			if ( function_exists( 'as_schedule_recurring_action' ) ) {
+				as_schedule_recurring_action( time(), 60 * 15, ScheduledActionManager::SCHEDULED_ACTION_HOOK );
+			}
 		}
 	}
 

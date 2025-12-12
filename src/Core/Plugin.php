@@ -59,8 +59,13 @@ final class Plugin {
 		if ( function_exists( 'wc_get_container' ) ) {
 			$open_ai_integration = $this->container->get( OpenAiIntegration::class );
 
-			$product_feed = wc_get_container()->get( ProductFeed::class );
-			$product_feed->register_integration( $open_ai_integration );
+			try {
+				$product_feed = wc_get_container()->get( ProductFeed::class );
+				$product_feed->register_integration( $open_ai_integration );
+			} catch ( \Throwable $e ) {
+				// ProductFeed service not available in this WooCommerce version.
+				return;
+			}
 
 			$open_ai_integration->register_hooks();
 		}
