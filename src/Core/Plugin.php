@@ -46,37 +46,37 @@ final class Plugin {
 	 * Private constructor
 	 */
 	private function __construct() {
-		$this->container = new Container();
-
-		// Immediately initialize by adding the necessary top-level hooks.
-		if ( ! class_exists( 'WooCommerce' ) ) {
+		if (
+			! class_exists( 'WooCommerce' ) // Woo is not instaled.
+			|| ! function_exists( 'wc_get_container' ) // The container is not available in Woo.
+			|| ! class_exists( ProductFeed::class ) // It's an old Woo version without ProductFeed bundled.
+		) {
 			add_action( 'admin_notices', [ $this, 'show_woo_commerce_missing_notice' ] );
 			return;
 		}
 
+		$this->container = new Container();
+
 		add_action( 'cli_init', [ $this, 'register_cli_commands' ] );
 
-		if ( function_exists( 'wc_get_container' ) ) {
-			$open_ai_integration = $this->container->get( OpenAiIntegration::class );
-
-			try {
-				$product_feed = wc_get_container()->get( ProductFeed::class );
-				$product_feed->register_integration( $open_ai_integration );
-			} catch ( \Throwable $e ) {
-				// ProductFeed service not available in this WooCommerce version.
-				return;
-			}
-
-			$open_ai_integration->register_hooks();
-		}
+		$open_ai_integration = $this->container->get( OpenAiIntegration::class );
+		$product_feed        = wc_get_container()->get( ProductFeed::class );
+		$product_feed->register_integration( $open_ai_integration );
+		$open_ai_integration->register_hooks();
 	}
 
 	/**
 	 * Register WP-CLI commands.
+	 *
+	 * @throws \RuntimeException If container is not initialized.
 	 */
 	public function register_cli_commands(): void {
 		if ( ! defined( 'WP_CLI' ) || ! WP_CLI ) {
 			return;
+		}
+
+		if ( null === $this->container ) {
+			throw new \RuntimeException( 'Container is not initialized. WooCommerce may not be active.' );
 		}
 
 		$command = $this->container->get( Command::class );
@@ -85,6 +85,8 @@ final class Plugin {
 
 	/**
 	 * Plugin activation
+	 *
+	 * @throws \RuntimeException If container is not initialized.
 	 */
 	public function activate(): void {
 		if ( ! class_exists( 'WooCommerce' ) ) {
@@ -97,13 +99,23 @@ final class Plugin {
 			);
 		}
 
+		if ( null === $this->container ) {
+			throw new \RuntimeException( 'Container is not initialized. WooCommerce may not be active.' );
+		}
+
 		$this->container->get( OpenAiIntegration::class )->activate();
 	}
 
 	/**
 	 * Plugin deactivation
+	 *
+	 * @throws \RuntimeException If container is not initialized.
 	 */
 	public function deactivate(): void {
+		if ( null === $this->container ) {
+			throw new \RuntimeException( 'Container is not initialized. WooCommerce may not be active.' );
+		}
+
 		$this->container->get( OpenAiIntegration::class )->deactivate();
 	}
 
@@ -124,8 +136,13 @@ final class Plugin {
 	 *
 	 * @param string $id The service ID.
 	 * @return mixed The service instance.
+	 * @throws \RuntimeException If container is not initialized.
 	 */
 	public function get( string $id ) {
+		if ( null === $this->container ) {
+			throw new \RuntimeException( 'Container is not initialized. WooCommerce may not be active.' );
+		}
+
 		return $this->container->get( $id );
 	}
 

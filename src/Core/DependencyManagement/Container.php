@@ -29,13 +29,17 @@ final class Container {
 		// When the League container was in use we allowed to retrieve the container itself
 		// by using 'Psr\Container\ContainerInterface' as the class identifier,
 		// we continue allowing that for compatibility.
-		$this->container = new RuntimeContainer(
-			[
-				__CLASS__                          => $this,
-				'Psr\Container\ContainerInterface' => $this,
-				WC_Logger_Interface::class         => wc_get_logger(),
-			]
-		);
+		$instances = [
+			__CLASS__                          => $this,
+			'Psr\Container\ContainerInterface' => $this,
+		];
+
+		// Only register the logger if wc_get_logger() is available.
+		if ( function_exists( 'wc_get_logger' ) ) {
+			$instances[ WC_Logger_Interface::class ] = wc_get_logger();
+		}
+
+		$this->container = new RuntimeContainer( $instances );
 	}
 
 	/**
