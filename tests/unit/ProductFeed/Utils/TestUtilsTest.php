@@ -4,7 +4,8 @@ declare( strict_types = 1 );
 namespace Automattic\WooCommerce\ProductFeedForOpenAI\Utils;
 
 use Automattic\WooCommerce\ProductFeedForOpenAI\Core\DependencyManagement\ContainerException;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\IntegrationInterface;
+use Automattic\WooCommerce\Internal\ProductFeed\Integrations\IntegrationInterface;
+use Automattic\WooCommerce\Internal\ProductFeed\Utils\StringHelper;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAi\OpenAiIntegration;
 use Automattic\WooCommerce\ProductFeedForOpenAI\ProductFeedTestCase;
 

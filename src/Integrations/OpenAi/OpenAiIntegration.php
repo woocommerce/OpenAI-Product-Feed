@@ -9,15 +9,15 @@ declare(strict_types=1);
 
 namespace Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAi;
 
+use Automattic\WooCommerce\Internal\ProductFeed\Feed\FeedInterface;
+use Automattic\WooCommerce\Internal\ProductFeed\Feed\FeedValidatorInterface;
+use Automattic\WooCommerce\Internal\ProductFeed\Feed\ProductMapperInterface;
+use Automattic\WooCommerce\Internal\ProductFeed\Integrations\IntegrationInterface;
+use Automattic\WooCommerce\Internal\ProductFeed\Storage\JsonFileFeed;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Core\DependencyManagement\Container;
 use Automattic\WooCommerce\ProductFeedForOpenAI\DeliveryMethods\FileDeliveryInterface;
 use Automattic\WooCommerce\ProductFeedForOpenAI\DeliveryMethods\PushFile;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\FeedInterface;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\FeedValidatorInterface;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductMapperInterface;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\IntegrationInterface;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\PushIntegrationInterface;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Storage\JsonFileFeed;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -69,8 +69,10 @@ class OpenAiIntegration implements IntegrationInterface, PushIntegrationInterfac
 	 * {@inheritdoc}
 	 */
 	public function activate(): void {
-		if ( ! as_has_scheduled_action( ScheduledActionManager::SCHEDULED_ACTION_HOOK ) ) {
-			as_schedule_recurring_action( time(), 60 * 15, ScheduledActionManager::SCHEDULED_ACTION_HOOK );
+		if ( function_exists( 'as_has_scheduled_action' ) && ! as_has_scheduled_action( ScheduledActionManager::SCHEDULED_ACTION_HOOK ) ) {
+			if ( function_exists( 'as_schedule_recurring_action' ) ) {
+				as_schedule_recurring_action( time(), 60 * 15, ScheduledActionManager::SCHEDULED_ACTION_HOOK );
+			}
 		}
 	}
 

@@ -4,6 +4,8 @@ declare( strict_types=1 );
 
 namespace Automattic\WooCommerce\ProductFeedForOpenAI\Core\DependencyManagement;
 
+use Automattic\WooCommerce\Internal\DependencyManagement\RuntimeContainer as CoreRuntimeContainer;
+
 /**
  * Dependency injection container used at runtime.
  *
@@ -47,9 +49,13 @@ class RuntimeContainer {
 	/**
 	 * Get an instance of a class.
 	 *
+	 * Classes in the Automattic\WooCommerce\ProductFeedForOpenAI namespace are resolved directly.
+	 * Classes in the WooCommerce core namespace are resolved via wc_get_container().
+	 *
 	 * ContainerException will be thrown in these cases:
 	 *
 	 * - $class_name is outside the Automattic\WooCommerce\ProductFeedForOpenAI root namespace (and wasn't included in the initial resolve cache).
+	 * - $class_name is in the WooCommerce core namespace but cannot be resolved by the core container.
 	 * - The class referred by $class_name doesn't exist.
 	 * - Recursive resolution condition found.
 	 * - Reflection exception thrown when instantiating or initializing the class.
@@ -91,6 +97,17 @@ class RuntimeContainer {
 		}
 
 		if ( ! $this->is_class_allowed( $class_name ) ) {
+			// Fallback for Woo core classes.
+			if ( 0 === strpos( $class_name, CoreRuntimeContainer::WOOCOMMERCE_NAMESPACE ) ) {
+				try {
+					$instance = wc_get_container()->get( $class_name );
+					$this->resolved_cache[ $class_name ] = $instance;
+					return $instance;
+				} catch ( \Exception $e ) {
+					// Fall through to namespace resolution error below.
+				}
+			}
+
 			throw new ContainerException( "Attempt to get an instance of class '$class_name', which is not in the " . self::NAMESPACE . ' namespace. Did you forget to add a namespace import?' );
 		}
 

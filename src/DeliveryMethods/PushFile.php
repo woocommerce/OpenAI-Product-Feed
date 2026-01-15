@@ -8,7 +8,7 @@
 namespace Automattic\WooCommerce\ProductFeedForOpenAI\DeliveryMethods;
 
 use Exception;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\FeedInterface;
+use Automattic\WooCommerce\Internal\ProductFeed\Feed\FeedInterface;
 
 // This file uses cURL heavily. It's a requirement for the plugin.
 // phpcs:disable WordPress.WP.AlternativeFunctions

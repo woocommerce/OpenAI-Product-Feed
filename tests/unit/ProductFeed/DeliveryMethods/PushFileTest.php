@@ -2,7 +2,7 @@
 declare( strict_types = 1 );
 
 use Automattic\WooCommerce\ProductFeedForOpenAI\DeliveryMethods\PushFile;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\FeedInterface;
+use Automattic\WooCommerce\Internal\ProductFeed\Feed\FeedInterface;
 
 /**
  * PushFile delivery method test class.

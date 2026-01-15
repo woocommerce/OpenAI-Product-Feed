@@ -10,7 +10,7 @@ declare(strict_types=1);
 namespace Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAi;
 
 use Automattic\WooCommerce\Enums\ProductStatus;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\FeedValidatorInterface;
+use Automattic\WooCommerce\Internal\ProductFeed\Feed\FeedValidatorInterface;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\OpenAi\FeedSchema;
 
 if ( ! defined( 'ABSPATH' ) ) {

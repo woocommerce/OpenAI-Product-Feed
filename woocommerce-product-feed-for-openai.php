@@ -57,8 +57,14 @@ register_activation_hook(
 register_deactivation_hook(
 	__FILE__,
 	function () {
-		$plugin = \Automattic\WooCommerce\ProductFeedForOpenAI\Core\Plugin::get_instance();
-		$plugin->deactivate();
+		try {
+			$plugin = \Automattic\WooCommerce\ProductFeedForOpenAI\Core\Plugin::get_instance();
+			$plugin->deactivate();
+		} catch ( \RuntimeException $e ) {
+			// Container not initialized - nothing to deactivate.
+			// This can happen if WooCommerce was not active when the plugin initialized.
+			return;
+		}
 	}
 );
 

@@ -9,14 +9,14 @@ declare(strict_types=1);
 
 namespace Automattic\WooCommerce\ProductFeedForOpenAI\CLI;
 
+use Automattic\WooCommerce\Internal\ProductFeed\Utils\MemoryManager;
 use Exception;
 use WP_CLI;
 use WP_CLI_Command;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\ProductWalker;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Feed\WalkerProgress;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\IntegrationRegistry;
+use Automattic\WooCommerce\Internal\ProductFeed\Feed\ProductWalker;
+use Automattic\WooCommerce\Internal\ProductFeed\Feed\WalkerProgress;
+use Automattic\WooCommerce\Internal\ProductFeed\Integrations\IntegrationRegistry;
 use Automattic\WooCommerce\ProductFeedForOpenAI\Integrations\PushIntegrationInterface;
-use Automattic\WooCommerce\ProductFeedForOpenAI\Utils\MemoryManager;
 
 // This is CLI. Non-escaped content should not break it.
 // phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped
